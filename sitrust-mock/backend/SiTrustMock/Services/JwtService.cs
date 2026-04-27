@@ -9,9 +9,9 @@ public class JwtService
 {
     private readonly string _secret;
 
-    public JwtService(IConfiguration config)
+    public JwtService(JwtSettings settings)
     {
-        _secret = config["JwtSettings:Secret"] ?? throw new InvalidOperationException("JwtSettings:Secret is not configured");
+        _secret = settings.Secret;
     }
 
     public string Sign(UserData user)
@@ -21,15 +21,15 @@ public class JwtService
 
         var claims = new[]
         {
-            new Claim("firstName", user.FirstName),
-            new Claim("lastName", user.LastName),
-            new Claim("emso", user.Emso),
-            new Claim("phone", user.Phone),
-            new Claim("email", user.Email),
-            new Claim("dateOfBirth", user.DateOfBirth),
-            new Claim("address", user.Address),
-            new Claim("zip", user.Zip),
-            new Claim("city", user.City),
+            new Claim(UserData.Claims.FirstName, user.FirstName),
+            new Claim(UserData.Claims.LastName, user.LastName),
+            new Claim(UserData.Claims.Emso, user.Emso),
+            new Claim(UserData.Claims.Phone, user.Phone),
+            new Claim(UserData.Claims.Email, user.Email),
+            new Claim(UserData.Claims.DateOfBirth, user.DateOfBirth),
+            new Claim(UserData.Claims.Address, user.Address),
+            new Claim(UserData.Claims.Zip, user.Zip),
+            new Claim(UserData.Claims.City, user.City),
         };
 
         var token = new JwtSecurityToken(claims: claims, signingCredentials: creds);

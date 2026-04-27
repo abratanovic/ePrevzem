@@ -13,8 +13,14 @@ public class AuthAttemptStore
         return id;
     }
 
-    public AuthAttempt? Get(string attemptId) =>
-        _attempts.TryGetValue(attemptId, out var attempt) ? attempt : null;
+    public CheckResult Check(string attemptId)
+    {
+        if (!_attempts.TryGetValue(attemptId, out var attempt))
+            return new CheckResult.NotFound();
+        if (attempt.State == AuthAttemptState.Pending)
+            return new CheckResult.Pending();
+        return new CheckResult.Complete(attempt.UserData!, attempt.RedirectUrl);
+    }
 
     public bool Complete(string attemptId, UserData userData)
     {
