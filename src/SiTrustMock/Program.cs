@@ -10,6 +10,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddSingleton<AuthAttemptStore>();
+builder.Services.AddSingleton<JwtService>();
 
 var app = builder.Build();
 
@@ -61,6 +62,20 @@ app.MapPost("/api/auth/complete", (string? attemptId, CompleteAuthRequest? body,
         return Results.NotFound(new { error = "Attempt not found" });
 
     return Results.Ok();
+});
+
+app.MapGet("/api/auth/check/{attemptId}", (string attemptId, AuthAttemptStore store, JwtService jwt) =>
+{
+    var attempt = store.Get(attemptId);
+    if (attempt is null)
+        return Results.NotFound(new { error = "Attempt not found" });
+
+    if (attempt.State == AuthAttemptState.Pending)
+        return Results.Ok(new { status = "pending" });
+
+    var token = jwt.Sign(attempt.UserData!);
+    var redirectUrl = $"{attempt.RedirectUrl}?token={token}";
+    return Results.Ok(new { status = "complete", redirectUrl });
 });
 
 app.Run();
