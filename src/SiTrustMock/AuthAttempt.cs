@@ -19,3 +19,15 @@ public record AuthAttempt(
     AuthAttemptState State = AuthAttemptState.Pending,
     UserData? UserData = null
 );
+
+public record CompleteAuthRequest(
+    string? FirstName,
+    string? LastName,
+    string? Emso,
+    string? Phone,
+    string? Email,
+    string? DateOfBirth,
+    string? Address,
+    string? Zip,
+    string? City
+);

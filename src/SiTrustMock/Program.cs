@@ -36,4 +36,31 @@ app.MapPost("/api/auth/initiate", (string? redirectUrl, HttpRequest request, Aut
     return Results.Ok(new { attemptId, qrCodeImage = qrBase64 });
 });
 
+app.MapPost("/api/auth/complete", (string? attemptId, CompleteAuthRequest? body, AuthAttemptStore store) =>
+{
+    if (string.IsNullOrWhiteSpace(attemptId))
+        return Results.BadRequest(new { error = "attemptId is required" });
+
+    if (body is null ||
+        string.IsNullOrWhiteSpace(body.FirstName) ||
+        string.IsNullOrWhiteSpace(body.LastName) ||
+        string.IsNullOrWhiteSpace(body.Emso) ||
+        string.IsNullOrWhiteSpace(body.Phone) ||
+        string.IsNullOrWhiteSpace(body.Email) ||
+        string.IsNullOrWhiteSpace(body.DateOfBirth) ||
+        string.IsNullOrWhiteSpace(body.Address) ||
+        string.IsNullOrWhiteSpace(body.Zip) ||
+        string.IsNullOrWhiteSpace(body.City))
+        return Results.BadRequest(new { error = "All user fields are required" });
+
+    var userData = new UserData(
+        body.FirstName!, body.LastName!, body.Emso!, body.Phone!,
+        body.Email!, body.DateOfBirth!, body.Address!, body.Zip!, body.City!);
+
+    if (!store.Complete(attemptId, userData))
+        return Results.NotFound(new { error = "Attempt not found" });
+
+    return Results.Ok();
+});
+
 app.Run();
