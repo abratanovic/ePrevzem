@@ -1,4 +1,6 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { checkAuth, normalizeQrCodeImage } from "../lib/authService";
 
 const steps = [
   "Na mobilni napravi odprite aplikacijo eOsebna.",
@@ -9,6 +11,76 @@ const steps = [
 
 export default function EosebnaPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const attemptId = searchParams.get("attemptId");
+  const qrCodeImage = searchParams.get("qrCodeImage");
+  const fallbackRedirectUrl =
+    searchParams.get("redirectUrl") ?? `${window.location.origin}/home`;
+  const hasRequiredParams = Boolean(attemptId && qrCodeImage);
+
+  const [status, setStatus] = useState<"pending" | "complete" | "error">(
+    "pending",
+  );
+  const [error, setError] = useState<string | null>(null);
+
+  const qrImageSrc = useMemo(() => {
+    if (!qrCodeImage) {
+      return null;
+    }
+
+    return normalizeQrCodeImage(qrCodeImage);
+  }, [qrCodeImage]);
+
+  useEffect(() => {
+    if (!attemptId) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const pollStatus = async () => {
+      try {
+        const result = await checkAuth(attemptId);
+
+        if (cancelled) {
+          return;
+        }
+
+        if (result.status === "pending") {
+          setStatus("pending");
+          return;
+        }
+
+        if (result.status === "complete") {
+          setStatus("complete");
+          window.location.href = result.redirectUrl || fallbackRedirectUrl;
+        }
+      } catch (err) {
+        if (cancelled) {
+          return;
+        }
+
+        setStatus("error");
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Napaka pri preverjanju prijave.",
+        );
+      }
+    };
+
+    void pollStatus();
+
+    const intervalId = window.setInterval(() => {
+      void pollStatus();
+    }, 2000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [attemptId, fallbackRedirectUrl]);
 
   return (
     <main className="min-h-screen bg-[#f7f5f3] text-slate-800">
@@ -49,6 +121,13 @@ export default function EosebnaPage() {
             </button>
           </div>
 
+          {!hasRequiredParams ? (
+            <div className="mb-8 rounded-2xl border border-red-300 bg-red-50 px-5 py-4 text-sm text-red-700">
+              Seja za prijavo ni bila pravilno inicializirana. Vrnite se na
+              prijavno stran in začnite postopek znova.
+            </div>
+          ) : null}
+
           <div className="grid gap-8 lg:grid-cols-[1.4fr_0.9fr]">
             <div className="grid gap-4 sm:grid-cols-2">
               {steps.map((step, index) => (
@@ -67,12 +146,29 @@ export default function EosebnaPage() {
             </div>
 
             <div className="flex items-center justify-center">
-              <div className="flex h-72 w-72 flex-col items-center justify-center rounded-2xl border-4 border-slate-900 bg-white shadow-md"></div>
+              {qrImageSrc ? (
+                <img
+                  src={qrImageSrc}
+                  alt="QR koda za prijavo"
+                  className="h-72 w-72 rounded-2xl border-4 border-slate-900 bg-white object-contain p-3 shadow-md"
+                />
+              ) : (
+                <div className="flex h-72 w-72 items-center justify-center rounded-2xl border-4 border-slate-900 bg-white shadow-md">
+                  <p className="text-sm text-slate-500">
+                    QR koda trenutno ni na voljo.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
           <div className="mt-8 rounded-2xl bg-amber-50 px-5 py-4 text-sm text-amber-800 ring-1 ring-amber-200">
-            Status: Čakanje na potrditev v mobilni aplikaciji.
+            {status === "pending" &&
+              "Status: Čakanje na potrditev v mobilni aplikaciji."}
+            {status === "complete" &&
+              "Status: Prijava uspešna. Preusmerjanje..."}
+            {status === "error" &&
+              `Status: Prišlo je do napake. ${error ?? "Poskusite znova."}`}
           </div>
         </div>
 

@@ -1,7 +1,9 @@
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import rsLogo from "../assets/rs-hd.png";
 import rsCasLogo from "../assets/rs-CAS.png";
 import euLogo from "../assets/evropski-sklad.jpg";
+import { initiateAuth } from "../lib/authService";
 
 const loginOptions = [
   "Uporabniško ime in geslo",
@@ -27,10 +29,38 @@ function UserIcon() {
 
 export default function SiPassLoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleOptionClick = (option: string) => {
-    if (option === "Mobilna aplikacija eOsebna") {
-      navigate("/sipass/eosebna");
+  const redirectUrl =
+    searchParams.get("redirectUrl") ?? `${window.location.origin}/home`;
+
+  const handleOptionClick = async (option: string) => {
+    if (option !== "Mobilna aplikacija eOsebna" || isSubmitting) {
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      setError(null);
+
+      const result = await initiateAuth(redirectUrl);
+      const nextParams = new URLSearchParams({
+        attemptId: result.attemptId,
+        qrCodeImage: result.qrCodeImage,
+        redirectUrl,
+      });
+
+      navigate(`/sipass/eosebna?${nextParams.toString()}`);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Prišlo je do napake pri začetku prijave.",
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -85,6 +115,12 @@ export default function SiPassLoginPage() {
               nadgradite na najnovejšo različico.
             </div>
 
+            {error ? (
+              <div className="mb-4 border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            ) : null}
+
             <div className="space-y-[3px]">
               {loginOptions.map((option) => {
                 const isActive = option === "Mobilna aplikacija eOsebna";
@@ -93,12 +129,13 @@ export default function SiPassLoginPage() {
                   <button
                     key={option}
                     type="button"
-                    onClick={() => handleOptionClick(option)}
+                    onClick={() => void handleOptionClick(option)}
+                    disabled={isSubmitting && isActive}
                     className={`relative flex min-h-[42px] w-full items-center border border-[#dddddd] bg-[#ededed] px-[28px] text-left ${
                       isActive
                         ? "cursor-pointer hover:bg-[#e7e7e7]"
                         : "cursor-default"
-                    }`}
+                    } ${isSubmitting && isActive ? "opacity-70" : ""}`}
                   >
                     <span className="pr-5 text-[14px] font-bold leading-none text-[#4d7f7b]">
                       {option}
