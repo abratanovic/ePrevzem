@@ -1,0 +1,6 @@
+docs/
+.claude/
+bin/
+obj/
+*.user
+.vs/
