@@ -74,7 +74,9 @@ export default function EPrevzemHomePage() {
 
               <div className="mt-6 flex flex-wrap gap-3">
                 <span className="rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700">
-                  {hasToken ? "Identifikacija zaključena" : "Pripravljen za prijavo"}
+                  {hasToken
+                    ? "Identifikacija zaključena"
+                    : "Pripravljen za prijavo"}
                 </span>
                 <span className="rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700">
                   2 aktivna prevzema

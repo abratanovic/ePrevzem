@@ -2,7 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import SipassLoginPage from "./pages/SiPassLoginPage";
 import EosebnaPage from "./pages/EosebnaPage";
-import EPrevzemHomePage from "./pages/EprevzemHomePage";
+import EPrevzemHomePage from "./pages/EPrevzemHomePage";
 
 export default function App() {
   return (
