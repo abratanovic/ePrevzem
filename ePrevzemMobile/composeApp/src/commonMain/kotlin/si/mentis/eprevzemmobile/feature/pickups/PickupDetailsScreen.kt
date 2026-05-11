@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -24,7 +25,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.Canvas
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -41,6 +44,7 @@ import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EAlertType
 import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EPickupStatus
 import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EStatusChip
 import si.mentis.eprevzemmobile.core.designsystem.components.inputs.EPinPad
+import si.mentis.eprevzemmobile.core.designsystem.components.layout.EDivider
 import si.mentis.eprevzemmobile.core.designsystem.components.layout.EScaffold
 import si.mentis.eprevzemmobile.core.designsystem.components.layout.EScreen
 import si.mentis.eprevzemmobile.core.designsystem.components.navigation.ETopBar
@@ -295,21 +299,31 @@ private fun IdlePhase(
             }
 
             ESummaryCard(title = "Podrobnosti", icon = EPrevzemIcons.document()) {
-                DetailRow(label = "Referenca", value = state.details.reference)
-                DetailRow(label = "Vrsta", value = state.details.type)
-                DetailRow(label = "Organizacija", value = state.details.organization)
-                DetailRow(label = "Na voljo od", value = state.details.availableFrom)
-                DetailRow(
-                    label = "Prevzem do",
-                    value = state.details.deadlineFormatted,
-                    valueColor = if (state.details.isExpiringSoon) colors.warning else null,
-                )
-                DetailRowWithContent(label = "Status") { EStatusChip(status = state.details.status) }
+                Column {
+                    DetailRow(label = "Referenca", value = state.details.reference)
+                    EDivider()
+                    DetailRow(label = "Vrsta", value = state.details.type)
+                    EDivider()
+                    DetailRow(label = "Organizacija", value = state.details.organization)
+                    EDivider()
+                    DetailRow(label = "Na voljo od", value = state.details.availableFrom)
+                    EDivider()
+                    DetailRow(
+                        label = "Prevzem do",
+                        value = state.details.deadlineFormatted,
+                        valueColor = if (state.details.isExpiringSoon) colors.warning else null,
+                    )
+                    EDivider()
+                    DetailRowWithContent(label = "Status") { EStatusChip(status = state.details.status) }
+                }
             }
 
-            ESummaryCard(title = "Lokacija", icon = EPrevzemIcons.location()) {
-                LockerChip(state.details.lockerNumber)
-                MapPlaceholder()
+            ESummaryCard(
+                title = "Lokacija",
+                icon = EPrevzemIcons.location(),
+                trailing = { LockerChip(state.details.lockerNumber) },
+            ) {
+                MapPlaceholder(locationName = state.details.locationName)
                 Text(
                     text = state.details.locationName,
                     style = typo.cardTitle,
@@ -322,17 +336,7 @@ private fun IdlePhase(
                 )
             }
 
-            ESummaryCard(title = "Varnostna preverba", icon = EPrevzemIcons.shieldOutlined()) {
-                Text(
-                    text = "Za prevzem je potrebna varnostna preverba. Izberite eno od spodnjih možnosti.",
-                    style = typo.bodySmall,
-                    color = colors.textSecondary,
-                )
-                VerificationOptionRow(icon = EPrevzemIcons.biometric(), label = "Biometrija (Face / Touch ID)")
-                VerificationOptionRow(icon = EPrevzemIcons.key(), label = "6-mestni PIN ePrevzem")
-            }
-
-            ESummaryCard(title = "Kako poteka prevzem", icon = EPrevzemIcons.info()) {
+ESummaryCard(title = "Kako poteka prevzem", icon = EPrevzemIcons.info()) {
                 NumberedStep(number = 1, text = "Tapnite »Odkleni predalček«.")
                 NumberedStep(number = 2, text = "Potrdite identiteto z biometrijo ali PIN-om.")
                 NumberedStep(number = 3, text = "Predalček se bo odprl za 30 sekund.")
@@ -375,6 +379,7 @@ private fun UnlockedPhase(
             verticalArrangement = Arrangement.spacedBy(spacing.lg),
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
                 .padding(horizontal = spacing.screenHorizontal, vertical = spacing.xl),
         ) {
             UnlockIconBubble()
@@ -390,7 +395,6 @@ private fun UnlockedPhase(
                 color = colors.textSecondary,
                 textAlign = TextAlign.Center,
             )
-            CountdownChip(secondsRemaining = state.secondsRemaining)
             UnlockedSummaryCard(details = state.details)
             Spacer(modifier = Modifier.weight(1f))
             EPrimaryButton(
@@ -418,7 +422,7 @@ private fun DetailRow(
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
     ) {
         Text(text = label, style = typo.bodySmall, color = colors.textSecondary)
         Text(text = value, style = typo.bodySmall, color = valueColor ?: colors.textPrimary)
@@ -432,7 +436,7 @@ private fun DetailRowWithContent(label: String, content: @Composable () -> Unit)
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
     ) {
         Text(text = label, style = typo.bodySmall, color = colors.textSecondary)
         content()
@@ -467,29 +471,57 @@ private fun LockerChip(text: String) {
 }
 
 @Composable
-private fun MapPlaceholder() {
+private fun MapPlaceholder(locationName: String) {
     val colors = EPrevzemTheme.colors
     val typo = EPrevzemTheme.typography
+    val gridColor = colors.border
+
     Box(
-        contentAlignment = Alignment.Center,
         modifier = Modifier
             .fillMaxWidth()
-            .height(140.dp)
+            .height(160.dp)
             .clip(EPrevzemTheme.shapes.medium)
             .background(colors.surfaceSunken),
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val step = 32.dp.toPx()
+            var x = 0f
+            while (x <= size.width) {
+                drawLine(gridColor, Offset(x, 0f), Offset(x, size.height), strokeWidth = 1f)
+                x += step
+            }
+            var y = 0f
+            while (y <= size.height) {
+                drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
+                y += step
+            }
+        }
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(44.dp)
+                .align(Alignment.Center)
+                .clip(CircleShape)
+                .background(colors.primary),
         ) {
             Icon(
                 painter = EPrevzemIcons.location(),
                 contentDescription = null,
-                tint = colors.textMuted,
-                modifier = Modifier.size(32.dp),
+                tint = Color.White,
+                modifier = Modifier.size(22.dp),
             )
-            Text(text = "Prikaz na zemljevidu", style = typo.caption, color = colors.textMuted)
         }
+        Text(
+            text = locationName,
+            style = typo.caption.copy(fontWeight = FontWeight.Medium),
+            color = colors.textPrimary,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(10.dp)
+                .clip(EPrevzemTheme.shapes.pill)
+                .background(Color.White)
+                .padding(horizontal = 10.dp, vertical = 5.dp),
+        )
     }
 }
 

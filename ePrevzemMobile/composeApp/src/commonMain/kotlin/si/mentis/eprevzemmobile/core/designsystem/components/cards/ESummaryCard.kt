@@ -19,6 +19,7 @@ fun ESummaryCard(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     tint: EIconTint = EIconTint.Green,
+    trailing: (@Composable () -> Unit)? = null,
     content: @Composable (() -> Unit)? = null,
 ) {
     val colors = EPrevzemTheme.colors
@@ -29,7 +30,7 @@ fun ESummaryCard(
         modifier = cardModifier(modifier.fillMaxWidth()).padding(spacing.md),
     ) {
         Row(
-            verticalAlignment = Alignment.Top,
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(spacing.sm),
         ) {
             EIconChip(painter = icon, tint = tint)
@@ -41,6 +42,7 @@ fun ESummaryCard(
                     Text(text = subtitle, style = typo.bodySmall, color = colors.textSecondary)
                 }
             }
+            if (trailing != null) trailing()
         }
         if (content != null) content()
     }

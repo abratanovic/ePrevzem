@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -48,6 +49,7 @@ fun EBottomNavigationBar(
             .fillMaxWidth()
             .background(colors.surface)
             .border(width = 1.dp, color = colors.border, shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
+            .navigationBarsPadding()
             .padding(horizontal = 8.dp, vertical = 8.dp),
     ) {
         items.forEach { item ->

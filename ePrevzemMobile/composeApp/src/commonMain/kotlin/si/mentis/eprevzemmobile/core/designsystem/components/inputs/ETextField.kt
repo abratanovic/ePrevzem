@@ -28,8 +28,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import si.mentis.eprevzemmobile.core.designsystem.icons.EPrevzemIcons
@@ -57,6 +59,9 @@ fun ETextField(
     val spacing = EPrevzemTheme.spacing
     val radius = EPrevzemTheme.radius
     var focused by remember { mutableStateOf(false) }
+    var fieldValue by remember(value) {
+        mutableStateOf(TextFieldValue(text = value, selection = TextRange(value.length)))
+    }
 
     val errorActive = isError || !error.isNullOrEmpty()
     val borderColor = when {
@@ -102,8 +107,11 @@ fun ETextField(
                     )
                 }
                 BasicTextField(
-                    value = value,
-                    onValueChange = onValueChange,
+                    value = fieldValue,
+                    onValueChange = { new ->
+                        fieldValue = new
+                        if (new.text != value) onValueChange(new.text)
+                    },
                     enabled = enabled,
                     singleLine = singleLine,
                     cursorBrush = SolidColor(colors.primary),

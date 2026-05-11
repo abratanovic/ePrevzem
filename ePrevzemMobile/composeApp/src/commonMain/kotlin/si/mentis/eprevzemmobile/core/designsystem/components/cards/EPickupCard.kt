@@ -15,7 +15,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EAlertType
 import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EPickupStatus
 import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EStatusChip
@@ -64,15 +66,30 @@ fun EPickupCard(
                     .background(colors.divider),
             )
             Row(
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    IconText(EPrevzemIcons.location(), location)
+                    Text(
+                        text = "LOKACIJA",
+                        style = typo.caption.copy(letterSpacing = 0.8.sp),
+                        color = colors.textMuted,
+                    )
+                    IconText(EPrevzemIcons.location(), location, bold = true, color = colors.textPrimary)
                     Text(text = lockerNumber, style = typo.caption, color = colors.textMuted)
                 }
-                IconText(EPrevzemIcons.clock(), expires)
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = "PREVZEM DO",
+                        style = typo.caption.copy(letterSpacing = 0.8.sp),
+                        color = colors.textMuted,
+                    )
+                    IconText(EPrevzemIcons.clock(), expires, bold = true, color = colors.textPrimary)
+                }
             }
         }
         if (warningText != null) {
@@ -104,8 +121,15 @@ private fun WarningStrip(text: String) {
 }
 
 @Composable
-private fun IconText(icon: androidx.compose.ui.graphics.painter.Painter, text: String) {
+private fun IconText(
+    icon: androidx.compose.ui.graphics.painter.Painter,
+    text: String,
+    bold: Boolean = false,
+    color: androidx.compose.ui.graphics.Color? = null,
+) {
     val colors = EPrevzemTheme.colors
+    val typo = EPrevzemTheme.typography
+    val resolvedColor = color ?: colors.textMuted
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -113,9 +137,13 @@ private fun IconText(icon: androidx.compose.ui.graphics.painter.Painter, text: S
         Icon(
             painter = icon,
             contentDescription = null,
-            tint = colors.textMuted,
+            tint = resolvedColor,
             modifier = Modifier.size(14.dp),
         )
-        Text(text = text, style = EPrevzemTheme.typography.caption, color = colors.textMuted)
+        Text(
+            text = text,
+            style = if (bold) typo.caption.copy(fontWeight = FontWeight.SemiBold) else typo.caption,
+            color = resolvedColor,
+        )
     }
 }

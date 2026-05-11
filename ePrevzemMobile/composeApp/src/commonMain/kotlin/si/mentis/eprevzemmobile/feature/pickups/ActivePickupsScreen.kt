@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.EPickupCard
@@ -90,7 +91,7 @@ fun ActivePickupsScreen(
                 )
                 Text(
                     text = "Pozdravljeni, ${state.userName}",
-                    style = typo.display,
+                    style = typo.display.copy(fontSize = 28.sp),
                     color = colors.textPrimary,
                 )
             }
