@@ -36,7 +36,7 @@ fun ELocationCard(
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.spacedBy(spacing.sm),
         ) {
-            EIconChip(icon = EPrevzemIcons.Location, tint = EIconTint.Teal)
+            EIconChip(painter = EPrevzemIcons.location(), tint = EIconTint.Teal)
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = name, style = typo.cardTitle, color = colors.textPrimary)
                 Text(text = address, style = typo.bodySmall, color = colors.textSecondary)
@@ -61,7 +61,7 @@ fun ELocationCard(
                     .padding(horizontal = 12.dp, vertical = 10.dp),
             ) {
                 Icon(
-                    imageVector = EPrevzemIcons.Clock,
+                    painter = EPrevzemIcons.clock(),
                     contentDescription = null,
                     tint = colors.textMuted,
                     modifier = Modifier.size(16.dp),

@@ -20,7 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
@@ -28,7 +28,7 @@ import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
 @Immutable
 data class EBottomNavItem(
     val id: String,
-    val icon: ImageVector,
+    val icon: Painter,
     val label: String,
     val primary: Boolean = false,
 )
@@ -69,7 +69,7 @@ private fun Tab(item: EBottomNavItem, active: Boolean, onClick: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier.clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
-        Icon(imageVector = item.icon, contentDescription = item.label, tint = tint, modifier = Modifier.size(22.dp))
+        Icon(painter = item.icon, contentDescription = item.label, tint = tint, modifier = Modifier.size(22.dp))
         Text(
             text = item.label,
             style = EPrevzemTheme.typography.caption.copy(
@@ -92,6 +92,6 @@ private fun PrimaryTab(item: EBottomNavItem, onClick: () -> Unit) {
             .background(colors.primary)
             .clickable(onClick = onClick),
     ) {
-        Icon(imageVector = item.icon, contentDescription = item.label, tint = Color.White, modifier = Modifier.size(26.dp))
+        Icon(painter = item.icon, contentDescription = item.label, tint = Color.White, modifier = Modifier.size(26.dp))
     }
 }

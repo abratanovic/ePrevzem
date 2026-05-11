@@ -7,21 +7,27 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import eprevzemmobile.composeapp.generated.resources.Res
+import eprevzemmobile.composeapp.generated.resources.inter_variable
+import eprevzemmobile.composeapp.generated.resources.jetbrains_mono_variable
+import org.jetbrains.compose.resources.Font
 
 @Composable
-fun appFontFamily(): FontFamily {
-    // return FontFamily(
-    //     Font(Res.font.inter_regular,   FontWeight.Normal),
-    //     Font(Res.font.inter_medium,    FontWeight.Medium),
-    //     Font(Res.font.inter_semibold,  FontWeight.SemiBold),
-    //     Font(Res.font.inter_bold,      FontWeight.Bold),
-    //     Font(Res.font.inter_extrabold, FontWeight.ExtraBold),
-    // )
-    return FontFamily.SansSerif
-}
+fun appFontFamily(): FontFamily = FontFamily(
+    Font(Res.font.inter_variable, FontWeight.Normal),
+    Font(Res.font.inter_variable, FontWeight.Medium),
+    Font(Res.font.inter_variable, FontWeight.SemiBold),
+    Font(Res.font.inter_variable, FontWeight.Bold),
+    Font(Res.font.inter_variable, FontWeight.ExtraBold),
+)
 
 @Composable
-fun monoFontFamily(): FontFamily = FontFamily.Monospace
+fun monoFontFamily(): FontFamily = FontFamily(
+    Font(Res.font.jetbrains_mono_variable, FontWeight.Normal),
+    Font(Res.font.jetbrains_mono_variable, FontWeight.Medium),
+    Font(Res.font.jetbrains_mono_variable, FontWeight.SemiBold),
+    Font(Res.font.jetbrains_mono_variable, FontWeight.Bold),
+)
 
 @Immutable
 data class EPrevzemTypography(

@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -19,7 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,7 +36,7 @@ fun ETopBar(
     eyebrow: String? = "Republika Slovenija",
     appName: String = "ePrevzem",
     onBack: (() -> Unit)? = null,
-    actionIcon: ImageVector? = EPrevzemIcons.Settings,
+    actionIcon: Painter? = EPrevzemIcons.settings(),
     onAction: (() -> Unit)? = null,
     notificationCount: Int = 0,
 ) {
@@ -46,8 +46,8 @@ fun ETopBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
             .background(colors.primary)
+            .statusBarsPadding()
             .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 28.dp),
     ) {
         Row(
@@ -56,7 +56,7 @@ fun ETopBar(
             modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp),
         ) {
             if (variant == ETopBarVariant.Detail && onBack != null) {
-                TopBarCircleButton(icon = EPrevzemIcons.Back, onClick = onBack)
+                TopBarCircleButton(icon = EPrevzemIcons.back(), onClick = onBack)
             }
             Box(modifier = Modifier.weight(1f)) {
                 when (variant) {
@@ -98,7 +98,7 @@ fun ETopBar(
 }
 
 @Composable
-private fun TopBarCircleButton(icon: ImageVector, onClick: () -> Unit) {
+private fun TopBarCircleButton(icon: Painter, onClick: () -> Unit) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
@@ -107,7 +107,7 @@ private fun TopBarCircleButton(icon: ImageVector, onClick: () -> Unit) {
             .background(Color.White.copy(alpha = 0.12f))
             .clickable(onClick = onClick),
     ) {
-        Icon(imageVector = icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+        Icon(painter = icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
     }
 }
 

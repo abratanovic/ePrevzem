@@ -18,7 +18,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
 
@@ -29,7 +29,7 @@ fun EPrimaryButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    icon: ImageVector? = null,
+    icon: Painter? = null,
     enabled: Boolean = true,
     loading: Boolean = false,
 ) {
@@ -64,7 +64,7 @@ fun ESecondaryButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    icon: ImageVector? = null,
+    icon: Painter? = null,
     enabled: Boolean = true,
 ) {
     val colors = EPrevzemTheme.colors
@@ -90,7 +90,7 @@ fun ETextButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    icon: ImageVector? = null,
+    icon: Painter? = null,
     enabled: Boolean = true,
 ) {
     val colors = EPrevzemTheme.colors
@@ -112,7 +112,7 @@ fun EDestructiveButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    icon: ImageVector? = null,
+    icon: Painter? = null,
     enabled: Boolean = true,
 ) {
     val colors = EPrevzemTheme.colors
@@ -133,11 +133,11 @@ fun EDestructiveButton(
 }
 
 @Composable
-private fun ButtonContent(label: String, icon: ImageVector?) {
+private fun ButtonContent(label: String, icon: Painter?) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         if (icon != null) {
             Icon(
-                imageVector = icon,
+                painter = icon,
                 contentDescription = null,
                 modifier = Modifier.size(18.dp),
             )

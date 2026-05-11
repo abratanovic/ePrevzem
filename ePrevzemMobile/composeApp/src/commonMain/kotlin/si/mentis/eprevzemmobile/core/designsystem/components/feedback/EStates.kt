@@ -17,7 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import si.mentis.eprevzemmobile.core.designsystem.components.buttons.ESecondaryButton
@@ -29,7 +29,7 @@ import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
 fun EEmptyState(
     title: String,
     modifier: Modifier = Modifier,
-    icon: ImageVector = EPrevzemIcons.Inbox,
+    icon: Painter = EPrevzemIcons.inbox(),
     message: String? = null,
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null,
@@ -62,7 +62,7 @@ fun EErrorState(
 ) {
     val colors = EPrevzemTheme.colors
     StateLayout(modifier = modifier) {
-        StateIconBubble(icon = EPrevzemIcons.Error, bg = colors.errorBg, fg = colors.error)
+        StateIconBubble(icon = EPrevzemIcons.error(), bg = colors.errorBg, fg = colors.error)
         Text(text = title, style = EPrevzemTheme.typography.section, color = colors.textPrimary, textAlign = TextAlign.Center)
         if (message != null) {
             Text(
@@ -74,7 +74,7 @@ fun EErrorState(
         }
         if (onRetry != null) {
             Box(modifier = Modifier.width(220.dp)) {
-                ESecondaryButton(label = retryLabel, icon = EPrevzemIcons.Refresh, onClick = onRetry, modifier = Modifier.fillMaxWidth())
+                ESecondaryButton(label = retryLabel, icon = EPrevzemIcons.refresh(), onClick = onRetry, modifier = Modifier.fillMaxWidth())
             }
         }
     }
@@ -115,11 +115,11 @@ private fun StateLayout(
 }
 
 @Composable
-private fun StateIconBubble(icon: ImageVector, bg: Color, fg: Color) {
+private fun StateIconBubble(icon: Painter, bg: Color, fg: Color) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier.size(72.dp).clip(CircleShape).background(bg),
     ) {
-        Icon(imageVector = icon, contentDescription = null, tint = fg, modifier = Modifier.size(36.dp))
+        Icon(painter = icon, contentDescription = null, tint = fg, modifier = Modifier.size(36.dp))
     }
 }

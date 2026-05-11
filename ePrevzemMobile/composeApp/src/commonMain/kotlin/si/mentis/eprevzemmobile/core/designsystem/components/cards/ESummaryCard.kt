@@ -9,13 +9,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
 
 @Composable
 fun ESummaryCard(
-    title: String,
-    icon: ImageVector,
+    title: String? = null,
+    icon: Painter,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     tint: EIconTint = EIconTint.Green,
@@ -32,9 +32,11 @@ fun ESummaryCard(
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.spacedBy(spacing.sm),
         ) {
-            EIconChip(icon = icon, tint = tint)
+            EIconChip(painter = icon, tint = tint)
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = title, style = typo.cardTitle, color = colors.textPrimary)
+                if (title != null) {
+                    Text(text = title, style = typo.cardTitle, color = colors.textPrimary)
+                }
                 if (subtitle != null) {
                     Text(text = subtitle, style = typo.bodySmall, color = colors.textSecondary)
                 }
