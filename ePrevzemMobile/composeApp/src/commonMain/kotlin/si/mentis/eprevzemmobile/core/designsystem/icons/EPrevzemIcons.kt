@@ -34,6 +34,8 @@ import eprevzemmobile.composeapp.generated.resources.ic_settings
 import eprevzemmobile.composeapp.generated.resources.ic_shield
 import eprevzemmobile.composeapp.generated.resources.ic_success
 import eprevzemmobile.composeapp.generated.resources.ic_unlock
+import eprevzemmobile.composeapp.generated.resources.ic_visibility
+import eprevzemmobile.composeapp.generated.resources.ic_visibility_off
 import eprevzemmobile.composeapp.generated.resources.ic_warning
 import org.jetbrains.compose.resources.painterResource
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
@@ -79,6 +81,8 @@ object EPrevzemIcons {
     @Composable fun help(): Painter = painterResource(Res.drawable.ic_info)
     @Composable fun arrowRight(): Painter = painterResource(Res.drawable.ic_arrow_right)
     @Composable fun key(): Painter = painterResource(Res.drawable.ic_key)
+    @Composable fun visibility(): Painter = painterResource(Res.drawable.ic_visibility)
+    @Composable fun visibilityOff(): Painter = painterResource(Res.drawable.ic_visibility_off)
 }
 
 /** Standard icon sizes from the design system (16 / 20 / 24 / 36). */

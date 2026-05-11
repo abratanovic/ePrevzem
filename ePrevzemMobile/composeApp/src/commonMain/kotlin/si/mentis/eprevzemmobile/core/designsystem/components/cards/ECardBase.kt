@@ -26,7 +26,7 @@ internal fun cardModifier(modifier: Modifier = Modifier): Modifier {
 }
 
 @Composable
-internal fun EIconChip(
+fun EIconChip(
     painter: Painter,
     tint: EIconTint = EIconTint.Green,
     modifier: Modifier = Modifier,
