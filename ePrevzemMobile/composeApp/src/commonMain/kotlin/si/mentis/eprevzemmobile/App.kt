@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
 import si.mentis.eprevzemmobile.feature.onboarding.WelcomeRoute
+import si.mentis.eprevzemmobile.feature.pickups.ActivePickupsRoute
 import si.mentis.eprevzemmobile.feature.registration.code.RegistrationCodeRoute
 import si.mentis.eprevzemmobile.feature.registration.confirm.ConfirmAccountRoute
 
@@ -15,6 +16,7 @@ private sealed interface AppDestination {
     data object Welcome : AppDestination
     data object RegistrationCode : AppDestination
     data object ConfirmAccount : AppDestination
+    data object ActivePickups : AppDestination
 }
 
 @Composable
@@ -29,13 +31,14 @@ fun App() {
             )
             AppDestination.RegistrationCode -> RegistrationCodeRoute(
                 onBack = { destination = AppDestination.Welcome },
-                onCodeAccepted = {
-                    destination = AppDestination.ConfirmAccount
-                },
+                onCodeAccepted = { destination = AppDestination.ActivePickups },
             )
             AppDestination.ConfirmAccount -> ConfirmAccountRoute(
                 onBack = { destination = AppDestination.RegistrationCode },
                 onUseAnotherCode = { destination = AppDestination.RegistrationCode },
+            )
+            AppDestination.ActivePickups -> ActivePickupsRoute(
+                onPickupClicked = { /* PickupDetails — wired in commit 3 */ },
             )
         }
     }
