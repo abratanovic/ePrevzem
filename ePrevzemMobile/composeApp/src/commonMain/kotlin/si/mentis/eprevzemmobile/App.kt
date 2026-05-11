@@ -35,6 +35,7 @@ fun App() {
             )
             AppDestination.ConfirmAccount -> ConfirmAccountRoute(
                 onBack = { destination = AppDestination.RegistrationCode },
+                onUseAnotherCode = { destination = AppDestination.RegistrationCode },
             )
         }
     }
