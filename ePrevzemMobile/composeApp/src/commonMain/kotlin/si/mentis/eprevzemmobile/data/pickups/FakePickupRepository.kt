@@ -13,7 +13,7 @@ class FakePickupRepository : PickupRepository {
             title = "Osebna izkaznica",
             organization = "Upravna enota Ljubljana",
             location = "BTC City, Ljubljana",
-            lockerNumber = "Paketnik #12",
+            lockerNumber = "352",
             deadline = "15. 5. 2026",
             status = EPickupStatus.Ready,
             isExpiringSoon = false,
@@ -54,7 +54,7 @@ class FakePickupRepository : PickupRepository {
             isExpiringSoon = false,
             locationName = "BTC City, Ljubljana",
             locationAddress = "Šmartinska cesta 152, 1000 Ljubljana",
-            lockerNumber = "Paketnik #12",
+            lockerNumber = "352",
         ),
         "2" to PickupDetails(
             id = "2",

@@ -88,3 +88,5 @@ Android-specific code lives in `composeApp/src/androidMain/` (`MainActivity` ena
 - Do not expose DTOs, tokens, registration/session tokens, or sensitive locker data in UI.
 - Use `Painter` icons from `EPrevzemIcons`; do not introduce `ImageVector` icon APIs.
 - Keep Slovenian text in UI; write code comments, docs, and internal names in English.
+- Never commit to git without permission
+- Never add Co-authored by Claude to git commit messages and keep git commit messages short

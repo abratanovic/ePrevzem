@@ -22,13 +22,15 @@ import si.mentis.eprevzemmobile.feature.pickups.PickupDetailsRoute
 import si.mentis.eprevzemmobile.feature.pickups.model.PickupDetails
 import si.mentis.eprevzemmobile.feature.registration.code.RegistrationCodeRoute
 import si.mentis.eprevzemmobile.feature.registration.confirm.ConfirmAccountRoute
+import si.mentis.eprevzemmobile.feature.unlock.UnlockRoute
 
 private sealed interface AppDestination {
     data object Welcome : AppDestination
     data object RegistrationCode : AppDestination
     data class ConfirmAccount(val validatedCode: String) : AppDestination
     data object ActivePickups : AppDestination
-    data class PickupDetails(val pickupId: String) : AppDestination
+    data class PickupDetails(val pickupId: String, val unlockedAt: String? = null) : AppDestination
+    data class Unlock(val pickupId: String, val lockerNumber: String) : AppDestination
     data object PickupConfirmed : AppDestination
 }
 
@@ -38,7 +40,8 @@ private val AppDestination.depth: Int get() = when (this) {
     is AppDestination.ConfirmAccount -> 2
     AppDestination.ActivePickups -> 3
     is AppDestination.PickupDetails -> 4
-    AppDestination.PickupConfirmed -> 5
+    is AppDestination.Unlock -> 5
+    AppDestination.PickupConfirmed -> 6
 }
 
 @Composable
@@ -89,11 +92,34 @@ fun App() {
                 }
                 is AppDestination.PickupDetails -> PickupDetailsRoute(
                     pickupId = dest.pickupId,
+                    initialUnlockedAt = dest.unlockedAt,
                     user = currentUser,
                     onBack = { destination = AppDestination.ActivePickups },
+                    onIdentityVerified = { details ->
+                        destination = AppDestination.Unlock(
+                            pickupId = details.id,
+                            lockerNumber = details.lockerNumber,
+                        )
+                    },
+                    onLockerDidNotOpen = { details ->
+                        destination = AppDestination.Unlock(
+                            pickupId = details.id,
+                            lockerNumber = details.lockerNumber,
+                        )
+                    },
                     onPickupConfirmed = { details ->
                         confirmedDetails = details
                         destination = AppDestination.PickupConfirmed
+                    },
+                )
+                is AppDestination.Unlock -> UnlockRoute(
+                    pickupId = dest.pickupId,
+                    expectedLockerNumber = dest.lockerNumber,
+                    onBack = {
+                        destination = AppDestination.PickupDetails(dest.pickupId)
+                    },
+                    onUnlocked = { unlockedAt ->
+                        destination = AppDestination.PickupDetails(dest.pickupId, unlockedAt)
                     },
                 )
                 AppDestination.PickupConfirmed -> {

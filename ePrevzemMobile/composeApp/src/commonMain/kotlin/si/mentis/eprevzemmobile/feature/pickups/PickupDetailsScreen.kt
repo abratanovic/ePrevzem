@@ -154,29 +154,41 @@ fun PickupDetailsRoute(
     pickupId: String,
     onBack: () -> Unit,
     onPickupConfirmed: (PickupDetails) -> Unit,
+    onIdentityVerified: (PickupDetails) -> Unit,
+    onLockerDidNotOpen: (PickupDetails) -> Unit = onIdentityVerified,
+    initialUnlockedAt: String? = null,
     user: si.mentis.eprevzemmobile.domain.User? = null,
     repository: si.mentis.eprevzemmobile.data.pickups.PickupRepository = si.mentis.eprevzemmobile.AppContainer.pickupRepository,
     modifier: Modifier = Modifier,
 ) {
-    var state by remember {
-        mutableStateOf(PickupDetailsState(details = placeholderDetails(pickupId)))
+    var state by remember(pickupId, initialUnlockedAt) {
+        val starting = if (initialUnlockedAt != null) {
+            PickupDetailsState(
+                details = placeholderDetails(pickupId).copy(unlockedAt = initialUnlockedAt),
+                unlockPhase = UnlockPhase.Unlocked,
+                secondsRemaining = 30,
+            )
+        } else {
+            PickupDetailsState(details = placeholderDetails(pickupId))
+        }
+        mutableStateOf(starting)
     }
 
     LaunchedEffect(pickupId) {
         val details = repository.getPickupDetails(pickupId)
-        if (details != null) state = state.copy(details = details)
+        if (details != null) {
+            state = state.copy(
+                details = details.copy(unlockedAt = initialUnlockedAt ?: details.unlockedAt),
+            )
+        }
     }
 
     LaunchedEffect(state.showBiometricSheet) {
         if (state.showBiometricSheet) {
             delay(2000)
             if (state.showBiometricSheet) {
-                state = state.copy(
-                    showBiometricSheet = false,
-                    unlockPhase = UnlockPhase.Unlocked,
-                    secondsRemaining = 30,
-                    details = state.details.copy(unlockedAt = "10:30"),
-                )
+                state = state.copy(showBiometricSheet = false)
+                onIdentityVerified(state.details)
             }
         }
     }
@@ -225,16 +237,10 @@ fun PickupDetailsRoute(
                     } else {
                         state.pinValue
                     }
-                    state = if (newPin.length == 6) {
-                        state.copy(
-                            showPinSheet = false,
-                            pinValue = "",
-                            unlockPhase = UnlockPhase.Unlocked,
-                            secondsRemaining = 30,
-                            details = state.details.copy(unlockedAt = "10:30"),
-                        )
-                    } else {
-                        state.copy(pinValue = newPin)
+                    state = state.copy(pinValue = newPin)
+                    if (newPin.length == 6) {
+                        state = state.copy(showPinSheet = false, pinValue = "")
+                        onIdentityVerified(state.details)
                     }
                 }
                 PickupDetailsEvent.PinBackspace -> {
@@ -242,11 +248,9 @@ fun PickupDetailsRoute(
                         state = state.copy(pinValue = state.pinValue.dropLast(1))
                     }
                 }
+                PickupDetailsEvent.IdentityVerified -> onIdentityVerified(state.details)
                 PickupDetailsEvent.Finish -> onPickupConfirmed(state.details)
-                PickupDetailsEvent.LockerDidNotOpen -> state = state.copy(
-                    unlockPhase = UnlockPhase.Idle,
-                    secondsRemaining = 30,
-                )
+                PickupDetailsEvent.LockerDidNotOpen -> onLockerDidNotOpen(state.details)
             }
         },
     )
