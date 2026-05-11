@@ -153,10 +153,17 @@ fun PickupDetailsRoute(
     pickupId: String,
     onBack: () -> Unit,
     onPickupConfirmed: (PickupDetails) -> Unit,
+    user: si.mentis.eprevzemmobile.domain.User? = null,
+    repository: si.mentis.eprevzemmobile.data.pickups.PickupRepository = si.mentis.eprevzemmobile.AppContainer.pickupRepository,
     modifier: Modifier = Modifier,
 ) {
     var state by remember {
-        mutableStateOf(PickupDetailsState(details = sampleDetailsForId(pickupId)))
+        mutableStateOf(PickupDetailsState(details = placeholderDetails(pickupId)))
+    }
+
+    LaunchedEffect(pickupId) {
+        val details = repository.getPickupDetails(pickupId)
+        if (details != null) state = state.copy(details = details)
     }
 
     LaunchedEffect(state.showBiometricSheet) {
@@ -190,10 +197,14 @@ fun PickupDetailsRoute(
                 PickupDetailsEvent.Back -> onBack()
                 PickupDetailsEvent.Share -> {}
                 PickupDetailsEvent.UnlockClicked -> state = state.copy(showUnlockDialog = true)
-                PickupDetailsEvent.UnlockConfirmed -> state = state.copy(
-                    showUnlockDialog = false,
-                    showBiometricSheet = true,
-                )
+                PickupDetailsEvent.UnlockConfirmed -> {
+                    val biometricEnabled = user?.isBiometricEnabled ?: true
+                    state = state.copy(
+                        showUnlockDialog = false,
+                        showBiometricSheet = biometricEnabled,
+                        showPinSheet = !biometricEnabled,
+                    )
+                }
                 PickupDetailsEvent.UnlockCancelled -> state = state.copy(
                     showUnlockDialog = false,
                     showBiometricSheet = false,
@@ -336,8 +347,8 @@ private fun IdlePhase(
                 )
             }
 
-ESummaryCard(title = "Kako poteka prevzem", icon = EPrevzemIcons.info()) {
-                NumberedStep(number = 1, text = "Tapnite »Odkleni predalček«.")
+            ESummaryCard(title = "Kako poteka prevzem", icon = EPrevzemIcons.info()) {
+                NumberedStep(number = 1, text = "Kliknite »Odkleni predalček«.")
                 NumberedStep(number = 2, text = "Potrdite identiteto z biometrijo ali PIN-om.")
                 NumberedStep(number = 3, text = "Predalček se bo odprl za 30 sekund.")
                 NumberedStep(number = 4, text = "Vzemite vsebino in zaprite vratca.")
@@ -707,50 +718,9 @@ private fun UnlockedSummaryCard(details: PickupDetails) {
     }
 }
 
-private fun sampleDetailsForId(id: String): PickupDetails = when (id) {
-    "1" -> PickupDetails(
-        id = "1",
-        title = "Osebna izkaznica",
-        organization = "Upravna enota Ljubljana",
-        reference = "UE-LJ-2026-0042",
-        type = "Identifikacijski dokument",
-        availableFrom = "8. 5. 2026",
-        deadline = "2026-05-15",
-        deadlineFormatted = "15. 5. 2026",
-        status = EPickupStatus.Ready,
-        isExpiringSoon = false,
-        locationName = "BTC City, Ljubljana",
-        locationAddress = "Šmartinska cesta 152, 1000 Ljubljana",
-        lockerNumber = "Paketnik #12",
-    )
-    "2" -> PickupDetails(
-        id = "2",
-        title = "Diploma",
-        organization = "Univerza v Ljubljani",
-        reference = "UL-2026-1234",
-        type = "Izobraževalni dokument",
-        availableFrom = "5. 5. 2026",
-        deadline = "2026-05-12",
-        deadlineFormatted = "12. 5. 2026",
-        status = EPickupStatus.Expiring,
-        isExpiringSoon = true,
-        locationName = "Kongresni trg, Ljubljana",
-        locationAddress = "Kongresni trg 12, 1000 Ljubljana",
-        lockerNumber = "Paketnik #7",
-    )
-    else -> PickupDetails(
-        id = "3",
-        title = "Potrdilo o stalnem bivališču",
-        organization = "Mestna občina Ljubljana",
-        reference = "MOL-2026-0088",
-        type = "Uradno potrdilo",
-        availableFrom = "10. 5. 2026",
-        deadline = "2026-05-20",
-        deadlineFormatted = "20. 5. 2026",
-        status = EPickupStatus.Ready,
-        isExpiringSoon = false,
-        locationName = "Magistrat, Ljubljana",
-        locationAddress = "Mestni trg 1, 1000 Ljubljana",
-        lockerNumber = "Paketnik #3",
-    )
-}
+private fun placeholderDetails(id: String) = PickupDetails(
+    id = id, title = "", organization = "", reference = "", type = "",
+    availableFrom = "", deadline = "", deadlineFormatted = "",
+    status = EPickupStatus.Ready, isExpiringSoon = false,
+    locationName = "", locationAddress = "", lockerNumber = "",
+)

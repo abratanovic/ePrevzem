@@ -24,12 +24,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.delay
+import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.launch
+import si.mentis.eprevzemmobile.AppContainer
+import si.mentis.eprevzemmobile.data.pickups.PickupRepository
+import si.mentis.eprevzemmobile.domain.User
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.EPickupCard
 import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EEmptyState
 import si.mentis.eprevzemmobile.core.designsystem.components.feedback.ELoadingState
-import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EPickupStatus
 import si.mentis.eprevzemmobile.core.designsystem.components.layout.EScaffold
 import si.mentis.eprevzemmobile.core.designsystem.components.layout.EScreen
 import si.mentis.eprevzemmobile.core.designsystem.components.navigation.EBottomNavItem
@@ -38,7 +40,6 @@ import si.mentis.eprevzemmobile.core.designsystem.components.navigation.ETopBar
 import si.mentis.eprevzemmobile.core.designsystem.components.navigation.ETopBarVariant
 import si.mentis.eprevzemmobile.core.designsystem.icons.EPrevzemIcons
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
-import si.mentis.eprevzemmobile.feature.pickups.model.PickupItem
 
 @Composable
 fun ActivePickupsScreen(
@@ -159,18 +160,19 @@ fun ActivePickupsScreen(
 
 @Composable
 fun ActivePickupsRoute(
+    user: User,
     onPickupClicked: (String) -> Unit,
+    repository: PickupRepository = AppContainer.pickupRepository,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
     var state by remember {
-        mutableStateOf(
-            ActivePickupsState(
-                userName = "Alenka Horvat",
-                pickups = samplePickups(),
-                activeTab = ActiveTab.Pickups,
-            ),
-        )
+        mutableStateOf(ActivePickupsState(userName = user.fullName, activeTab = ActiveTab.Pickups))
+    }
+
+    LaunchedEffect(Unit) {
+        state = state.copy(isRefreshing = true)
+        state = state.copy(pickups = repository.getActivePickups(), isRefreshing = false)
     }
 
     ActivePickupsScreen(
@@ -181,8 +183,7 @@ fun ActivePickupsRoute(
                 ActivePickupsEvent.Refresh -> {
                     state = state.copy(isRefreshing = true)
                     scope.launch {
-                        delay(1500)
-                        state = state.copy(isRefreshing = false, pickups = samplePickups())
+                        state = state.copy(pickups = repository.getActivePickups(), isRefreshing = false)
                     }
                 }
                 is ActivePickupsEvent.PickupClicked -> onPickupClicked(event.id)
@@ -191,36 +192,3 @@ fun ActivePickupsRoute(
         },
     )
 }
-
-private fun samplePickups(): List<PickupItem> = listOf(
-    PickupItem(
-        id = "1",
-        title = "Osebna izkaznica",
-        organization = "Upravna enota Ljubljana",
-        location = "BTC City, Ljubljana",
-        lockerNumber = "Paketnik #12",
-        deadline = "15. 5. 2026",
-        status = EPickupStatus.Ready,
-        isExpiringSoon = false,
-    ),
-    PickupItem(
-        id = "2",
-        title = "Diploma",
-        organization = "Univerza v Ljubljani",
-        location = "Kongresni trg, Ljubljana",
-        lockerNumber = "Paketnik #7",
-        deadline = "12. 5. 2026",
-        status = EPickupStatus.Expiring,
-        isExpiringSoon = true,
-    ),
-    PickupItem(
-        id = "3",
-        title = "Potrdilo o stalnem bivališču",
-        organization = "Mestna občina Ljubljana",
-        location = "Magistrat, Ljubljana",
-        lockerNumber = "Paketnik #3",
-        deadline = "20. 5. 2026",
-        status = EPickupStatus.Ready,
-        isExpiringSoon = false,
-    ),
-)

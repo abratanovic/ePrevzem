@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
+import si.mentis.eprevzemmobile.domain.User
 import si.mentis.eprevzemmobile.feature.onboarding.WelcomeRoute
 import si.mentis.eprevzemmobile.feature.pickups.ActivePickupsRoute
 import si.mentis.eprevzemmobile.feature.pickups.PickupConfirmedRoute
@@ -18,7 +19,7 @@ import si.mentis.eprevzemmobile.feature.registration.confirm.ConfirmAccountRoute
 private sealed interface AppDestination {
     data object Welcome : AppDestination
     data object RegistrationCode : AppDestination
-    data object ConfirmAccount : AppDestination
+    data class ConfirmAccount(val validatedCode: String) : AppDestination
     data object ActivePickups : AppDestination
     data class PickupDetails(val pickupId: String) : AppDestination
     data object PickupConfirmed : AppDestination
@@ -29,6 +30,7 @@ private sealed interface AppDestination {
 fun App() {
     EPrevzemTheme {
         var destination: AppDestination by remember { mutableStateOf(AppDestination.Welcome) }
+        var currentUser: User? by remember { mutableStateOf(null) }
         var confirmedDetails: PickupDetails? by remember { mutableStateOf(null) }
 
         when (val dest = destination) {
@@ -37,17 +39,29 @@ fun App() {
             )
             AppDestination.RegistrationCode -> RegistrationCodeRoute(
                 onBack = { destination = AppDestination.Welcome },
-                onCodeAccepted = { destination = AppDestination.ActivePickups },
+                onCodeAccepted = { code -> destination = AppDestination.ConfirmAccount(code) },
             )
-            AppDestination.ConfirmAccount -> ConfirmAccountRoute(
+            is AppDestination.ConfirmAccount -> ConfirmAccountRoute(
+                validatedCode = dest.validatedCode,
                 onBack = { destination = AppDestination.RegistrationCode },
                 onUseAnotherCode = { destination = AppDestination.RegistrationCode },
+                onConfirmed = { user ->
+                    currentUser = user
+                    destination = AppDestination.ActivePickups
+                },
             )
-            AppDestination.ActivePickups -> ActivePickupsRoute(
-                onPickupClicked = { id -> destination = AppDestination.PickupDetails(id) },
-            )
+            AppDestination.ActivePickups -> {
+                val user = currentUser
+                if (user != null) {
+                    ActivePickupsRoute(
+                        user = user,
+                        onPickupClicked = { id -> destination = AppDestination.PickupDetails(id) },
+                    )
+                }
+            }
             is AppDestination.PickupDetails -> PickupDetailsRoute(
                 pickupId = dest.pickupId,
+                user = currentUser,
                 onBack = { destination = AppDestination.ActivePickups },
                 onPickupConfirmed = { details ->
                     confirmedDetails = details
