@@ -9,10 +9,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
 import si.mentis.eprevzemmobile.feature.onboarding.WelcomeRoute
 import si.mentis.eprevzemmobile.feature.registration.code.RegistrationCodeRoute
+import si.mentis.eprevzemmobile.feature.registration.confirm.ConfirmAccountRoute
 
 private sealed interface AppDestination {
     data object Welcome : AppDestination
     data object RegistrationCode : AppDestination
+    data object ConfirmAccount : AppDestination
 }
 
 @Composable
@@ -28,8 +30,11 @@ fun App() {
             AppDestination.RegistrationCode -> RegistrationCodeRoute(
                 onBack = { destination = AppDestination.Welcome },
                 onCodeAccepted = {
-                    // TODO: navigate forward once the post-registration flow exists.
+                    destination = AppDestination.ConfirmAccount
                 },
+            )
+            AppDestination.ConfirmAccount -> ConfirmAccountRoute(
+                onBack = { destination = AppDestination.RegistrationCode },
             )
         }
     }
