@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import eprevzemmobile.composeapp.generated.resources.Res
+import eprevzemmobile.composeapp.generated.resources.ic_arrow_right
 import eprevzemmobile.composeapp.generated.resources.ic_back
 import eprevzemmobile.composeapp.generated.resources.ic_biometric
 import eprevzemmobile.composeapp.generated.resources.ic_blocked
@@ -75,6 +76,7 @@ object EPrevzemIcons {
     @Composable fun lock(): Painter = painterResource(Res.drawable.ic_lock)
     // No dedicated ic_help.svg — re-use ic_info for now.
     @Composable fun help(): Painter = painterResource(Res.drawable.ic_info)
+    @Composable fun arrowRight(): Painter = painterResource(Res.drawable.ic_arrow_right)
 }
 
 /** Standard icon sizes from the design system (16 / 20 / 24 / 36). */

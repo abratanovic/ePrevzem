@@ -16,7 +16,7 @@ import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
 @Composable
 fun EInfoCard(
     icon: Painter,
-    label: String,
+    label: String? = null,
     value: String,
     modifier: Modifier = Modifier,
     tint: EIconTint = EIconTint.Green,
@@ -32,8 +32,10 @@ fun EInfoCard(
     ) {
         EIconChip(painter = icon, tint = tint)
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = label, style = typo.caption, color = colors.textMuted)
-            Text(text = value, style = typo.cardTitle, color = colors.textPrimary)
+            if (label != null) {
+                Text(text = label, style = typo.caption, color = colors.textMuted)
+            }
+            Text(text = value, style = typo.bodySmall, color = colors.textSecondary)
         }
         if (trailing != null) trailing()
     }

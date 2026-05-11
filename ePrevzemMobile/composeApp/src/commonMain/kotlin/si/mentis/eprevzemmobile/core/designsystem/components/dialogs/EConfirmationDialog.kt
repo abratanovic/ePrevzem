@@ -35,7 +35,7 @@ fun EConfirmationDialog(
     message: String? = null,
     icon: Painter = EPrevzemIcons.help(),
     confirmLabel: String = "Potrdi",
-    dismissLabel: String = "Prekliči",
+    dismissLabel: String = "",
     destructive: Boolean = false,
 ) {
     val colors = EPrevzemTheme.colors
@@ -85,7 +85,9 @@ fun EConfirmationDialog(
                 } else {
                     EPrimaryButton(label = confirmLabel, onClick = onConfirm, modifier = Modifier.fillMaxWidth())
                 }
-                ESecondaryButton(label = dismissLabel, onClick = onDismiss, modifier = Modifier.fillMaxWidth())
+                if (dismissLabel.isNotEmpty()) {
+                    ESecondaryButton(label = dismissLabel, onClick = onDismiss, modifier = Modifier.fillMaxWidth())
+                }
             }
         }
     }

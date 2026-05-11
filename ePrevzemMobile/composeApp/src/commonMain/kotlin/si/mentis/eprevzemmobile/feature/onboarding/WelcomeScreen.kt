@@ -27,6 +27,7 @@ import si.mentis.eprevzemmobile.core.designsystem.components.buttons.EPrimaryBut
 import si.mentis.eprevzemmobile.core.designsystem.components.buttons.ETextButton
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.ESummaryCard
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.EIconTint
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.EInfoCard
 import si.mentis.eprevzemmobile.core.designsystem.components.dialogs.EConfirmationDialog
 import si.mentis.eprevzemmobile.core.designsystem.components.layout.EScaffold
 import si.mentis.eprevzemmobile.core.designsystem.components.layout.EScreen
@@ -50,8 +51,8 @@ private object WelcomeStrings {
     const val HelpLink = "Kaj je registracijska koda?"
     const val HelpTitle = "Kaj je registracijska koda?"
     const val HelpMessage =
-        "Registracijsko kodo prejmete od organizacije, ki je pripravila " +
-            "dokument za prevzem. Koda poveže vašo napravo z vašim uporabniškim računom."
+        "Registracijsko kodo prejmete na spletni strani po uspešni prijavi v vaš uporabniški račun." +
+            "Koda poveže vašo napravo z vašim uporabniškim računom."
     const val HelpClose = "Razumem"
 }
 
@@ -93,9 +94,8 @@ fun WelcomeScreen(
                 )
             }
 
-            ESummaryCard(
-                title = WelcomeStrings.InfoTitle,
-                subtitle = WelcomeStrings.InfoBody,
+            EInfoCard(
+                value = WelcomeStrings.InfoBody,
                 icon = EPrevzemIcons.info(),
                 tint = EIconTint.Teal,
             )
@@ -108,6 +108,7 @@ fun WelcomeScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 EPrimaryButton(
+                    icon = EPrevzemIcons.arrowRight(),
                     label = WelcomeStrings.RegisterCta,
                     onClick = { onEvent(WelcomeEvent.RegisterDeviceClicked) },
                     modifier = Modifier.fillMaxWidth(),
@@ -127,7 +128,6 @@ fun WelcomeScreen(
             message = WelcomeStrings.HelpMessage,
             icon = EPrevzemIcons.help(),
             confirmLabel = WelcomeStrings.HelpClose,
-            dismissLabel = WelcomeStrings.HelpClose,
             onConfirm = { onEvent(WelcomeEvent.HelpDismissed) },
             onDismiss = { onEvent(WelcomeEvent.HelpDismissed) },
         )
@@ -199,14 +199,14 @@ private fun HeroIconStack(modifier: Modifier = Modifier) {
             icon = EPrevzemIcons.locker(),
             tint = colors.secondary,
             alignment = Alignment.BottomEnd,
-            offset = (-8).dp to (-14).dp,
+            offset = 0.dp to 0.dp,
             sizeDp = 52,
         )
         HeroBadge(
             icon = EPrevzemIcons.qrCode(),
             tint = colors.accent,
             alignment = Alignment.TopStart,
-            offset = 10.dp to 22.dp,
+            offset = 0.dp to 0.dp,
             sizeDp = 44,
         )
     }
@@ -222,7 +222,7 @@ private fun HeroBadge(
 ) {
     val colors = EPrevzemTheme.colors
     Box(
-        modifier = Modifier.fillMaxWidth().size(192.dp),
+        modifier = Modifier.size(170.dp),
         contentAlignment = alignment,
     ) {
         Box(
