@@ -23,6 +23,8 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.EIconChip
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.EIconTint
 import si.mentis.eprevzemmobile.core.designsystem.icons.EPrevzemIcons
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
 
@@ -33,12 +35,14 @@ fun ETopBar(
     variant: ETopBarVariant,
     modifier: Modifier = Modifier,
     title: String? = null,
-    eyebrow: String? = "Republika Slovenija",
+    eyebrow: String? = null,
     appName: String = "ePrevzem",
     onBack: (() -> Unit)? = null,
     actionIcon: Painter? = EPrevzemIcons.settings(),
     onAction: (() -> Unit)? = null,
     notificationCount: Int = 0,
+    leadingIcon: Painter? = null,
+    userInitials: String? = null,
 ) {
     val colors = EPrevzemTheme.colors
     val typo = EPrevzemTheme.typography
@@ -58,6 +62,9 @@ fun ETopBar(
             if (variant == ETopBarVariant.Detail && onBack != null) {
                 TopBarCircleButton(icon = EPrevzemIcons.back(), onClick = onBack)
             }
+            if (variant == ETopBarVariant.Home && leadingIcon != null) {
+                EIconChip(painter = leadingIcon, tint = EIconTint.Green)
+            }
             Box(modifier = Modifier.weight(1f)) {
                 when (variant) {
                     ETopBarVariant.Home -> Column {
@@ -75,21 +82,34 @@ fun ETopBar(
                         )
                     }
                     ETopBarVariant.Detail, ETopBarVariant.Plain -> {
-                        if (title != null) {
-                            Text(
-                                text = title,
-                                style = typo.section.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold),
-                                color = Color.White,
-                            )
+                        Column {
+                            if (eyebrow != null) {
+                                Text(
+                                    text = eyebrow.uppercase(),
+                                    style = typo.caption.copy(letterSpacing = 1.0.sp, fontSize = 11.sp),
+                                    color = Color.White.copy(alpha = 0.7f),
+                                )
+                            }
+                            if (title != null) {
+                                Text(
+                                    text = title,
+                                    style = typo.section.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold),
+                                    color = Color.White,
+                                )
+                            }
                         }
                     }
                 }
             }
-            if (variant != ETopBarVariant.Plain && actionIcon != null && onAction != null) {
-                Box {
-                    TopBarCircleButton(icon = actionIcon, onClick = onAction)
-                    if (notificationCount > 0) {
-                        NotificationDot(count = notificationCount)
+            if (variant != ETopBarVariant.Plain) {
+                if (userInitials != null) {
+                    InitialsCircle(initials = userInitials)
+                } else if (actionIcon != null && onAction != null) {
+                    Box {
+                        TopBarCircleButton(icon = actionIcon, onClick = onAction)
+                        if (notificationCount > 0) {
+                            NotificationDot(count = notificationCount)
+                        }
                     }
                 }
             }
@@ -108,6 +128,26 @@ private fun TopBarCircleButton(icon: Painter, onClick: () -> Unit) {
             .clickable(onClick = onClick),
     ) {
         Icon(painter = icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+    }
+}
+
+@Composable
+private fun InitialsCircle(initials: String) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(36.dp)
+            .clip(CircleShape)
+            .background(Color.White.copy(alpha = 0.12f)),
+    ) {
+        Text(
+            text = initials.take(2).uppercase(),
+            style = EPrevzemTheme.typography.caption.copy(
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+            ),
+            color = Color.White,
+        )
     }
 }
 
