@@ -12,4 +12,5 @@ sealed interface PickupDetailsEvent {
     data object PinBackspace : PickupDetailsEvent
     data object Finish : PickupDetailsEvent
     data object LockerDidNotOpen : PickupDetailsEvent
+    data object IdentityVerified : PickupDetailsEvent
 }
