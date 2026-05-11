@@ -11,6 +11,7 @@ data class ConfirmAccountState(
     val pinConfirmation: String = "",
     val isPinVisible: Boolean = false,
     val isPinConfirmationVisible: Boolean = false,
+    val isLoading: Boolean = false,
 ) {
     val isPinTooShort: Boolean get() = pin.isNotEmpty() && pin.length < PIN_LENGTH
     val isPinMismatch: Boolean get() =
@@ -25,16 +26,16 @@ data class ConfirmAccountState(
 
 @Immutable
 data class ConfirmAccountData(
-    val fullName: String = "Marko Horvat",
-    val email: String = "marko.horvat@gov.si",
-    val phone: String = "+386 41 234 567",
-    val status: String = "Aktiven",
-    val validUntil: String = "14. nov 2025",
+    val fullName: String = "",
+    val email: String = "",
+    val phone: String = "",
+    val status: String = "",
+    val validUntil: String = "",
 )
 
 @Immutable
 data class ConfirmOrganizationData(
-    val name: String = "Upravna enota Ljubljana",
-    val type: String = "Javna uprava",
-    val location: String = "Adamič-Lundrovo nabrežje 2, Ljubljana",
+    val name: String = "",
+    val type: String = "",
+    val location: String = "",
 )

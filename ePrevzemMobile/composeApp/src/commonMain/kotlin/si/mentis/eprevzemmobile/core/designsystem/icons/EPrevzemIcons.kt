@@ -31,6 +31,7 @@ import eprevzemmobile.composeapp.generated.resources.ic_profile
 import eprevzemmobile.composeapp.generated.resources.ic_qrcode
 import eprevzemmobile.composeapp.generated.resources.ic_refresh
 import eprevzemmobile.composeapp.generated.resources.ic_settings
+import eprevzemmobile.composeapp.generated.resources.ic_share
 import eprevzemmobile.composeapp.generated.resources.ic_shield
 import eprevzemmobile.composeapp.generated.resources.ic_success
 import eprevzemmobile.composeapp.generated.resources.ic_unlock
@@ -77,6 +78,7 @@ object EPrevzemIcons {
     @Composable fun blocked(): Painter = painterResource(Res.drawable.ic_blocked)
     @Composable fun drafts(): Painter = painterResource(Res.drawable.ic_drafts)
     @Composable fun lock(): Painter = painterResource(Res.drawable.ic_lock)
+    @Composable fun share(): Painter = painterResource(Res.drawable.ic_share)
     // No dedicated ic_help.svg — re-use ic_info for now.
     @Composable fun help(): Painter = painterResource(Res.drawable.ic_info)
     @Composable fun arrowRight(): Painter = painterResource(Res.drawable.ic_arrow_right)

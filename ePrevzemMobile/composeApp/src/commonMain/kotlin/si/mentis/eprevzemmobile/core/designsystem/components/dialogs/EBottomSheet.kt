@@ -38,7 +38,7 @@ fun EBottomSheet(
 ) {
     val colors = EPrevzemTheme.colors
     val typo = EPrevzemTheme.typography
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,

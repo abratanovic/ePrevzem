@@ -15,7 +15,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EAlertType
 import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EPickupStatus
 import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EStatusChip
 import si.mentis.eprevzemmobile.core.designsystem.icons.EPrevzemIcons
@@ -28,7 +31,9 @@ fun EPickupCard(
     location: String,
     expires: String,
     status: EPickupStatus,
+    lockerNumber: String,
     modifier: Modifier = Modifier,
+    warningText: String? = null,
     onClick: (() -> Unit)? = null,
 ) {
     val colors = EPrevzemTheme.colors
@@ -38,41 +43,93 @@ fun EPickupCard(
     val base = cardModifier(modifier.fillMaxWidth())
     val rooted = if (onClick != null) base.clickable(onClick = onClick) else base
 
-    Column(
-        verticalArrangement = Arrangement.spacedBy(spacing.sm),
-        modifier = rooted.padding(18.dp),
-    ) {
-        Row(
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+    Column(modifier = rooted) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(spacing.sm),
+            modifier = Modifier.padding(18.dp),
         ) {
-            EIconChip(painter = EPrevzemIcons.document(), tint = EIconTint.Green)
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = title, style = typo.cardTitle, color = colors.textPrimary)
-                Text(text = organization, style = typo.bodySmall, color = colors.textSecondary)
+            Row(
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+            ) {
+                EIconChip(painter = EPrevzemIcons.document(), tint = EIconTint.Green)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = title, style = typo.cardTitle, color = colors.textPrimary)
+                    Text(text = organization, style = typo.bodySmall, color = colors.textSecondary)
+                }
+                EStatusChip(status = status)
             }
-            EStatusChip(status = status)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(colors.divider),
+            )
+            Row(
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "LOKACIJA",
+                        style = typo.caption.copy(letterSpacing = 0.8.sp),
+                        color = colors.textMuted,
+                    )
+                    IconText(EPrevzemIcons.location(), location, bold = true, color = colors.textPrimary)
+                    Text(text = lockerNumber, style = typo.caption, color = colors.textMuted)
+                }
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = "PREVZEM DO",
+                        style = typo.caption.copy(letterSpacing = 0.8.sp),
+                        color = colors.textMuted,
+                    )
+                    IconText(EPrevzemIcons.clock(), expires, bold = true, color = colors.textPrimary)
+                }
+            }
         }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(colors.divider),
-        )
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            IconText(EPrevzemIcons.location(), location)
-            IconText(EPrevzemIcons.clock(), expires)
+        if (warningText != null) {
+            WarningStrip(text = warningText)
         }
     }
 }
 
 @Composable
-private fun IconText(icon: androidx.compose.ui.graphics.painter.Painter, text: String) {
+private fun WarningStrip(text: String) {
     val colors = EPrevzemTheme.colors
+    val typo = EPrevzemTheme.typography
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(colors.warningBg)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+    ) {
+        Icon(
+            painter = EPrevzemIcons.clock(),
+            contentDescription = null,
+            tint = colors.warning,
+            modifier = Modifier.size(14.dp),
+        )
+        Text(text = text, style = typo.caption, color = colors.warning)
+    }
+}
+
+@Composable
+private fun IconText(
+    icon: androidx.compose.ui.graphics.painter.Painter,
+    text: String,
+    bold: Boolean = false,
+    color: androidx.compose.ui.graphics.Color? = null,
+) {
+    val colors = EPrevzemTheme.colors
+    val typo = EPrevzemTheme.typography
+    val resolvedColor = color ?: colors.textMuted
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -80,9 +137,13 @@ private fun IconText(icon: androidx.compose.ui.graphics.painter.Painter, text: S
         Icon(
             painter = icon,
             contentDescription = null,
-            tint = colors.textMuted,
+            tint = resolvedColor,
             modifier = Modifier.size(14.dp),
         )
-        Text(text = text, style = EPrevzemTheme.typography.caption, color = colors.textMuted)
+        Text(
+            text = text,
+            style = if (bold) typo.caption.copy(fontWeight = FontWeight.SemiBold) else typo.caption,
+            color = resolvedColor,
+        )
     }
 }

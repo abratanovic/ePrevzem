@@ -37,6 +37,7 @@ fun EConfirmationDialog(
     confirmLabel: String = "Potrdi",
     dismissLabel: String = "",
     destructive: Boolean = false,
+    content: (@Composable () -> Unit)? = null,
 ) {
     val colors = EPrevzemTheme.colors
     val typo = EPrevzemTheme.typography
@@ -77,6 +78,9 @@ fun EConfirmationDialog(
                         color = colors.textSecondary,
                         textAlign = TextAlign.Center,
                     )
+                }
+                if (content != null) {
+                    content()
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {

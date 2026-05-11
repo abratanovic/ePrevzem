@@ -44,9 +44,7 @@ fun EScaffold(
         Box(modifier = Modifier.weight(1f)) {
             content(PaddingValues(0.dp))
         }
-        Box(modifier = Modifier.navigationBarsPadding()) {
-            bottomBar()
-        }
+        bottomBar()
     }
 }
 

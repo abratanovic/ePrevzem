@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -46,7 +47,7 @@ private object WelcomeStrings {
     const val InfoTitle = "Registracijska koda"
     const val InfoBody =
         "Za uporabo aplikacije potrebujete registracijsko kodo, ki ste jo " +
-            "prejeli od organizacije."
+            "prejeli ob registraciji na ePrevzem spletni strani."
     const val RegisterCta = "Registriraj napravo"
     const val HelpLink = "Kaj je registracijska koda?"
     const val HelpTitle = "Kaj je registracijska koda?"
@@ -70,13 +71,14 @@ fun WelcomeScreen(
 ) {
     EScaffold(
         modifier = modifier,
-        topBar = { ETopBar(variant = ETopBarVariant.Home, actionIcon = null, onAction = null) },
+        topBar = { ETopBar(variant = ETopBarVariant.Home, eyebrow = "Republika Slovenija", actionIcon = null, onAction = null) },
         bottomBar = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(EPrevzemTheme.spacing.sm),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .navigationBarsPadding()
                     .padding(
                         horizontal = EPrevzemTheme.spacing.screenHorizontal,
                         vertical = EPrevzemTheme.spacing.md,
