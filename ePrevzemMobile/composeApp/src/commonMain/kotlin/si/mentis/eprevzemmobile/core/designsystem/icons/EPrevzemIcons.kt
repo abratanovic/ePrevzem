@@ -21,6 +21,7 @@ import eprevzemmobile.composeapp.generated.resources.ic_history
 import eprevzemmobile.composeapp.generated.resources.ic_home
 import eprevzemmobile.composeapp.generated.resources.ic_inbox
 import eprevzemmobile.composeapp.generated.resources.ic_info
+import eprevzemmobile.composeapp.generated.resources.ic_key
 import eprevzemmobile.composeapp.generated.resources.ic_location
 import eprevzemmobile.composeapp.generated.resources.ic_lock
 import eprevzemmobile.composeapp.generated.resources.ic_locker
@@ -77,6 +78,7 @@ object EPrevzemIcons {
     // No dedicated ic_help.svg — re-use ic_info for now.
     @Composable fun help(): Painter = painterResource(Res.drawable.ic_info)
     @Composable fun arrowRight(): Painter = painterResource(Res.drawable.ic_arrow_right)
+    @Composable fun key(): Painter = painterResource(Res.drawable.ic_key)
 }
 
 /** Standard icon sizes from the design system (16 / 20 / 24 / 36). */

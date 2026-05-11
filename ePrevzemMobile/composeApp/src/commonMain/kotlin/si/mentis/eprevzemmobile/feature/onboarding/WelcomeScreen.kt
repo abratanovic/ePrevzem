@@ -71,6 +71,30 @@ fun WelcomeScreen(
     EScaffold(
         modifier = modifier,
         topBar = { ETopBar(variant = ETopBarVariant.Home, actionIcon = null, onAction = null) },
+        bottomBar = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(EPrevzemTheme.spacing.sm),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        horizontal = EPrevzemTheme.spacing.screenHorizontal,
+                        vertical = EPrevzemTheme.spacing.md,
+                    ),
+            ) {
+                EPrimaryButton(
+                    icon = EPrevzemIcons.arrowRight(),
+                    label = WelcomeStrings.RegisterCta,
+                    onClick = { onEvent(WelcomeEvent.RegisterDeviceClicked) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                ETextButton(
+                    label = WelcomeStrings.HelpLink,
+                    icon = EPrevzemIcons.help(),
+                    onClick = { onEvent(WelcomeEvent.HelpClicked) },
+                )
+            }
+        },
     ) { _ ->
         EScreen(verticalGap = EPrevzemTheme.spacing.xl) {
             HeroIconStack(modifier = Modifier.fillMaxWidth())
@@ -99,26 +123,6 @@ fun WelcomeScreen(
                 icon = EPrevzemIcons.info(),
                 tint = EIconTint.Teal,
             )
-
-            Spacer(modifier = Modifier.size(EPrevzemTheme.spacing.xs))
-
-            Column(
-                verticalArrangement = Arrangement.spacedBy(EPrevzemTheme.spacing.sm),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                EPrimaryButton(
-                    icon = EPrevzemIcons.arrowRight(),
-                    label = WelcomeStrings.RegisterCta,
-                    onClick = { onEvent(WelcomeEvent.RegisterDeviceClicked) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                ETextButton(
-                    label = WelcomeStrings.HelpLink,
-                    icon = EPrevzemIcons.help(),
-                    onClick = { onEvent(WelcomeEvent.HelpClicked) },
-                )
-            }
         }
     }
 
