@@ -46,7 +46,7 @@ fun EPickupCard(
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.spacedBy(spacing.sm),
         ) {
-            EIconChip(icon = EPrevzemIcons.Document, tint = EIconTint.Green)
+            EIconChip(painter = EPrevzemIcons.document(), tint = EIconTint.Green)
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = title, style = typo.cardTitle, color = colors.textPrimary)
                 Text(text = organization, style = typo.bodySmall, color = colors.textSecondary)
@@ -64,21 +64,21 @@ fun EPickupCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            IconText(EPrevzemIcons.Location, location)
-            IconText(EPrevzemIcons.Clock, expires)
+            IconText(EPrevzemIcons.location(), location)
+            IconText(EPrevzemIcons.clock(), expires)
         }
     }
 }
 
 @Composable
-private fun IconText(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
+private fun IconText(icon: androidx.compose.ui.graphics.painter.Painter, text: String) {
     val colors = EPrevzemTheme.colors
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Icon(
-            imageVector = icon,
+            painter = icon,
             contentDescription = null,
             tint = colors.textMuted,
             modifier = Modifier.size(14.dp),

@@ -9,13 +9,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
 
 @Composable
 fun EInfoCard(
-    icon: ImageVector,
+    icon: Painter,
     label: String,
     value: String,
     modifier: Modifier = Modifier,
@@ -30,7 +30,7 @@ fun EInfoCard(
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         modifier = cardModifier(modifier.fillMaxWidth()).padding(spacing.md),
     ) {
-        EIconChip(icon = icon, tint = tint)
+        EIconChip(painter = icon, tint = tint)
         Column(modifier = Modifier.weight(1f)) {
             Text(text = label, style = typo.caption, color = colors.textMuted)
             Text(text = value, style = typo.cardTitle, color = colors.textPrimary)

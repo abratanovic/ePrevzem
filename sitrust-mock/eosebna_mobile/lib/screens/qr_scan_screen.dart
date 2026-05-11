@@ -36,6 +36,8 @@ class _QrScanScreenState extends State<QrScanScreen> {
     final raw = capture.barcodes.firstOrNull?.rawValue;
     if (raw == null) return;
 
+    debugPrint('[QR] payload: $raw');
+
     // Throttle duplicate scans within 2 seconds
     final now = DateTime.now();
     if (_lastScanTime != null && now.difference(_lastScanTime!).inSeconds < 2) return;

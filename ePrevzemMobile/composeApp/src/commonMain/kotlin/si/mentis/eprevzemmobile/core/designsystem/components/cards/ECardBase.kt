@@ -9,8 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
 
@@ -28,7 +27,7 @@ internal fun cardModifier(modifier: Modifier = Modifier): Modifier {
 
 @Composable
 internal fun EIconChip(
-    icon: ImageVector,
+    painter: Painter,
     tint: EIconTint = EIconTint.Green,
     modifier: Modifier = Modifier,
 ) {
@@ -46,6 +45,6 @@ internal fun EIconChip(
             .clip(EPrevzemTheme.shapes.medium)
             .background(bg),
     ) {
-        Icon(imageVector = icon, contentDescription = null, tint = fg, modifier = Modifier.size(22.dp))
+        Icon(painter = painter, contentDescription = null, tint = fg, modifier = Modifier.size(22.dp))
     }
 }

@@ -25,7 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -38,7 +38,7 @@ fun ETextField(
     modifier: Modifier = Modifier,
     label: String? = null,
     placeholder: String? = null,
-    leadingIcon: ImageVector? = null,
+    leadingIcon: Painter? = null,
     helper: String? = null,
     error: String? = null,
     enabled: Boolean = true,
@@ -78,7 +78,7 @@ fun ETextField(
         ) {
             if (leadingIcon != null) {
                 Icon(
-                    imageVector = leadingIcon,
+                    painter = leadingIcon,
                     contentDescription = null,
                     tint = colors.textMuted,
                     modifier = Modifier.size(18.dp),

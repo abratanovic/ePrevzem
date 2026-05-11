@@ -15,7 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -33,7 +33,7 @@ fun EConfirmationDialog(
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
     message: String? = null,
-    icon: ImageVector = EPrevzemIcons.Help,
+    icon: Painter = EPrevzemIcons.help(),
     confirmLabel: String = "Potrdi",
     dismissLabel: String = "Prekliči",
     destructive: Boolean = false,
@@ -63,7 +63,7 @@ fun EConfirmationDialog(
                         .background(if (destructive) colors.errorBg else colors.primary50),
                 ) {
                     Icon(
-                        imageVector = icon,
+                        painter = icon,
                         contentDescription = null,
                         tint = if (destructive) colors.error else colors.primary,
                         modifier = Modifier.size(28.dp),

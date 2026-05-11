@@ -70,7 +70,7 @@ fun EBottomSheet(
                 ) {
                     Text(text = title, style = typo.section, color = colors.textPrimary)
                     Icon(
-                        imageVector = EPrevzemIcons.Close,
+                        painter = EPrevzemIcons.close(),
                         contentDescription = "Zapri",
                         tint = colors.textSecondary,
                         modifier = Modifier
