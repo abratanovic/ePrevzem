@@ -40,7 +40,13 @@ import si.mentis.eprevzemmobile.core.designsystem.components.navigation.ETopBar
 import si.mentis.eprevzemmobile.core.designsystem.components.navigation.ETopBarVariant
 import si.mentis.eprevzemmobile.core.designsystem.icons.EPrevzemIcons
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
-
+import kotlin.enums.EnumEntries
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.EDetailsCard
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.EDetailsDivider
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.EDetailsRow
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.EDetailsSectionLabel
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.EIconTint
+import androidx.compose.foundation.layout.padding
 @Composable
 fun ActivePickupsScreen(
     state: ActivePickupsState,
@@ -84,74 +90,18 @@ fun ActivePickupsScreen(
         },
     ) { _ ->
         EScreen {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = "DOBRODOŠLI NAZAJ",
-                    style = typo.caption,
-                    color = colors.textMuted,
+            when (state.activeTab){
+                ActiveTab.Pickups->ActivePickupContent(
+                    state=state,
+                    onEvent=onEvent
                 )
-                Text(
-                    text = "Pozdravljeni, ${state.userName}",
-                    style = typo.display.copy(fontSize = 28.sp),
-                    color = colors.textPrimary,
+                ActiveTab.History -> AuditLogContent(
+                    entries=state.auditLogEntries
                 )
-            }
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    text = "Aktivni prevzemi",
-                    style = typo.section,
-                    color = colors.textPrimary,
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "${state.pickups.size} aktivni",
-                    style = typo.bodySmall,
-                    color = colors.textMuted,
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(colors.surfaceMuted)
-                        .clickable { onEvent(ActivePickupsEvent.Refresh) },
-                ) {
-                    Icon(
-                        painter = EPrevzemIcons.refresh(),
-                        contentDescription = "Osveži",
-                        tint = colors.textSecondary,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-            }
-
-            if (state.isRefreshing) {
-                ELoadingState(message = "Osvežujem seznam …")
-            }
-
-            if (!state.isRefreshing && state.pickups.isEmpty()) {
-                EEmptyState(
-                    icon = EPrevzemIcons.locker(),
-                    title = "Trenutno nimate aktivnih prevzemov.",
-                    message = "Ko bo organizacija pripravila dokument za prevzem, se bo pojavil tukaj.",
-                )
-            }
-
-            state.pickups.forEach { pickup ->
-                EPickupCard(
-                    title = pickup.title,
-                    organization = pickup.organization,
-                    location = pickup.location,
-                    expires = pickup.deadline,
-                    lockerNumber = pickup.lockerNumber,
-                    status = pickup.status,
-                    warningText = if (pickup.isExpiringSoon) "Manj kot 24 ur do izteka roka prevzema." else null,
-                    onClick = { onEvent(ActivePickupsEvent.PickupClicked(pickup.id)) },
+                ActiveTab.Profile->ActivePickupContent(
+                    state=state,
+                    onEvent=onEvent
                 )
             }
         }
@@ -214,3 +164,185 @@ private fun demoAuditLogEntries()=listOf(
         status = AuditLogStatus.Opened,
     )
 )
+@Composable
+private fun ActivePickupContent(
+    state: ActivePickupsState,
+    onEvent: (ActivePickupsEvent) -> Unit
+){
+    val colors = EPrevzemTheme.colors
+    val typo = EPrevzemTheme.typography
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = "DOBRODOŠLI NAZAJ",
+            style = typo.caption,
+            color = colors.textMuted,
+        )
+        Text(
+            text = "Pozdravljeni, ${state.userName}",
+            style = typo.display.copy(fontSize = 28.sp),
+            color = colors.textPrimary,
+        )
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(
+            text = "Aktivni prevzemi",
+            style = typo.section,
+            color = colors.textPrimary,
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = "${state.pickups.size} aktivni",
+            style = typo.bodySmall,
+            color = colors.textMuted,
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(colors.surfaceMuted)
+                .clickable { onEvent(ActivePickupsEvent.Refresh) },
+        ) {
+            Icon(
+                painter = EPrevzemIcons.refresh(),
+                contentDescription = "Osveži",
+                tint = colors.textSecondary,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+    }
+
+    if (state.isRefreshing) {
+        ELoadingState(message = "Osvežujem seznam …")
+    }
+
+    if (!state.isRefreshing && state.pickups.isEmpty()) {
+        EEmptyState(
+            icon = EPrevzemIcons.locker(),
+            title = "Trenutno nimate aktivnih prevzemov.",
+            message = "Ko bo organizacija pripravila dokument za prevzem, se bo pojavil tukaj.",
+        )
+    }
+
+    state.pickups.forEach { pickup ->
+        EPickupCard(
+            title = pickup.title,
+            organization = pickup.organization,
+            location = pickup.location,
+            expires = pickup.deadline,
+            lockerNumber = pickup.lockerNumber,
+            status = pickup.status,
+            warningText = if (pickup.isExpiringSoon) "Manj kot 24 ur do izteka roka prevzema." else null,
+            onClick = { onEvent(ActivePickupsEvent.PickupClicked(pickup.id)) },
+        )
+    }
+}
+
+@Composable
+private fun AuditLogContent(entries: List<AuditLogEntry>){
+    val colors=EPrevzemTheme.colors
+    val typo=EPrevzemTheme.typography
+    val spacing=EPrevzemTheme.spacing
+    Column(verticalArrangement = Arrangement.spacedBy(spacing.cardGap)) {
+        Column(verticalArrangement = Arrangement.spacedBy(spacing.xxs)) {
+            Text(
+                text = "Zgodovina",
+                style = typo.title,
+                color = colors.textPrimary,
+            )
+            Text(
+                text = "Pregled zabeleženih odpiranj paketnikov.",
+                style = typo.body,
+                color = colors.textSecondary,
+            )
+        }
+
+        EDetailsSectionLabel(
+            title = "Dnevnik aktivnosti",
+            hint = {
+                Text(
+                    text = "${entries.size} zapisa",
+                    style = typo.bodySmall,
+                    color = colors.textMuted,
+                )
+            },
+        )
+
+        entries.forEach { entry ->
+            AuditLogCard(entry = entry)
+        }
+    }
+}
+@Composable
+private fun AuditLogCard(entry: AuditLogEntry) {
+    EDetailsCard {
+        EDetailsRow(
+            icon = EPrevzemIcons.document(),
+            label = "Dokument",
+            value = entry.documentTitle,
+            tint = EIconTint.Green,
+            trailing = { AuditStatusBadge(status = entry.status) },
+        )
+        EDetailsDivider()
+        EDetailsRow(
+            icon = EPrevzemIcons.organization(),
+            label = "Organizacija",
+            value = entry.organization,
+            tint = EIconTint.Teal,
+        )
+        EDetailsDivider()
+        EDetailsRow(
+            icon = EPrevzemIcons.locker(),
+            label = "Paketnik",
+            value = entry.lockerNumber,
+            tint = EIconTint.Gray,
+        )
+        EDetailsDivider()
+        EDetailsRow(
+            icon = EPrevzemIcons.clock(),
+            label = "Odpiranje",
+            value = entry.openedAt,
+            tint = EIconTint.Gold,
+        )
+    }
+}
+@Composable
+private fun AuditStatusBadge(status: AuditLogStatus) {
+    val colors = EPrevzemTheme.colors
+    val typo = EPrevzemTheme.typography
+    val spacing = EPrevzemTheme.spacing
+
+    val label = when (status) {
+        AuditLogStatus.Opened -> "Odprto"
+        AuditLogStatus.Confirmed -> "Potrjeno"
+        AuditLogStatus.Failed -> "Neuspešno"
+    }
+
+    val background = when (status) {
+        AuditLogStatus.Opened -> colors.infoBg
+        AuditLogStatus.Confirmed -> colors.successBg
+        AuditLogStatus.Failed -> colors.errorBg
+    }
+
+    val foreground = when (status) {
+        AuditLogStatus.Opened -> colors.info
+        AuditLogStatus.Confirmed -> colors.success
+        AuditLogStatus.Failed -> colors.error
+    }
+
+    Box(
+        modifier = Modifier
+            .clip(EPrevzemTheme.shapes.pill)
+            .background(background)
+            .padding(horizontal = spacing.sm, vertical = spacing.xxs),
+    ) {
+        Text(text = label, style = typo.caption, color = foreground)
+    }
+}
+
+
+
