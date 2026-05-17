@@ -8,3 +8,17 @@ docs/
 !.env.example
 .idea/
 .vscode/
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# Rider
+.idea/
+
+# Local secrets / runtime
+appsettings.*.local.json
+*.pfx
