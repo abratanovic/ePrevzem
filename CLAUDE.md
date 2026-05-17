@@ -19,6 +19,11 @@ The user-facing pickup client is `ePrevzemMobile` (Kotlin Multiplatform). The `s
 
 Each subproject has its own README; `ePrevzemMobile/CLAUDE.md` and `ePrevzemMobile/AGENTS.md` carry the detailed design-system rules for that client and **must be followed when touching `ePrevzemMobile/`**. Treat the root README as the product overview (Slovenian).
 
+**Per-subproject agent guides — read before editing:**
+
+- `backend/` → `backend/AGENTS.md` (also mirrored as `backend/CLAUDE.md` / `backend/GEMINI.md`). Backend architecture, layering rules, and conventions.
+- `ePrevzemMobile/` → `ePrevzemMobile/CLAUDE.md` / `ePrevzemMobile/AGENTS.md`. Compose Multiplatform design-system rules.
+
 ## Working per subproject
 
 ### `ePrevzemMobile/` — Kotlin Multiplatform (Compose)
