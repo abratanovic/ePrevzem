@@ -4,7 +4,6 @@ import androidx.compose.runtime.Immutable
 import si.mentis.eprevzemmobile.feature.pickups.model.PickupItem
 
 enum class ActiveTab { Pickups, History, Profile }
-enum class AuditLogStatus {Opened, Confirmed, Failed}
 
 @Immutable
 data class ActivePickupsState(
@@ -15,12 +14,3 @@ data class ActivePickupsState(
     val auditLogEntries:List<AuditLogEntry> = emptyList()
 )
 
-data class AuditLogEntry(
-    val id:String,
-    val documentTitle: String,
-    val organization:String,
-    val lockerNumber: String,
-    val location: String,
-    val openedAt: String,
-    val status: AuditLogStatus
-)

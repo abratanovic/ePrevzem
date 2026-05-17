@@ -95,7 +95,7 @@ fun ActivePickupsScreen(
                     state=state,
                     onEvent=onEvent
                 )
-                ActiveTab.History -> AuditLogContent(
+                ActiveTab.History -> AuditLogScreen(
                     entries=state.auditLogEntries
                 )
 
@@ -241,109 +241,4 @@ private fun ActivePickupContent(
         )
     }
 }
-
-@Composable
-private fun AuditLogContent(entries: List<AuditLogEntry>){
-    val colors=EPrevzemTheme.colors
-    val typo=EPrevzemTheme.typography
-    val spacing=EPrevzemTheme.spacing
-    Column(verticalArrangement = Arrangement.spacedBy(spacing.cardGap)) {
-        Column(verticalArrangement = Arrangement.spacedBy(spacing.xxs),
-            modifier = Modifier.padding(horizontal = spacing.xxs)) {
-            Text(
-                text = "Zgodovina",
-                style = typo.title,
-                color = colors.textPrimary,
-            )
-            Text(
-                text = "Pregled zabeleženih odpiranj paketnikov.",
-                style = typo.body,
-                color = colors.textSecondary,
-            )
-        }
-
-        EDetailsSectionLabel(
-            title = "Dnevnik aktivnosti",
-            hint = {
-                Text(
-                    text = "${entries.size} zapisa",
-                    style = typo.bodySmall,
-                    color = colors.textMuted,
-                )
-            },
-        )
-
-        entries.forEach { entry ->
-            AuditLogCard(entry = entry)
-        }
-    }
-}
-@Composable
-private fun AuditLogCard(entry: AuditLogEntry) {
-    EDetailsCard {
-        EDetailsRow(
-            icon = EPrevzemIcons.document(),
-            label = "Dokument",
-            value = entry.documentTitle,
-            tint = EIconTint.Green,
-            trailing = { AuditStatusBadge(status = entry.status) },
-        )
-        EDetailsDivider()
-        EDetailsRow(
-            icon = EPrevzemIcons.organization(),
-            label = "Organizacija",
-            value = entry.organization,
-            tint = EIconTint.Teal,
-        )
-        EDetailsDivider()
-        EDetailsRow(
-            icon = EPrevzemIcons.locker(),
-            label = "Paketnik",
-            value = entry.lockerNumber,
-            tint = EIconTint.Gray,
-        )
-        EDetailsDivider()
-        EDetailsRow(
-            icon = EPrevzemIcons.clock(),
-            label = "Odpiranje",
-            value = entry.openedAt,
-            tint = EIconTint.Gold,
-        )
-    }
-}
-@Composable
-private fun AuditStatusBadge(status: AuditLogStatus) {
-    val colors = EPrevzemTheme.colors
-    val typo = EPrevzemTheme.typography
-    val spacing = EPrevzemTheme.spacing
-
-    val label = when (status) {
-        AuditLogStatus.Opened -> "Odprto"
-        AuditLogStatus.Confirmed -> "Potrjeno"
-        AuditLogStatus.Failed -> "Neuspešno"
-    }
-
-    val background = when (status) {
-        AuditLogStatus.Opened -> colors.infoBg
-        AuditLogStatus.Confirmed -> colors.successBg
-        AuditLogStatus.Failed -> colors.errorBg
-    }
-
-    val foreground = when (status) {
-        AuditLogStatus.Opened -> colors.info
-        AuditLogStatus.Confirmed -> colors.success
-        AuditLogStatus.Failed -> colors.error
-    }
-
-    Box(
-        modifier = Modifier
-            .clip(EPrevzemTheme.shapes.pill)
-            .background(background)
-            .padding(horizontal = spacing.sm, vertical = spacing.xxs),
-    ) {
-        Text(text = label, style = typo.caption, color = foreground)
-    }
-}
-
-
 
