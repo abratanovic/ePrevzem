@@ -2,9 +2,26 @@
 docs/
 .ralph/
 .claude/
+.ai/
 *.log
 .env
 .env.*
 !.env.example
 .idea/
 .vscode/
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+**/appsettings.Development.json
+**/appsettings.*.Local.json
+
+# Rider
+.idea/
+
+# Local secrets / runtime
+appsettings.*.local.json
+*.pfx
