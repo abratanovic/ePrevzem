@@ -248,7 +248,8 @@ private fun AuditLogContent(entries: List<AuditLogEntry>){
     val typo=EPrevzemTheme.typography
     val spacing=EPrevzemTheme.spacing
     Column(verticalArrangement = Arrangement.spacedBy(spacing.cardGap)) {
-        Column(verticalArrangement = Arrangement.spacedBy(spacing.xxs)) {
+        Column(verticalArrangement = Arrangement.spacedBy(spacing.xxs),
+            modifier = Modifier.padding(horizontal = spacing.xxs)) {
             Text(
                 text = "Zgodovina",
                 style = typo.title,
