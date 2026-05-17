@@ -11,4 +11,6 @@ data class ActivePickupsState(
     val pickups: List<PickupItem> = emptyList(),
     val isRefreshing: Boolean = false,
     val activeTab: ActiveTab = ActiveTab.Pickups,
+    val auditLogEntries:List<AuditLogEntry> = emptyList()
 )
+
