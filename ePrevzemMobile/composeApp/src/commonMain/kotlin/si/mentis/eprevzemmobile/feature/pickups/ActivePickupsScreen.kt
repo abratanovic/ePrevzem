@@ -167,7 +167,8 @@ fun ActivePickupsRoute(
 ) {
     val scope = rememberCoroutineScope()
     var state by remember {
-        mutableStateOf(ActivePickupsState(userName = user.fullName, activeTab = ActiveTab.Pickups))
+        mutableStateOf(ActivePickupsState(userName = user.fullName, activeTab = ActiveTab.Pickups,
+            auditLogEntries=demoAuditLogEntries()))
     }
 
     LaunchedEffect(Unit) {
@@ -192,3 +193,24 @@ fun ActivePickupsRoute(
         },
     )
 }
+
+private fun demoAuditLogEntries()=listOf(
+    AuditLogEntry(
+        id = "1",
+        documentTitle = "Diploma",
+        organization = "Univerza v Ljubljani",
+        lockerNumber = "Paketnik #7",
+        location = "Kongresni trg, Ljubljana",
+        openedAt = "12. 5. 2026 ob 14:32",
+        status = AuditLogStatus.Confirmed,
+    ),
+    AuditLogEntry(
+        id = "2",
+        documentTitle = "Osebna izkaznica",
+        organization = "Upravna enota Ljubljana",
+        lockerNumber = "Paketnik #3",
+        location = "BTC City, Ljubljana",
+        openedAt = "9. 5. 2026 ob 09:18",
+        status = AuditLogStatus.Opened,
+    )
+)
