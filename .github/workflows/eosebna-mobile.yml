@@ -1,15 +1,20 @@
-﻿name: eosebna-build
-  on:
-    pull_request:
-      paths: ['sitrust-mock/eosebna_mobile/**', '.github/workflows/eosebna.yml']
-  jobs:
-    build:
-      runs-on: ubuntu-latest
-      defaults: { run: { working-directory: sitrust-mock/eosebna_mobile } }
-      steps:
-        - uses: actions/checkout@v4
-        - uses: subosito/flutter-action@v2
-          with: { channel: stable }
-        - run: flutter pub get
-        - run: flutter analyze
-        - run: flutter test
+name: eosebna-build
+"on":
+  pull_request:
+    paths:
+      - "sitrust-mock/eosebna_mobile/**"
+      - ".github/workflows/eosebna-mobile.yml"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sitrust-mock/eosebna_mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
