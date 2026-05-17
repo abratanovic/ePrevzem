@@ -3,3 +3,5 @@ obj/
 *.user
 .vs/
 *.suo
+**/appsettings.Development.json
+**/appsettings.*.Local.json
