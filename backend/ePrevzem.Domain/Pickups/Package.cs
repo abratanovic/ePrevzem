@@ -100,4 +100,38 @@ public sealed class Package : AggregateRoot<PackageId>
         DeadlineAt = null;
         Raise(new PackageRemovedByEmployee(Id, placement.Id, removedBy, now));
     }
+
+    public void MarkExpired(DateTimeOffset now)
+    {
+        if (Status != PackageStatus.InLocker)
+            throw new InvalidOperationException($"Expiry can only be marked from InLocker (current: {Status}).");
+        if (DeadlineAt is null || now < DeadlineAt)
+            throw new InvalidOperationException("Cannot mark expired before the deadline has passed.");
+
+        Status = PackageStatus.NotPickedUp;
+        Raise(new PackageExpired(Id, now));
+    }
+
+    public void RetrieveAfterExpiry(EmployeeAccountId retrievedBy, DateTimeOffset now)
+    {
+        if (Status != PackageStatus.NotPickedUp)
+            throw new InvalidOperationException($"Retrieval after expiry is only allowed from NotPickedUp (current: {Status}).");
+
+        var placement = ActivePlacement
+            ?? throw new InvalidOperationException("No active placement to close.");
+        placement.CloseByExpiryRetrieval(retrievedBy, now);
+
+        Status = PackageStatus.AwaitingPersonalPickup;
+        Raise(new PackageRetrievedAfterExpiry(Id, placement.Id, retrievedBy, now));
+    }
+
+    public void MarkPickedUpManually(EmployeeAccountId markedBy, DateTimeOffset now)
+    {
+        if (Status != PackageStatus.AwaitingPersonalPickup)
+            throw new InvalidOperationException($"Manual mark-picked-up is only allowed from AwaitingPersonalPickup (current: {Status}).");
+
+        Status = PackageStatus.PickedUp;
+        FinalizedAt = now;
+        Raise(new PackageMarkedPickedUpManually(Id, markedBy, now));
+    }
 }
