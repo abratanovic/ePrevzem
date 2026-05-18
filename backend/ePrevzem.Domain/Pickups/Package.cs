@@ -51,4 +51,25 @@ public sealed class Package : AggregateRoot<PackageId>
         pkg.Raise(new PackageCreated(id, now));
         return pkg;
     }
+
+    public Placement Place(
+        PlacementId placementId,
+        LockerId lockerId,
+        EmployeeAccountId openedBy,
+        TimeSpan pickupDuration,
+        DateTimeOffset now)
+    {
+        if (Status != PackageStatus.AwaitingPlacement)
+            throw new InvalidOperationException($"Package can only be placed while in AwaitingPlacement (current: {Status}).");
+        if (pickupDuration <= TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(pickupDuration), pickupDuration, "Pickup duration must be positive.");
+
+        var placement = Placement.Open(placementId, Id, lockerId, openedBy, now);
+        _placements.Add(placement);
+        Status = PackageStatus.InLocker;
+        DeadlineAt = now + pickupDuration;
+
+        Raise(new PackagePlaced(Id, placementId, lockerId, openedBy, DeadlineAt.Value, now));
+        return placement;
+    }
 }
