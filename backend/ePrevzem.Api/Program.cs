@@ -59,6 +59,7 @@ try
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddOpenApi();
+    builder.Services.AddSwaggerGen();
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
 
@@ -72,6 +73,8 @@ try
     if (app.Environment.IsDevelopment())
     {
         app.MapOpenApi();
+        app.UseSwagger();
+        app.UseSwaggerUI();
     }
     else
     {
