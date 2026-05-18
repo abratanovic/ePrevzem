@@ -8,6 +8,7 @@ public sealed class StationClaim : AggregateRoot<StationClaimId>
 {
     public PickupStationId PickupStationId { get; private set; }
     public OrganizationId OrganizationId { get; private set; }
+    public Location Location { get; private set; } = default!;
     public DateTimeOffset ClaimedAt { get; private set; }
     public DateTimeOffset? ReleasedAt { get; private set; }
 
@@ -19,13 +20,16 @@ public sealed class StationClaim : AggregateRoot<StationClaimId>
         StationClaimId id,
         PickupStationId stationId,
         OrganizationId organizationId,
+        Location location,
         DateTimeOffset now)
     {
+        ArgumentNullException.ThrowIfNull(location);
         var claim = new StationClaim
         {
             Id = id,
             PickupStationId = stationId,
             OrganizationId = organizationId,
+            Location = location,
             ClaimedAt = now
         };
         claim.Raise(new StationClaimed(id, stationId, organizationId, now));

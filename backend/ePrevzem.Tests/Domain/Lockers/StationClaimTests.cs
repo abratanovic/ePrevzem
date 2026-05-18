@@ -8,26 +8,30 @@ namespace ePrevzem.Tests.Domain.Lockers;
 public class StationClaimTests
 {
     private static readonly DateTimeOffset Now = new(2026, 5, 18, 10, 0, 0, TimeSpan.Zero);
+    private static Location ValidLocation() => Location.Create(46m, 14m, "Slovenska cesta", "11", "1000", "Ljubljana");
 
     [Fact]
     public void Claim_creates_active_claim_and_raises_event()
     {
+        var location = ValidLocation();
         var claim = StationClaim.Claim(
             StationClaimId.New(),
             PickupStationId.New(),
             OrganizationId.New(),
+            location,
             Now);
 
         claim.ClaimedAt.Should().Be(Now);
         claim.ReleasedAt.Should().BeNull();
         claim.IsActive.Should().BeTrue();
+        claim.Location.Should().Be(location);
         claim.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<StationClaimed>();
     }
 
     [Fact]
     public void Release_sets_ReleasedAt_and_raises_event()
     {
-        var claim = StationClaim.Claim(StationClaimId.New(), PickupStationId.New(), OrganizationId.New(), Now);
+        var claim = StationClaim.Claim(StationClaimId.New(), PickupStationId.New(), OrganizationId.New(), ValidLocation(), Now);
         var later = Now.AddDays(1);
 
         claim.Release(later);
@@ -40,7 +44,7 @@ public class StationClaimTests
     [Fact]
     public void Release_when_already_released_throws()
     {
-        var claim = StationClaim.Claim(StationClaimId.New(), PickupStationId.New(), OrganizationId.New(), Now);
+        var claim = StationClaim.Claim(StationClaimId.New(), PickupStationId.New(), OrganizationId.New(), ValidLocation(), Now);
         claim.Release(Now.AddDays(1));
 
         var act = () => claim.Release(Now.AddDays(2));
@@ -50,7 +54,7 @@ public class StationClaimTests
     [Fact]
     public void Release_before_ClaimedAt_throws()
     {
-        var claim = StationClaim.Claim(StationClaimId.New(), PickupStationId.New(), OrganizationId.New(), Now);
+        var claim = StationClaim.Claim(StationClaimId.New(), PickupStationId.New(), OrganizationId.New(), ValidLocation(), Now);
         var act = () => claim.Release(Now.AddSeconds(-1));
         act.Should().Throw<ArgumentException>().WithParameterName("releasedAt");
     }
