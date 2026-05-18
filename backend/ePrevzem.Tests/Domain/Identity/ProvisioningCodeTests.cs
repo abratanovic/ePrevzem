@@ -1,0 +1,139 @@
+using ePrevzem.Domain.Identity;
+using ePrevzem.Domain.Identity.Events;
+using ePrevzem.Domain.Lockers;
+using ePrevzem.Domain.Organizations;
+using FluentAssertions;
+
+namespace ePrevzem.Tests.Domain.Identity;
+
+public class ProvisioningCodeTests
+{
+    private static readonly DateTimeOffset Now = new(2026, 5, 18, 10, 0, 0, TimeSpan.Zero);
+
+    [Fact]
+    public void Issue_creates_unredeemed_code_with_event()
+    {
+        var id = ProvisioningCodeId.New();
+        var orgId = OrganizationId.New();
+        var stationIds = new[] { PickupStationId.New() };
+        var roles = new[] { EmployeeAccountRole.Operator };
+        var creator = EmployeeAccountId.New();
+
+        var code = ProvisioningCode.Issue(
+            id,
+            orgId,
+            code: "ABCD-1234",
+            preFilledFirstName: "Ana",
+            preFilledLastName: "Kovač",
+            preFilledEmail: "ana@example.com",
+            roles: roles,
+            stationAccess: stationIds,
+            createdBy: creator,
+            now: Now,
+            expiresAt: Now.AddHours(24),
+            isReprovisioningOf: null);
+
+        code.Id.Should().Be(id);
+        code.OrganizationId.Should().Be(orgId);
+        code.Code.Should().Be("ABCD-1234");
+        code.PreFilledFirstName.Should().Be("Ana");
+        code.PreFilledLastName.Should().Be("Kovač");
+        code.PreFilledEmail.Should().Be("ana@example.com");
+        code.Roles.Should().BeEquivalentTo(roles);
+        code.StationAccess.Should().BeEquivalentTo(stationIds);
+        code.CreatedByEmployeeAccountId.Should().Be(creator);
+        code.CreatedAt.Should().Be(Now);
+        code.ExpiresAt.Should().Be(Now.AddHours(24));
+        code.RedeemedAt.Should().BeNull();
+        code.IsReprovisioningOfEmployeeAccountId.Should().BeNull();
+        code.IsRedeemable(at: Now).Should().BeTrue();
+        code.DomainEvents.OfType<ProvisioningCodeIssued>().Should().ContainSingle();
+    }
+
+    [Fact]
+    public void Issue_with_empty_roles_throws()
+    {
+        var act = () => ProvisioningCode.Issue(
+            ProvisioningCodeId.New(), OrganizationId.New(), "C", "F", "L", null,
+            Array.Empty<EmployeeAccountRole>(), Array.Empty<PickupStationId>(),
+            EmployeeAccountId.New(), Now, Now.AddHours(1), null);
+        act.Should().Throw<ArgumentException>().WithParameterName("roles");
+    }
+
+    [Fact]
+    public void Issue_with_expiration_in_past_throws()
+    {
+        var act = () => ProvisioningCode.Issue(
+            ProvisioningCodeId.New(), OrganizationId.New(), "C", "F", "L", null,
+            new[] { EmployeeAccountRole.Operator }, Array.Empty<PickupStationId>(),
+            EmployeeAccountId.New(), Now, Now.AddMinutes(-1), null);
+        act.Should().Throw<ArgumentException>().WithParameterName("expiresAt");
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Issue_with_blank_code_throws(string code)
+    {
+        var act = () => ProvisioningCode.Issue(
+            ProvisioningCodeId.New(), OrganizationId.New(), code, "F", "L", null,
+            new[] { EmployeeAccountRole.Operator }, Array.Empty<PickupStationId>(),
+            EmployeeAccountId.New(), Now, Now.AddHours(1), null);
+        act.Should().Throw<ArgumentException>().WithParameterName("code");
+    }
+
+    [Fact]
+    public void Redeem_sets_redemption_state_and_raises_event()
+    {
+        var code = Issue();
+        var newAccount = EmployeeAccountId.New();
+
+        code.Redeem(redeemedAt: Now.AddMinutes(5), redeemedIntoEmployeeAccountId: newAccount);
+
+        code.RedeemedAt.Should().Be(Now.AddMinutes(5));
+        code.RedeemedIntoEmployeeAccountId.Should().Be(newAccount);
+        code.IsRedeemable(at: Now.AddMinutes(5)).Should().BeFalse();
+        code.DomainEvents.OfType<ProvisioningCodeRedeemed>().Should().ContainSingle();
+    }
+
+    [Fact]
+    public void Redeem_twice_throws()
+    {
+        var code = Issue();
+        code.Redeem(Now.AddMinutes(1), EmployeeAccountId.New());
+
+        var act = () => code.Redeem(Now.AddMinutes(2), EmployeeAccountId.New());
+        act.Should().Throw<InvalidOperationException>().WithMessage("*already redeemed*");
+    }
+
+    [Fact]
+    public void Redeem_after_expiry_throws()
+    {
+        var code = Issue();
+        var act = () => code.Redeem(Now.AddHours(2), EmployeeAccountId.New());
+        act.Should().Throw<InvalidOperationException>().WithMessage("*expired*");
+    }
+
+    [Fact]
+    public void IsRedeemable_is_false_after_expiry()
+    {
+        var code = Issue();
+        code.IsRedeemable(Now.AddHours(2)).Should().BeFalse();
+    }
+
+    private static ProvisioningCode Issue(
+        EmployeeAccountId? reprovisioningOf = null)
+        => ProvisioningCode.Issue(
+            ProvisioningCodeId.New(),
+            OrganizationId.New(),
+            code: "ABCD-1234",
+            preFilledFirstName: "Ana",
+            preFilledLastName: "Kovač",
+            preFilledEmail: null,
+            roles: new[] { EmployeeAccountRole.Operator },
+            stationAccess: Array.Empty<PickupStationId>(),
+            createdBy: EmployeeAccountId.New(),
+            now: Now,
+            expiresAt: Now.AddHours(1),
+            isReprovisioningOf: reprovisioningOf);
+}
