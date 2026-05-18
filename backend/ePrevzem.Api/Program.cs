@@ -1,8 +1,12 @@
 using System.Text;
+using System.IdentityModel.Tokens.Jwt;
+using ePrevzem.Api.Authentication;
 using ePrevzem.Api.Configuration;
 using ePrevzem.Application;
+using ePrevzem.Application.Common.Abstractions;
 using ePrevzem.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 
@@ -36,6 +40,8 @@ try
                 ValidateIssuerSigningKey = true,
                 ValidIssuer = jwt.Issuer,
                 ValidAudience = jwt.Audience,
+                NameClaimType = JwtRegisteredClaimNames.Sub,
+                RoleClaimType = ClaimTypes.Role,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Secret))
             };
         });
@@ -53,6 +59,8 @@ try
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddOpenApi();
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
 
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
