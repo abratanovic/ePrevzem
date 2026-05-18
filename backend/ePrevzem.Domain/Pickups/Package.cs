@@ -72,4 +72,18 @@ public sealed class Package : AggregateRoot<PackageId>
         Raise(new PackagePlaced(Id, placementId, lockerId, openedBy, DeadlineAt.Value, now));
         return placement;
     }
+
+    public void PickUpByCitizen(CitizenUserId pickedUpBy, DateTimeOffset now)
+    {
+        if (Status != PackageStatus.InLocker)
+            throw new InvalidOperationException($"Pickup is only allowed from InLocker (current: {Status}).");
+
+        var placement = ActivePlacement
+            ?? throw new InvalidOperationException("No active placement to close.");
+        placement.CloseByCitizen(pickedUpBy, now);
+
+        Status = PackageStatus.PickedUp;
+        FinalizedAt = now;
+        Raise(new PackagePickedUpByCitizen(Id, placement.Id, pickedUpBy, now));
+    }
 }
