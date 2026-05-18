@@ -134,4 +134,26 @@ public sealed class Package : AggregateRoot<PackageId>
         FinalizedAt = now;
         Raise(new PackageMarkedPickedUpManually(Id, markedBy, now));
     }
+
+    public void Cancel(EmployeeAccountId cancelledBy, DateTimeOffset now)
+    {
+        switch (Status)
+        {
+            case PackageStatus.AwaitingPlacement:
+            case PackageStatus.AwaitingPersonalPickup:
+                break;
+            case PackageStatus.InLocker:
+            case PackageStatus.NotPickedUp:
+                throw new InvalidOperationException(
+                    "Cancel requires the package not be physically in a locker; remove or retrieve it first.");
+            case PackageStatus.PickedUp:
+            case PackageStatus.Cancelled:
+                throw new InvalidOperationException(
+                    $"Cancel is not allowed from terminal state {Status}.");
+        }
+
+        Status = PackageStatus.Cancelled;
+        FinalizedAt = now;
+        Raise(new PackageCancelled(Id, cancelledBy, now));
+    }
 }
