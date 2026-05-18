@@ -5,5 +5,5 @@ public sealed record OrganizationResponse(
     string Name,
     string TaxNumber,
     string RegistrationNumber,
-    TimeSpan DefaultPickupDuration,
+    int DefaultPickupDurationDays,
     DateTimeOffset CreatedAt);

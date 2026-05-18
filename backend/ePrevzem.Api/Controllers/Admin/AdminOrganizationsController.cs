@@ -35,7 +35,7 @@ public sealed class AdminOrganizationsController : ControllerBase
                     request.Name,
                     request.TaxNumber,
                     request.RegistrationNumber,
-                    request.DefaultPickupDuration),
+                    request.DefaultPickupDurationDays),
                 cancellationToken);
 
             return CreatedAtAction(nameof(Create), new { id = response.Id }, response);
@@ -78,4 +78,4 @@ public sealed record CreateOrganizationRequest(
     string Name,
     string TaxNumber,
     string RegistrationNumber,
-    TimeSpan DefaultPickupDuration);
+    int DefaultPickupDurationDays);

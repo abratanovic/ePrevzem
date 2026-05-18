@@ -37,8 +37,11 @@ public sealed class OrganizationConfiguration : IEntityTypeConfiguration<Organiz
             .IsUnique();
 
         builder.Property(x => x.DefaultPickupDuration)
-            .HasColumnName("default_pickup_duration")
-            .HasColumnType("interval")
+            .HasColumnName("default_pickup_duration_in_days")
+            .HasColumnType("integer")
+            .HasConversion(
+                ts => (int)ts.TotalDays,
+                days => TimeSpan.FromDays(days))
             .IsRequired();
 
         builder.Property(x => x.CreatedAt)

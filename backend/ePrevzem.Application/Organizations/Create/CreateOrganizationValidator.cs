@@ -18,7 +18,7 @@ public sealed class CreateOrganizationValidator : AbstractValidator<CreateOrgani
             .NotEmpty()
             .MaximumLength(20);
 
-        RuleFor(x => x.DefaultPickupDuration)
-            .GreaterThan(TimeSpan.Zero);
+        RuleFor(x => x.DefaultPickupDurationDays)
+            .GreaterThan(0);
     }
 }

@@ -9,7 +9,7 @@ public sealed record CreateOrganizationCommand(
     string Name,
     string TaxNumber,
     string RegistrationNumber,
-    TimeSpan DefaultPickupDuration) : IRequest<OrganizationResponse>;
+    int DefaultPickupDurationDays) : IRequest<OrganizationResponse>;
 
 public sealed class CreateOrganizationCommandHandler : IRequestHandler<CreateOrganizationCommand, OrganizationResponse>
 {
@@ -42,7 +42,7 @@ public sealed class CreateOrganizationCommandHandler : IRequestHandler<CreateOrg
             command.Name,
             command.TaxNumber,
             command.RegistrationNumber,
-            command.DefaultPickupDuration,
+            TimeSpan.FromDays(command.DefaultPickupDurationDays),
             now);
 
         await _organizationRepository.AddAsync(org, cancellationToken);
@@ -53,7 +53,7 @@ public sealed class CreateOrganizationCommandHandler : IRequestHandler<CreateOrg
             org.Name,
             org.TaxNumber,
             org.RegistrationNumber,
-            org.DefaultPickupDuration,
+            (int)org.DefaultPickupDuration.TotalDays,
             org.CreatedAt);
     }
 }
