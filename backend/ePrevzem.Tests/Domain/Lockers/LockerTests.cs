@@ -41,6 +41,6 @@ public class LockerTests
 
     private static PickupStation NewStation() => PickupStation.Create(
         PickupStationId.New(),
-        Location.Create(46m, 14m, "a", "1", "1000", "Ljubljana"),
+        "SN-001",
         new DateTimeOffset(2026, 5, 18, 10, 0, 0, TimeSpan.Zero));
 }

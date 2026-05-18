@@ -1,6 +1,5 @@
 using ePrevzem.Domain.Identity;
 using ePrevzem.Domain.Identity.Events;
-using ePrevzem.Domain.Lockers;
 using ePrevzem.Domain.Organizations;
 using FluentAssertions;
 
@@ -15,19 +14,15 @@ public class ProvisioningCodeTests
     {
         var id = ProvisioningCodeId.New();
         var orgId = OrganizationId.New();
-        var stationIds = new[] { PickupStationId.New() };
         var roles = new[] { EmployeeAccountRole.Operator };
-        var creator = EmployeeAccountId.New();
+        var creator = OrganizationAdminAccountId.New();
 
         var code = ProvisioningCode.Issue(
             id,
             orgId,
             code: "ABCD-1234",
-            preFilledFirstName: "Ana",
-            preFilledLastName: "Kovač",
-            preFilledEmail: "ana@example.com",
+            preFilledInfo: PersonalInfo.Create("Ana", "Kovač", "ana@example.com"),
             roles: roles,
-            stationAccess: stationIds,
             createdBy: creator,
             now: Now,
             expiresAt: Now.AddHours(24),
@@ -36,12 +31,11 @@ public class ProvisioningCodeTests
         code.Id.Should().Be(id);
         code.OrganizationId.Should().Be(orgId);
         code.Code.Should().Be("ABCD-1234");
-        code.PreFilledFirstName.Should().Be("Ana");
-        code.PreFilledLastName.Should().Be("Kovač");
-        code.PreFilledEmail.Should().Be("ana@example.com");
+        code.PreFilledInfo.FirstName.Should().Be("Ana");
+        code.PreFilledInfo.LastName.Should().Be("Kovač");
+        code.PreFilledInfo.Email.Should().Be("ana@example.com");
         code.Roles.Should().BeEquivalentTo(roles);
-        code.StationAccess.Should().BeEquivalentTo(stationIds);
-        code.CreatedByEmployeeAccountId.Should().Be(creator);
+        code.CreatedByOrganizationAdminId.Should().Be(creator);
         code.CreatedAt.Should().Be(Now);
         code.ExpiresAt.Should().Be(Now.AddHours(24));
         code.RedeemedAt.Should().BeNull();
@@ -54,9 +48,9 @@ public class ProvisioningCodeTests
     public void Issue_with_empty_roles_throws()
     {
         var act = () => ProvisioningCode.Issue(
-            ProvisioningCodeId.New(), OrganizationId.New(), "C", "F", "L", null,
-            Array.Empty<EmployeeAccountRole>(), Array.Empty<PickupStationId>(),
-            EmployeeAccountId.New(), Now, Now.AddHours(1), null);
+            ProvisioningCodeId.New(), OrganizationId.New(), "C", PersonalInfo.Create("F", "L", null),
+            Array.Empty<EmployeeAccountRole>(),
+            OrganizationAdminAccountId.New(), Now, Now.AddHours(1), null);
         act.Should().Throw<ArgumentException>().WithParameterName("roles");
     }
 
@@ -64,9 +58,9 @@ public class ProvisioningCodeTests
     public void Issue_with_expiration_in_past_throws()
     {
         var act = () => ProvisioningCode.Issue(
-            ProvisioningCodeId.New(), OrganizationId.New(), "C", "F", "L", null,
-            new[] { EmployeeAccountRole.Operator }, Array.Empty<PickupStationId>(),
-            EmployeeAccountId.New(), Now, Now.AddMinutes(-1), null);
+            ProvisioningCodeId.New(), OrganizationId.New(), "C", PersonalInfo.Create("F", "L", null),
+            new[] { EmployeeAccountRole.Operator },
+            OrganizationAdminAccountId.New(), Now, Now.AddMinutes(-1), null);
         act.Should().Throw<ArgumentException>().WithParameterName("expiresAt");
     }
 
@@ -76,9 +70,9 @@ public class ProvisioningCodeTests
     public void Issue_with_blank_code_throws(string code)
     {
         var act = () => ProvisioningCode.Issue(
-            ProvisioningCodeId.New(), OrganizationId.New(), code, "F", "L", null,
-            new[] { EmployeeAccountRole.Operator }, Array.Empty<PickupStationId>(),
-            EmployeeAccountId.New(), Now, Now.AddHours(1), null);
+            ProvisioningCodeId.New(), OrganizationId.New(), code, PersonalInfo.Create("F", "L", null),
+            new[] { EmployeeAccountRole.Operator },
+            OrganizationAdminAccountId.New(), Now, Now.AddHours(1), null);
         act.Should().Throw<ArgumentException>().WithParameterName("code");
     }
 
@@ -127,12 +121,9 @@ public class ProvisioningCodeTests
             ProvisioningCodeId.New(),
             OrganizationId.New(),
             code: "ABCD-1234",
-            preFilledFirstName: "Ana",
-            preFilledLastName: "Kovač",
-            preFilledEmail: null,
+            preFilledInfo: PersonalInfo.Create("Ana", "Kovač", null),
             roles: new[] { EmployeeAccountRole.Operator },
-            stationAccess: Array.Empty<PickupStationId>(),
-            createdBy: EmployeeAccountId.New(),
+            createdBy: OrganizationAdminAccountId.New(),
             now: Now,
             expiresAt: Now.AddHours(1),
             isReprovisioningOf: reprovisioningOf);

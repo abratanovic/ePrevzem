@@ -236,6 +236,14 @@ public sealed class TestTokenService : ITokenService
             new DateTimeOffset(2026, 5, 18, 11, 0, 0, TimeSpan.Zero));
     }
 
+    public AccessTokenResult IssueAccessToken(OrganizationAdminAccount admin)
+    {
+        _accessTokenCounter++;
+        return new AccessTokenResult(
+            $"access_token_{_accessTokenCounter}",
+            new DateTimeOffset(2026, 5, 18, 11, 0, 0, TimeSpan.Zero));
+    }
+
     public RefreshTokenResult IssueRefreshToken(DateTimeOffset now)
     {
         _refreshTokenCounter++;

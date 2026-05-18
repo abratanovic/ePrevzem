@@ -6,19 +6,20 @@ public sealed class PickupStation : AggregateRoot<PickupStationId>
 {
     private readonly List<Locker> _lockers = new();
 
-    public Location Location { get; private set; } = default!;
+    public string SerialNumber { get; private set; } = default!;
     public DateTimeOffset CreatedAt { get; private set; }
     public IReadOnlyCollection<Locker> Lockers => _lockers.AsReadOnly();
 
     private PickupStation() { }
 
-    public static PickupStation Create(PickupStationId id, Location location, DateTimeOffset now)
+    public static PickupStation Create(PickupStationId id, string serialNumber, DateTimeOffset now)
     {
-        ArgumentNullException.ThrowIfNull(location);
+        if (string.IsNullOrWhiteSpace(serialNumber))
+            throw new ArgumentException("Serial number is required.", nameof(serialNumber));
         return new PickupStation
         {
             Id = id,
-            Location = location,
+            SerialNumber = serialNumber,
             CreatedAt = now
         };
     }

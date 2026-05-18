@@ -55,21 +55,11 @@ public class EmployeeAccountTests
     }
 
     [Fact]
-    public void OrganizationAdmin_implies_record_and_operator_permissions()
-    {
-        var acc = Account(new[] { EmployeeAccountRole.OrganizationAdmin });
-        acc.CanManageRecords.Should().BeTrue();
-        acc.CanOperateLockers.Should().BeTrue();
-        acc.CanManageOrgAndEmployees.Should().BeTrue();
-    }
-
-    [Fact]
     public void RecordManager_only_grants_record_permissions()
     {
         var acc = Account(new[] { EmployeeAccountRole.RecordManager });
         acc.CanManageRecords.Should().BeTrue();
         acc.CanOperateLockers.Should().BeFalse();
-        acc.CanManageOrgAndEmployees.Should().BeFalse();
     }
 
     [Fact]
@@ -78,7 +68,6 @@ public class EmployeeAccountTests
         var acc = Account(new[] { EmployeeAccountRole.Operator });
         acc.CanManageRecords.Should().BeFalse();
         acc.CanOperateLockers.Should().BeTrue();
-        acc.CanManageOrgAndEmployees.Should().BeFalse();
     }
 
     [Fact]

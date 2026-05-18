@@ -77,7 +77,7 @@ public sealed class LoginAdminCommandHandler : IRequestHandler<LoginAdminCommand
         var accessResult = _tokenService.IssueAccessToken(admin);
         var refreshResult = _tokenService.IssueRefreshToken(now);
 
-        var refreshToken = RefreshToken.Issue(
+        var refreshToken = RefreshToken.IssueForSystemAdmin(
             RefreshTokenId.New(),
             admin.Id,
             refreshResult.Hash,
