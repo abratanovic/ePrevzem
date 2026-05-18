@@ -1,5 +1,6 @@
 using ePrevzem.Application.Common.Abstractions;
 using ePrevzem.Application.Identity.IssueProvisioningCode;
+using ePrevzem.Application.Identity.PeekProvisioningCode;
 using ePrevzem.Domain.Identity;
 using FluentValidation;
 using MediatR;
@@ -61,10 +62,38 @@ public sealed class OrgProvisioningController : ControllerBase
     [ProducesResponseType<PeekProvisioningCodeResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status410Gone)]
-    public Task<IActionResult> Peek([FromRoute] string code, CancellationToken cancellationToken)
+    public async Task<IActionResult> Peek([FromRoute] string code, CancellationToken cancellationToken)
     {
-        // TODO: implement PeekProvisioningCodeQuery handler
-        return Task.FromResult<IActionResult>(StatusCode(StatusCodes.Status501NotImplemented));
+        try
+        {
+            var result = await _mediator.Send(new PeekProvisioningCodeQuery(code), cancellationToken);
+            return Ok(new PeekProvisioningCodeResponse(
+                result.FirstName,
+                result.LastName,
+                result.Email,
+                result.Roles,
+                result.OrganizationId,
+                result.OrganizationName,
+                result.ExpiresAt));
+        }
+        catch (ProvisioningCodeNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (ProvisioningCodeExpiredException)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status410Gone,
+                title: "Code expired",
+                detail: "Koda za zagotavljanje je potekla.");
+        }
+        catch (ProvisioningCodeAlreadyRedeemedException)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status410Gone,
+                title: "Code already redeemed",
+                detail: "Koda za zagotavljanje je bila že unovčena.");
+        }
     }
 
     [AllowAnonymous]
