@@ -19,9 +19,13 @@ public sealed class AdminOrganizationsController : ControllerBase
         _mediator = mediator;
     }
 
+    private const string DuplicateTaxNumberType = "urn:eprevzem:organizations:duplicate-tax-number";
+    private const string DuplicateRegistrationNumberType = "urn:eprevzem:organizations:duplicate-registration-number";
+
     [HttpPost]
     [ProducesResponseType<OrganizationResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Create([FromBody] CreateOrganizationRequest request, CancellationToken cancellationToken)
     {
         try
@@ -39,6 +43,22 @@ public sealed class AdminOrganizationsController : ControllerBase
         catch (ValidationException ex)
         {
             return ValidationProblem(CreateValidationProblemDetails(ex));
+        }
+        catch (DuplicateTaxNumberException)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Duplicate tax number",
+                type: DuplicateTaxNumberType,
+                detail: "Organizacija s to davčno številko že obstaja.");
+        }
+        catch (DuplicateRegistrationNumberException)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Duplicate registration number",
+                type: DuplicateRegistrationNumberType,
+                detail: "Organizacija s to matično številko že obstaja.");
         }
     }
 

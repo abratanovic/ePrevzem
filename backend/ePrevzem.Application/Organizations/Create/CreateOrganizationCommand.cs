@@ -31,6 +31,12 @@ public sealed class CreateOrganizationCommandHandler : IRequestHandler<CreateOrg
     {
         var now = _clock.UtcNow;
 
+        if (await _organizationRepository.ExistsByTaxNumberAsync(command.TaxNumber, cancellationToken))
+            throw new DuplicateTaxNumberException(command.TaxNumber);
+
+        if (await _organizationRepository.ExistsByRegistrationNumberAsync(command.RegistrationNumber, cancellationToken))
+            throw new DuplicateRegistrationNumberException(command.RegistrationNumber);
+
         var org = Organization.Create(
             OrganizationId.New(),
             command.Name,
@@ -51,3 +57,9 @@ public sealed class CreateOrganizationCommandHandler : IRequestHandler<CreateOrg
             org.CreatedAt);
     }
 }
+
+public sealed class DuplicateTaxNumberException(string taxNumber)
+    : Exception($"An organization with tax number '{taxNumber}' already exists.");
+
+public sealed class DuplicateRegistrationNumberException(string registrationNumber)
+    : Exception($"An organization with registration number '{registrationNumber}' already exists.");
