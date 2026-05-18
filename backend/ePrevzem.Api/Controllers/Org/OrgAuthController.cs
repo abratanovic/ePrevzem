@@ -1,6 +1,8 @@
 using ePrevzem.Application.Identity.Dtos;
 using ePrevzem.Application.Identity.Login;
 using ePrevzem.Application.Identity.LoginOrgAdmin;
+using ePrevzem.Application.Identity.Refresh;
+using ePrevzem.Application.Identity.RefreshOrgAdminToken;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +14,7 @@ namespace ePrevzem.Api.Controllers.Org;
 public sealed class OrgAuthController : ControllerBase
 {
     private const string InvalidCredentialsType = "urn:eprevzem:identity:invalid-credentials";
+    private const string InvalidRefreshTokenType = "urn:eprevzem:identity:invalid-refresh-token";
 
     private readonly IMediator _mediator;
 
@@ -49,6 +52,35 @@ public sealed class OrgAuthController : ControllerBase
         }
     }
 
+    [HttpPost("refresh")]
+    [ProducesResponseType<OrgAdminTokenResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Refresh(
+        [FromBody] RefreshOrgAdminTokenRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await _mediator.Send(
+                new RefreshOrganizationAdminTokenCommand(request.RefreshToken),
+                cancellationToken);
+            return Ok(response);
+        }
+        catch (ValidationException ex)
+        {
+            return ValidationProblem(CreateValidationProblemDetails(ex));
+        }
+        catch (InvalidRefreshTokenException)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status401Unauthorized,
+                title: "Invalid refresh token",
+                type: InvalidRefreshTokenType,
+                detail: "Osvežitveni žeton ni veljaven.");
+        }
+    }
+
     private static ValidationProblemDetails CreateValidationProblemDetails(ValidationException exception)
     {
         var errors = exception.Errors
@@ -61,3 +93,4 @@ public sealed class OrgAuthController : ControllerBase
 }
 
 public sealed record LoginOrgAdminRequest(string Email, string Password);
+public sealed record RefreshOrgAdminTokenRequest(string RefreshToken);
