@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ePrevzem.Infrastructure.Persistence;
 
-public class EPrevzemDbContext : DbContext, IEPrevzemDbContext
+public class EPrevzemDbContext : DbContext, IUnitOfWork
 {
     public DbSet<SystemAdmin> SystemAdmins { get; set; } = null!;
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
