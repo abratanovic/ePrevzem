@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using ePrevzem.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using ePrevzem.Infrastructure.Persistence;
 namespace ePrevzem.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(EPrevzemDbContext))]
-    partial class EPrevzemDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260518214807_Lockers_AddPickupStationLockerAndStationClaim")]
+    partial class Lockers_AddPickupStationLockerAndStationClaim
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

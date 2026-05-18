@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using ePrevzem.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using ePrevzem.Infrastructure.Persistence;
 namespace ePrevzem.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(EPrevzemDbContext))]
-    partial class EPrevzemDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260518214318_RefactorProvisioningCodePersonalInfo")]
+    partial class RefactorProvisioningCodePersonalInfo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -119,6 +122,11 @@ namespace ePrevzem.Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("roles");
 
+                    b.Property<string>("StationAccess")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("station_access");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
@@ -207,82 +215,6 @@ namespace ePrevzem.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("system_admins", (string)null);
-                });
-
-            modelBuilder.Entity("ePrevzem.Domain.Lockers.Locker", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("IsServiceable")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_serviceable");
-
-                    b.Property<int>("LockerNumber")
-                        .HasColumnType("integer")
-                        .HasColumnName("locker_number");
-
-                    b.Property<Guid>("PickupStationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("pickup_station_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PickupStationId");
-
-                    b.ToTable("lockers", (string)null);
-                });
-
-            modelBuilder.Entity("ePrevzem.Domain.Lockers.PickupStation", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("SerialNumber")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("serial_number");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SerialNumber")
-                        .IsUnique();
-
-                    b.ToTable("pickup_stations", (string)null);
-                });
-
-            modelBuilder.Entity("ePrevzem.Domain.Lockers.StationClaim", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("ClaimedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("claimed_at");
-
-                    b.Property<Guid>("OrganizationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("organization_id");
-
-                    b.Property<Guid>("PickupStationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("pickup_station_id");
-
-                    b.Property<DateTimeOffset?>("ReleasedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("released_at");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PickupStationId")
-                        .IsUnique()
-                        .HasFilter("released_at IS NULL");
-
-                    b.ToTable("station_claims", (string)null);
                 });
 
             modelBuilder.Entity("ePrevzem.Domain.Organizations.Organization", b =>
@@ -374,67 +306,6 @@ namespace ePrevzem.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("SystemAdminId")
                         .OnDelete(DeleteBehavior.Cascade);
-                });
-
-            modelBuilder.Entity("ePrevzem.Domain.Lockers.Locker", b =>
-                {
-                    b.HasOne("ePrevzem.Domain.Lockers.PickupStation", null)
-                        .WithMany("Lockers")
-                        .HasForeignKey("PickupStationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("ePrevzem.Domain.Lockers.StationClaim", b =>
-                {
-                    b.OwnsOne("ePrevzem.Domain.Lockers.Location", "Location", b1 =>
-                        {
-                            b1.Property<Guid>("StationClaimId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<string>("Address")
-                                .IsRequired()
-                                .HasColumnType("text")
-                                .HasColumnName("location_address");
-
-                            b1.Property<string>("City")
-                                .IsRequired()
-                                .HasColumnType("text")
-                                .HasColumnName("location_city");
-
-                            b1.Property<string>("HouseNumber")
-                                .IsRequired()
-                                .HasColumnType("text")
-                                .HasColumnName("location_house_number");
-
-                            b1.Property<decimal>("Latitude")
-                                .HasColumnType("numeric(9,6)")
-                                .HasColumnName("location_latitude");
-
-                            b1.Property<decimal>("Longitude")
-                                .HasColumnType("numeric(9,6)")
-                                .HasColumnName("location_longitude");
-
-                            b1.Property<string>("ZipCode")
-                                .IsRequired()
-                                .HasColumnType("text")
-                                .HasColumnName("location_zip_code");
-
-                            b1.HasKey("StationClaimId");
-
-                            b1.ToTable("station_claims");
-
-                            b1.WithOwner()
-                                .HasForeignKey("StationClaimId");
-                        });
-
-                    b.Navigation("Location")
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("ePrevzem.Domain.Lockers.PickupStation", b =>
-                {
-                    b.Navigation("Lockers");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,5 +1,6 @@
 using ePrevzem.Application.Common.Abstractions;
 using ePrevzem.Domain.Identity;
+using ePrevzem.Domain.Lockers;
 using ePrevzem.Domain.Organizations;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +13,9 @@ public class EPrevzemDbContext : DbContext, IUnitOfWork
     public DbSet<Organization> Organizations { get; set; } = null!;
     public DbSet<OrganizationAdminAccount> OrganizationAdminAccounts { get; set; } = null!;
     public DbSet<ProvisioningCode> ProvisioningCodes { get; set; } = null!;
+    public DbSet<PickupStation> PickupStations { get; set; } = null!;
+    public DbSet<Locker> Lockers { get; set; } = null!;
+    public DbSet<StationClaim> StationClaims { get; set; } = null!;
 
     public EPrevzemDbContext(DbContextOptions<EPrevzemDbContext> options) : base(options)
     {
