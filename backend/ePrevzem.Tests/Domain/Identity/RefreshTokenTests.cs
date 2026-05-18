@@ -163,4 +163,36 @@ public class RefreshTokenTests
 
         isActive.Should().BeFalse();
     }
+
+    [Fact]
+    public void Rotate_after_revoke_throws()
+    {
+        var token = RefreshToken.Issue(
+            RefreshTokenId.New(),
+            SystemAdminId.New(),
+            "hash",
+            Now.AddDays(14),
+            Now);
+
+        token.Revoke(Now.AddHours(1));
+
+        var act = () => token.Rotate(RefreshTokenId.New(), Now.AddHours(2));
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void Rotate_before_CreatedAt_throws()
+    {
+        var token = RefreshToken.Issue(
+            RefreshTokenId.New(),
+            SystemAdminId.New(),
+            "hash",
+            Now.AddDays(14),
+            Now);
+
+        var act = () => token.Rotate(RefreshTokenId.New(), Now.AddSeconds(-1));
+
+        act.Should().Throw<ArgumentException>();
+    }
 }
