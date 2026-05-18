@@ -10,6 +10,7 @@ public class EPrevzemDbContext : DbContext, IUnitOfWork
     public DbSet<SystemAdmin> SystemAdmins { get; set; } = null!;
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
     public DbSet<Organization> Organizations { get; set; } = null!;
+    public DbSet<OrganizationAdminAccount> OrganizationAdminAccounts { get; set; } = null!;
 
     public EPrevzemDbContext(DbContextOptions<EPrevzemDbContext> options) : base(options)
     {

@@ -28,6 +28,7 @@ public static class DependencyInjection
         services.AddScoped<ISystemAdminRepository, SystemAdminRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IOrganizationRepository, OrganizationRepository>();
+        services.AddScoped<IOrganizationAdminAccountRepository, OrganizationAdminAccountRepository>();
 
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IPasswordHasher, PasswordHasherAdapter>();
