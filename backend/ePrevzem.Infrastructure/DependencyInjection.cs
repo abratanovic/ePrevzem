@@ -32,6 +32,7 @@ public static class DependencyInjection
         services.AddScoped<IOrganizationAdminAccountRepository, OrganizationAdminAccountRepository>();
         services.AddScoped<IProvisioningCodeRepository, ProvisioningCodeRepository>();
         services.AddScoped<IPickupStationRepository, PickupStationRepository>();
+        services.AddScoped<IStationClaimRepository, StationClaimRepository>();
 
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IPasswordHasher, PasswordHasherAdapter>();
