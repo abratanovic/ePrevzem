@@ -54,7 +54,7 @@ public class RefreshTokenTests
     }
 
     [Fact]
-    public void Revoke_sets_RevokedAt_and_raises_event()
+    public void Revoke_sets_RevokedAt()
     {
         var token = RefreshToken.Issue(
             RefreshTokenId.New(),
@@ -67,11 +67,7 @@ public class RefreshTokenTests
         token.Revoke(revokedAt);
 
         token.RevokedAt.Should().Be(revokedAt);
-        token.DomainEvents.OfType<RefreshTokenChainRevoked>().Should().ContainSingle()
-            .Which.Should().Match<RefreshTokenChainRevoked>(e =>
-                e.SystemAdminId == token.SystemAdminId &&
-                e.TriggerTokenId == token.Id &&
-                e.OccurredOn == revokedAt);
+        token.DomainEvents.OfType<RefreshTokenChainRevoked>().Should().BeEmpty();
     }
 
     [Fact]

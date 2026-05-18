@@ -58,7 +58,6 @@ public sealed class RefreshToken : AggregateRoot<RefreshTokenId>
             throw new ArgumentException("Revoked-at must be on or after created-at.", nameof(revokedAt));
 
         RevokedAt = revokedAt;
-        Raise(new RefreshTokenChainRevoked(SystemAdminId, Id, revokedAt));
     }
 
     public bool IsActive(DateTimeOffset now) => RevokedAt is null && now < ExpiresAt;
