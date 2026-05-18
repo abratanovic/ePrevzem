@@ -4,27 +4,48 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository shape
 
-`ePrevzem` is a multi-tenant "secure document pickup from smart lockers" prototype. The repo is a **polyglot monorepo** with three independent subprojects, each with its own toolchain. There is no top-level build that ties them together — `ePrevzem.sln` only wires the `sitrust-mock` .NET projects.
+`ePrevzem` is a multi-tenant "secure document pickup from smart lockers" platform. The repo is a **polyglot monorepo** with several independent subprojects, each with its own toolchain. There is no top-level build that ties them all together — `ePrevzem.sln` only wires the `backend/` projects.
 
 ```
 ePrevzem/
+├── backend/             # ASP.NET Core 9 modular monolith — the real production backend
+│   ├── ePrevzem.Api             # thin controllers, DI, auth, OpenAPI
+│   ├── ePrevzem.Application     # MediatR use cases, DTOs, validators, ports
+│   ├── ePrevzem.Domain          # aggregates, value objects, domain events (zero deps)
+│   ├── ePrevzem.Infrastructure  # EF Core (Npgsql), adapters, SystemClock
+│   └── ePrevzem.Tests           # xUnit + Testcontainers Postgres + WebApplicationFactory
 ├── ePrevzemMobile/      # Kotlin Multiplatform / Compose Multiplatform client (Android + iOS)
 └── sitrust-mock/        # SI-TRUST / eOsebna identity simulator (separate solution)
     ├── backend/         # ASP.NET Core 9 Web API (SiTrustMock + SiTrustMock.Tests)
-    ├── frontend/        # React 19 + Vite 8 + Tailwind 4 web portal (SI-PASS login mock)
-    └── eosebna_mobile/  # Flutter app that simulates the "eOsebna" NFC/biometric ID flow
+    ├── frontend/        # React 19 + Vite 8 + Tailwind 4 SI-PASS web login mock
+    └── eosebna_mobile/  # Flutter app simulating the eOsebna NFC/biometric ID flow
 ```
 
-The user-facing pickup client is `ePrevzemMobile` (Kotlin Multiplatform). The `sitrust-mock` subtree exists to **mock the Slovenian state identity infrastructure** (SI-TRUST / SI-PASS and eOsebna) that the real system would integrate with — its three pieces (API + web SI-PASS login + Flutter eOsebna app) cooperate to play out the identification flow against the mobile client.
-
-Each subproject has its own README; `ePrevzemMobile/CLAUDE.md` and `ePrevzemMobile/AGENTS.md` carry the detailed design-system rules for that client and **must be followed when touching `ePrevzemMobile/`**. Treat the root README as the product overview (Slovenian).
+The user-facing pickup client is `ePrevzemMobile`. The **real backend** is `backend/` (Clean Architecture). The `sitrust-mock` subtree is a **separate solution** that simulates Slovenian state identity infrastructure (SI-TRUST / SI-PASS and eOsebna) so the mobile client can play out the identification flow end-to-end — it is not part of the production system.
 
 **Per-subproject agent guides — read before editing:**
 
-- `backend/` → `backend/AGENTS.md` (also mirrored as `backend/CLAUDE.md` / `backend/GEMINI.md`). Backend architecture, layering rules, and conventions.
+- `backend/` → `backend/AGENTS.md` (mirrored as `backend/CLAUDE.md` / `backend/GEMINI.md`). Authoritative for backend architecture, layering rules, and conventions.
 - `ePrevzemMobile/` → `ePrevzemMobile/CLAUDE.md` / `ePrevzemMobile/AGENTS.md`. Compose Multiplatform design-system rules.
 
 ## Working per subproject
+
+### `backend/` — ASP.NET Core 9 modular monolith (Clean Architecture)
+
+`net9.0`, EF Core 9 + Npgsql (PostgreSQL), MediatR, FluentValidation, Serilog, JWT bearer auth. Strict one-way dependency flow: `Api → Application → Domain` and `Infrastructure → Application, Domain`. Feature modules (`Organizations / Pickups / Lockers / Delegations / Identity / Audit / Notifications`) mirror their folder layout across `Domain/` and `Application/`. Cross-module communication happens through domain events, never direct entity references. See `backend/AGENTS.md` for the full ruleset — the dependency rule, thin-controller rule, multi-tenancy via `ITenantContext` global filters, append-only audit log, and aggregate-encapsulated state transitions are non-negotiable.
+
+```
+# from repo root
+dotnet build ePrevzem.sln
+dotnet run --project backend/ePrevzem.Api
+dotnet test backend/ePrevzem.Tests
+dotnet test backend/ePrevzem.Tests --filter "FullyQualifiedName~Pickups"
+
+# EF migrations
+dotnet ef migrations add <Name> --project backend/ePrevzem.Infrastructure --startup-project backend/ePrevzem.Api
+```
+
+Integration tests use Testcontainers Postgres + `WebApplicationFactory` — **never mock the DB**.
 
 ### `ePrevzemMobile/` — Kotlin Multiplatform (Compose)
 
@@ -43,7 +64,7 @@ On Windows shells use `gradlew.bat`. See `ePrevzemMobile/CLAUDE.md` for the desi
 
 ### `sitrust-mock/backend/` — ASP.NET Core 9 mock identity API
 
-`net9.0`, minimal-hosting `Program.cs`, controllers in `Controllers/`, business logic in `Services/`, in-memory `Stores/`. Issues JWTs using `JwtSettings:Secret` from configuration (required — `Program.cs` throws if missing). Generates SI-PASS QR codes via `QRCoder` and exposes `/health`.
+`net9.0`, minimal-hosting `Program.cs`, controllers in `Controllers/`, business logic in `Services/`, in-memory `Stores/`. Issues JWTs using `JwtSettings:Secret` from configuration (required — `Program.cs` throws if missing). Generates SI-PASS QR codes via `QRCoder` and exposes `/health`. This is a separate solution (`sitrust-mock/sitrust-mock.sln`) — not part of `ePrevzem.sln`.
 
 ```
 # from sitrust-mock/
@@ -53,9 +74,7 @@ dotnet test backend/SiTrustMock.Tests
 dotnet test backend/SiTrustMock.Tests --filter "FullyQualifiedName~AuthAttemptStoreTests"
 ```
 
-The `http` launch profile binds `applicationUrl` to a specific LAN IP (`172.20.10.9:5070`) so the Flutter `eosebna_mobile` device can reach it. If running locally without that network, switch profile to `https` or override `ASPNETCORE_URLS`. The `https` profile uses `https://localhost:7282;http://localhost:5070`.
-
-CORS is `AllowAnyOrigin/Header/Method` because the React and Flutter clients hit it from different origins. The auth store is a `Singleton` in-memory store — state resets on restart.
+The `http` launch profile binds `applicationUrl` to a specific LAN IP (`172.20.10.9:5070`) so the Flutter `eosebna_mobile` device can reach it. If running locally without that network, switch profile to `https` or override `ASPNETCORE_URLS`. The `https` profile uses `https://localhost:7282;http://localhost:5070`. CORS is `AllowAnyOrigin/Header/Method` because the React and Flutter clients hit it from different origins. The auth store is a `Singleton` in-memory store — state resets on restart.
 
 ### `sitrust-mock/frontend/` — React 19 + Vite 8 + Tailwind 4
 
@@ -89,7 +108,12 @@ The app expects the SiTrustMock backend reachable at the LAN URL configured in `
 
 ## Cross-project conventions
 
-- **Languages:** UI copy is **Slovenian** (`ePrevzemMobile`, parts of the mocks). Code, identifiers, comments, commit messages, and docs are **English**.
+- **Languages:** UI copy is **Slovenian** (`ePrevzemMobile`, parts of the mocks, user-facing backend error messages). Code, identifiers, comments, commit messages, and docs are **English**.
 - **No real PII or identity credentials.** The "SI-TRUST" and "eOsebna" flows are simulated — never wire them to real state services from this repo.
 - **Subprojects are independently buildable.** Don't introduce a top-level Gradle/npm orchestrator without a strong reason; each toolchain owns its own lifecycle.
-- The .NET solution at the repo root (`ePrevzem.sln`) only contains the `sitrust-mock` backend + tests. The mobile and frontend apps are intentionally outside it.
+- The .NET solution at the repo root (`ePrevzem.sln`) contains **only** the `backend/` Clean Architecture projects. The mobile, React frontend, Flutter mock, and `sitrust-mock` backend are intentionally outside it.
+
+## GIT Conventions
+- short git messages
+- never include "Co-authored by <AI AGENT NAME>" messages in git commits
+- never mention any AI agents in commits
