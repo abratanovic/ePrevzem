@@ -1,8 +1,11 @@
+using ePrevzem.Application.Common.Abstractions;
+using ePrevzem.Application.Identity.ChangeOrgAdminPassword;
 using ePrevzem.Application.Identity.Dtos;
 using ePrevzem.Application.Identity.Login;
 using ePrevzem.Application.Identity.LoginOrgAdmin;
 using ePrevzem.Application.Identity.Refresh;
 using ePrevzem.Application.Identity.RefreshOrgAdminToken;
+using Microsoft.AspNetCore.Authorization;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -15,12 +18,16 @@ public sealed class OrgAuthController : ControllerBase
 {
     private const string InvalidCredentialsType = "urn:eprevzem:identity:invalid-credentials";
     private const string InvalidRefreshTokenType = "urn:eprevzem:identity:invalid-refresh-token";
+    private const string WrongPasswordType = "urn:eprevzem:identity:wrong-current-password";
+
+    private readonly ICurrentUser _currentUser;
 
     private readonly IMediator _mediator;
 
-    public OrgAuthController(IMediator mediator)
+    public OrgAuthController(IMediator mediator, ICurrentUser currentUser)
     {
         _mediator = mediator;
+        _currentUser = currentUser;
     }
 
     [HttpPost("login")]
@@ -81,6 +88,38 @@ public sealed class OrgAuthController : ControllerBase
         }
     }
 
+    [Authorize]
+    [HttpPost("change-password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ChangePassword(
+        [FromBody] ChangeOrgAdminPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        var accountId = _currentUser.UserId
+            ?? throw new InvalidOperationException("User not authenticated.");
+
+        try
+        {
+            await _mediator.Send(
+                new ChangeOrganizationAdminPasswordCommand(accountId, request.CurrentPassword, request.NewPassword),
+                cancellationToken);
+            return NoContent();
+        }
+        catch (ValidationException ex)
+        {
+            return ValidationProblem(CreateValidationProblemDetails(ex));
+        }
+        catch (WrongCurrentPasswordException)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Wrong current password",
+                type: WrongPasswordType,
+                detail: "Trenutno geslo ni pravilno.");
+        }
+    }
+
     private static ValidationProblemDetails CreateValidationProblemDetails(ValidationException exception)
     {
         var errors = exception.Errors
@@ -94,3 +133,4 @@ public sealed class OrgAuthController : ControllerBase
 
 public sealed record LoginOrgAdminRequest(string Email, string Password);
 public sealed record RefreshOrgAdminTokenRequest(string RefreshToken);
+public sealed record ChangeOrgAdminPasswordRequest(string CurrentPassword, string NewPassword);
