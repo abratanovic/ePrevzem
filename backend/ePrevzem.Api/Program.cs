@@ -1,6 +1,7 @@
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using ePrevzem.Api.Authentication;
+using ePrevzem.Application.Common.Abstractions;
 using ePrevzem.Api.Configuration;
 using ePrevzem.Application;
 using ePrevzem.Application.Common.Abstractions;
@@ -61,7 +62,9 @@ try
     builder.Services.AddOpenApi();
     builder.Services.AddSwaggerGen();
     builder.Services.AddHttpContextAccessor();
-    builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
+    builder.Services.AddScoped<HttpCurrentUser>();
+    builder.Services.AddScoped<ICurrentUser>(sp => sp.GetRequiredService<HttpCurrentUser>());
+    builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<HttpCurrentUser>());
 
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);

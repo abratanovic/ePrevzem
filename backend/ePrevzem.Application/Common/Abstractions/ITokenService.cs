@@ -5,6 +5,7 @@ namespace ePrevzem.Application.Common.Abstractions;
 public interface ITokenService
 {
     AccessTokenResult IssueAccessToken(SystemAdmin admin);
+    AccessTokenResult IssueAccessToken(OrganizationAdminAccount admin);
     RefreshTokenResult IssueRefreshToken(DateTimeOffset now);
 }
 

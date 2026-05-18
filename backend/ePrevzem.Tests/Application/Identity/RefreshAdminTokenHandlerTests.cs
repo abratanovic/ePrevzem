@@ -34,7 +34,7 @@ public class RefreshAdminTokenHandlerTests
         systemAdminRepository.Add(admin);
 
         var refreshTokenRepository = new TestRefreshTokenRepository();
-        refreshTokenRepository.Items.Add(RefreshToken.Issue(
+        refreshTokenRepository.Items.Add(RefreshToken.IssueForSystemAdmin(
             RefreshTokenId.New(),
             admin.Id,
             ComputeTokenHash("expired"),
@@ -60,7 +60,7 @@ public class RefreshAdminTokenHandlerTests
         var systemAdminRepository = new TestSystemAdminRepository();
         systemAdminRepository.Add(admin);
 
-        var existingToken = RefreshToken.Issue(
+        var existingToken = RefreshToken.IssueForSystemAdmin(
             RefreshTokenId.New(),
             admin.Id,
             ComputeTokenHash("refresh-token-1"),
@@ -96,13 +96,13 @@ public class RefreshAdminTokenHandlerTests
         var systemAdminRepository = new TestSystemAdminRepository();
         systemAdminRepository.Add(admin);
 
-        var rootToken = RefreshToken.Issue(
+        var rootToken = RefreshToken.IssueForSystemAdmin(
             RefreshTokenId.New(),
             admin.Id,
             ComputeTokenHash("refresh-token-1"),
             Now.AddDays(14),
             Now);
-        var descendantToken = RefreshToken.Issue(
+        var descendantToken = RefreshToken.IssueForSystemAdmin(
             RefreshTokenId.New(),
             admin.Id,
             ComputeTokenHash("refresh-token-2"),

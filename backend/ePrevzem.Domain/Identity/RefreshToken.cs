@@ -5,7 +5,8 @@ namespace ePrevzem.Domain.Identity;
 
 public sealed class RefreshToken : AggregateRoot<RefreshTokenId>
 {
-    public SystemAdminId SystemAdminId { get; private set; }
+    public SystemAdminId? SystemAdminId { get; private set; }
+    public OrganizationAdminAccountId? OrganizationAdminAccountId { get; private set; }
     public string TokenHash { get; private set; } = default!;
     public DateTimeOffset ExpiresAt { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
@@ -14,19 +15,15 @@ public sealed class RefreshToken : AggregateRoot<RefreshTokenId>
 
     private RefreshToken() { }
 
-    public static RefreshToken Issue(
+    public static RefreshToken IssueForSystemAdmin(
         RefreshTokenId id,
         SystemAdminId systemAdminId,
         string tokenHash,
         DateTimeOffset expiresAt,
         DateTimeOffset now)
     {
-        if (string.IsNullOrWhiteSpace(tokenHash))
-            throw new ArgumentException("Token hash is required.", nameof(tokenHash));
-        if (expiresAt <= now)
-            throw new ArgumentException("Expiration time must be after now.", nameof(expiresAt));
-
-        var token = new RefreshToken
+        ValidateCommon(tokenHash, expiresAt, now);
+        return new RefreshToken
         {
             Id = id,
             SystemAdminId = systemAdminId,
@@ -34,8 +31,24 @@ public sealed class RefreshToken : AggregateRoot<RefreshTokenId>
             ExpiresAt = expiresAt,
             CreatedAt = now
         };
+    }
 
-        return token;
+    public static RefreshToken IssueForOrganizationAdmin(
+        RefreshTokenId id,
+        OrganizationAdminAccountId organizationAdminAccountId,
+        string tokenHash,
+        DateTimeOffset expiresAt,
+        DateTimeOffset now)
+    {
+        ValidateCommon(tokenHash, expiresAt, now);
+        return new RefreshToken
+        {
+            Id = id,
+            OrganizationAdminAccountId = organizationAdminAccountId,
+            TokenHash = tokenHash,
+            ExpiresAt = expiresAt,
+            CreatedAt = now
+        };
     }
 
     public void Rotate(RefreshTokenId replacementId, DateTimeOffset now)
@@ -47,7 +60,7 @@ public sealed class RefreshToken : AggregateRoot<RefreshTokenId>
 
         RevokedAt = now;
         ReplacedByTokenId = replacementId;
-        Raise(new RefreshTokenRotated(Id, replacementId, SystemAdminId, now));
+        Raise(new RefreshTokenRotated(Id, replacementId, SystemAdminId, OrganizationAdminAccountId, now));
     }
 
     public void Revoke(DateTimeOffset revokedAt)
@@ -65,8 +78,16 @@ public sealed class RefreshToken : AggregateRoot<RefreshTokenId>
         if (occurredAt < CreatedAt)
             throw new ArgumentException("Occurred-at must be on or after created-at.", nameof(occurredAt));
 
-        Raise(new RefreshTokenChainRevoked(SystemAdminId, Id, occurredAt));
+        Raise(new RefreshTokenChainRevoked(SystemAdminId, OrganizationAdminAccountId, Id, occurredAt));
     }
 
     public bool IsActive(DateTimeOffset now) => RevokedAt is null && now < ExpiresAt;
+
+    private static void ValidateCommon(string tokenHash, DateTimeOffset expiresAt, DateTimeOffset now)
+    {
+        if (string.IsNullOrWhiteSpace(tokenHash))
+            throw new ArgumentException("Token hash is required.", nameof(tokenHash));
+        if (expiresAt <= now)
+            throw new ArgumentException("Expiration time must be after now.", nameof(expiresAt));
+    }
 }

@@ -50,13 +50,16 @@ public sealed class RefreshAdminTokenCommandHandler : IRequestHandler<RefreshAdm
         if (!currentToken.IsActive(now))
             throw new InvalidRefreshTokenException("Invalid refresh token.");
 
-        var admin = await _systemAdminRepository.GetByIdAsync(currentToken.SystemAdminId, cancellationToken);
+        if (currentToken.SystemAdminId is null)
+            throw new InvalidRefreshTokenException("Invalid refresh token.");
+
+        var admin = await _systemAdminRepository.GetByIdAsync(currentToken.SystemAdminId.Value, cancellationToken);
         if (admin is null)
             throw new InvalidRefreshTokenException("Invalid refresh token.");
 
         var accessToken = _tokenService.IssueAccessToken(admin);
         var refreshToken = _tokenService.IssueRefreshToken(now);
-        var replacementToken = Domain.Identity.RefreshToken.Issue(
+        var replacementToken = Domain.Identity.RefreshToken.IssueForSystemAdmin(
             Domain.Identity.RefreshTokenId.New(),
             admin.Id,
             refreshToken.Hash,
