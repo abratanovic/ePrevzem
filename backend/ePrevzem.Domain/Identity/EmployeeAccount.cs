@@ -67,33 +67,38 @@ public sealed class EmployeeAccount : AggregateRoot<EmployeeAccountId>
         return acc;
     }
 
-    public void GrantRole(EmployeeAccountRole role)
+    public void GrantRole(EmployeeAccountRole role, DateTimeOffset now)
     {
         EnsureActive();
         if (_roles.Contains(role)) return;
         _roles.Add(role);
+        Raise(new EmployeeAccountRoleGranted(Id, role, now));
     }
 
-    public void RevokeRole(EmployeeAccountRole role)
+    public void RevokeRole(EmployeeAccountRole role, DateTimeOffset now)
     {
         EnsureActive();
         if (!_roles.Contains(role)) return;
         if (_roles.Count == 1)
             throw new InvalidOperationException("Cannot revoke the last role; an account must have at least one role.");
         _roles.Remove(role);
+        Raise(new EmployeeAccountRoleRevoked(Id, role, now));
     }
 
-    public void GrantStationAccess(PickupStationId stationId)
+    public void GrantStationAccess(PickupStationId stationId, DateTimeOffset now)
     {
         EnsureActive();
         if (_stationAccess.Contains(stationId)) return;
         _stationAccess.Add(stationId);
+        Raise(new EmployeeStationAccessGranted(Id, stationId, now));
     }
 
-    public void RevokeStationAccess(PickupStationId stationId)
+    public void RevokeStationAccess(PickupStationId stationId, DateTimeOffset now)
     {
         EnsureActive();
+        if (!_stationAccess.Contains(stationId)) return;
         _stationAccess.Remove(stationId);
+        Raise(new EmployeeStationAccessRevoked(Id, stationId, now));
     }
 
     public EmployeeDevice RegisterDevice(

@@ -85,24 +85,36 @@ public class EmployeeAccountTests
     public void GrantRole_adds_role_idempotently()
     {
         var acc = Account(new[] { EmployeeAccountRole.Operator });
-        acc.GrantRole(EmployeeAccountRole.RecordManager);
-        acc.GrantRole(EmployeeAccountRole.RecordManager);
+        acc.GrantRole(EmployeeAccountRole.RecordManager, Now.AddHours(1));
+        acc.GrantRole(EmployeeAccountRole.RecordManager, Now.AddHours(2));
         acc.Roles.Should().BeEquivalentTo(new[] { EmployeeAccountRole.Operator, EmployeeAccountRole.RecordManager });
+        acc.DomainEvents.OfType<EmployeeAccountRoleGranted>()
+            .Should().ContainSingle()
+            .Which.Should().Match<EmployeeAccountRoleGranted>(e =>
+                e.EmployeeAccountId == acc.Id &&
+                e.Role == EmployeeAccountRole.RecordManager &&
+                e.OccurredOn == Now.AddHours(1));
     }
 
     [Fact]
     public void RevokeRole_removes_role()
     {
         var acc = Account(new[] { EmployeeAccountRole.Operator, EmployeeAccountRole.RecordManager });
-        acc.RevokeRole(EmployeeAccountRole.RecordManager);
+        acc.RevokeRole(EmployeeAccountRole.RecordManager, Now.AddHours(1));
         acc.Roles.Should().BeEquivalentTo(new[] { EmployeeAccountRole.Operator });
+        acc.DomainEvents.OfType<EmployeeAccountRoleRevoked>()
+            .Should().ContainSingle()
+            .Which.Should().Match<EmployeeAccountRoleRevoked>(e =>
+                e.EmployeeAccountId == acc.Id &&
+                e.Role == EmployeeAccountRole.RecordManager &&
+                e.OccurredOn == Now.AddHours(1));
     }
 
     [Fact]
     public void RevokeRole_below_minimum_throws()
     {
         var acc = Account(new[] { EmployeeAccountRole.Operator });
-        var act = () => acc.RevokeRole(EmployeeAccountRole.Operator);
+        var act = () => acc.RevokeRole(EmployeeAccountRole.Operator, Now.AddHours(1));
         act.Should().Throw<InvalidOperationException>().WithMessage("*at least one role*");
     }
 
@@ -111,9 +123,15 @@ public class EmployeeAccountTests
     {
         var acc = Account(new[] { EmployeeAccountRole.Operator });
         var s = PickupStationId.New();
-        acc.GrantStationAccess(s);
-        acc.GrantStationAccess(s);
+        acc.GrantStationAccess(s, Now.AddHours(1));
+        acc.GrantStationAccess(s, Now.AddHours(2));
         acc.StationAccess.Should().ContainSingle(x => x == s);
+        acc.DomainEvents.OfType<EmployeeStationAccessGranted>()
+            .Should().ContainSingle()
+            .Which.Should().Match<EmployeeStationAccessGranted>(e =>
+                e.EmployeeAccountId == acc.Id &&
+                e.PickupStationId == s &&
+                e.OccurredOn == Now.AddHours(1));
     }
 
     [Fact]
@@ -121,9 +139,15 @@ public class EmployeeAccountTests
     {
         var acc = Account(new[] { EmployeeAccountRole.Operator });
         var s = PickupStationId.New();
-        acc.GrantStationAccess(s);
-        acc.RevokeStationAccess(s);
+        acc.GrantStationAccess(s, Now.AddHours(1));
+        acc.RevokeStationAccess(s, Now.AddHours(2));
         acc.StationAccess.Should().BeEmpty();
+        acc.DomainEvents.OfType<EmployeeStationAccessRevoked>()
+            .Should().ContainSingle()
+            .Which.Should().Match<EmployeeStationAccessRevoked>(e =>
+                e.EmployeeAccountId == acc.Id &&
+                e.PickupStationId == s &&
+                e.OccurredOn == Now.AddHours(2));
     }
 
     [Fact]
@@ -199,10 +223,10 @@ public class EmployeeAccountTests
         var acc = Account(new[] { EmployeeAccountRole.Operator });
         acc.Disable(Now.AddDays(1));
 
-        var grantRole = () => acc.GrantRole(EmployeeAccountRole.RecordManager);
-        var revokeRole = () => acc.RevokeRole(EmployeeAccountRole.Operator);
-        var grantStation = () => acc.GrantStationAccess(PickupStationId.New());
-        var revokeStation = () => acc.RevokeStationAccess(PickupStationId.New());
+        var grantRole = () => acc.GrantRole(EmployeeAccountRole.RecordManager, Now.AddDays(2));
+        var revokeRole = () => acc.RevokeRole(EmployeeAccountRole.Operator, Now.AddDays(2));
+        var grantStation = () => acc.GrantStationAccess(PickupStationId.New(), Now.AddDays(2));
+        var revokeStation = () => acc.RevokeStationAccess(PickupStationId.New(), Now.AddDays(2));
         var registerDevice = () => acc.RegisterDevice(EmployeeDeviceId.New(), AnyKey, "fp", null, Now.AddDays(2));
 
         grantRole.Should().Throw<InvalidOperationException>();
