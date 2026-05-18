@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
 using ePrevzem.Application.Common.Abstractions;
 using ePrevzem.Domain.Identity;
-using ePrevzem.Domain.Lockers;
 using ePrevzem.Domain.Organizations;
 using MediatR;
 
@@ -14,7 +13,6 @@ public sealed record IssueProvisioningCodeCommand(
     string LastName,
     string? Email,
     IReadOnlyList<EmployeeAccountRole> Roles,
-    IReadOnlyList<Guid> StationAccessIds,
     int ExpiresInHours) : IRequest<IssueProvisioningCodeResponse>;
 
 public sealed record IssueProvisioningCodeResponse(string Code, DateTimeOffset ExpiresAt);
@@ -43,17 +41,14 @@ public sealed class IssueProvisioningCodeCommandHandler
         var now = _clock.UtcNow;
         var expiresAt = now.AddHours(command.ExpiresInHours);
         var code = GenerateCode();
-        var stationAccess = command.StationAccessIds.Select(id => new PickupStationId(id)).ToList();
+        var preFilledInfo = PersonalInfo.Create(command.FirstName, command.LastName, command.Email);
 
         var provisioningCode = ProvisioningCode.Issue(
             ProvisioningCodeId.New(),
             new OrganizationId(command.OrganizationId),
             code,
-            command.FirstName,
-            command.LastName,
-            command.Email,
+            preFilledInfo,
             command.Roles,
-            stationAccess,
             new OrganizationAdminAccountId(command.OrgAdminAccountId),
             now,
             expiresAt,

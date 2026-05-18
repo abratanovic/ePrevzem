@@ -45,7 +45,6 @@ public sealed class OrgProvisioningController : ControllerBase
                     request.LastName,
                     request.Email,
                     request.Roles.Select(Enum.Parse<EmployeeAccountRole>).ToList(),
-                    request.StationAccessIds,
                     request.ExpiresInHours),
                 cancellationToken);
 
@@ -121,7 +120,6 @@ public sealed record IssueProvisioningCodeRequest(
     string LastName,
     string? Email,
     IReadOnlyList<string> Roles,
-    IReadOnlyList<Guid> StationAccessIds,
     int ExpiresInHours);
 
 public sealed record PeekProvisioningCodeResponse(

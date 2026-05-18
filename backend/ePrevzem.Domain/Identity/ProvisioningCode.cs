@@ -1,6 +1,5 @@
 using ePrevzem.Domain.Common;
 using ePrevzem.Domain.Identity.Events;
-using ePrevzem.Domain.Lockers;
 using ePrevzem.Domain.Organizations;
 
 namespace ePrevzem.Domain.Identity;
@@ -8,15 +7,11 @@ namespace ePrevzem.Domain.Identity;
 public sealed class ProvisioningCode : AggregateRoot<ProvisioningCodeId>
 {
     private readonly List<EmployeeAccountRole> _roles = new();
-    private readonly List<PickupStationId> _stationAccess = new();
 
     public OrganizationId OrganizationId { get; private set; }
     public string Code { get; private set; } = default!;
-    public string PreFilledFirstName { get; private set; } = default!;
-    public string PreFilledLastName { get; private set; } = default!;
-    public string? PreFilledEmail { get; private set; }
+    public PersonalInfo PreFilledInfo { get; private set; } = default!;
     public IReadOnlyCollection<EmployeeAccountRole> Roles => _roles.AsReadOnly();
-    public IReadOnlyCollection<PickupStationId> StationAccess => _stationAccess.AsReadOnly();
     public OrganizationAdminAccountId CreatedByOrganizationAdminId { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset ExpiresAt { get; private set; }
@@ -30,11 +25,8 @@ public sealed class ProvisioningCode : AggregateRoot<ProvisioningCodeId>
         ProvisioningCodeId id,
         OrganizationId organizationId,
         string code,
-        string preFilledFirstName,
-        string preFilledLastName,
-        string? preFilledEmail,
+        PersonalInfo preFilledInfo,
         IReadOnlyCollection<EmployeeAccountRole> roles,
-        IReadOnlyCollection<PickupStationId> stationAccess,
         OrganizationAdminAccountId createdBy,
         DateTimeOffset now,
         DateTimeOffset expiresAt,
@@ -42,10 +34,6 @@ public sealed class ProvisioningCode : AggregateRoot<ProvisioningCodeId>
     {
         if (string.IsNullOrWhiteSpace(code))
             throw new ArgumentException("Code is required.", nameof(code));
-        if (string.IsNullOrWhiteSpace(preFilledFirstName))
-            throw new ArgumentException("First name is required.", nameof(preFilledFirstName));
-        if (string.IsNullOrWhiteSpace(preFilledLastName))
-            throw new ArgumentException("Last name is required.", nameof(preFilledLastName));
         if (roles is null || roles.Count == 0)
             throw new ArgumentException("At least one role must be granted.", nameof(roles));
         if (expiresAt <= now)
@@ -56,16 +44,13 @@ public sealed class ProvisioningCode : AggregateRoot<ProvisioningCodeId>
             Id = id,
             OrganizationId = organizationId,
             Code = code,
-            PreFilledFirstName = preFilledFirstName,
-            PreFilledLastName = preFilledLastName,
-            PreFilledEmail = preFilledEmail,
+            PreFilledInfo = preFilledInfo,
             CreatedByOrganizationAdminId = createdBy,
             CreatedAt = now,
             ExpiresAt = expiresAt,
             IsReprovisioningOfEmployeeAccountId = isReprovisioningOf
         };
         pc._roles.AddRange(roles.Distinct());
-        pc._stationAccess.AddRange(stationAccess?.Distinct() ?? Array.Empty<PickupStationId>());
         pc.Raise(new ProvisioningCodeIssued(id, now));
         return pc;
     }

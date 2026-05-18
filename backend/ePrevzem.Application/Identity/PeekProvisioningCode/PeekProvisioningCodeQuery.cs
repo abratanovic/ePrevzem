@@ -51,9 +51,9 @@ public sealed class PeekProvisioningCodeQueryHandler
         var org = await _organizationRepository.GetByIdAsync(code.OrganizationId, cancellationToken);
 
         return new PeekProvisioningCodeResult(
-            code.PreFilledFirstName,
-            code.PreFilledLastName,
-            code.PreFilledEmail,
+            code.PreFilledInfo.FirstName,
+            code.PreFilledInfo.LastName,
+            code.PreFilledInfo.Email,
             code.Roles.Select(r => r.ToString()).ToList(),
             code.OrganizationId.Value,
             org?.Name ?? string.Empty,

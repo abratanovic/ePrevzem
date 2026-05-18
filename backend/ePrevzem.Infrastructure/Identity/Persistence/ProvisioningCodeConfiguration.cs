@@ -1,6 +1,5 @@
 using System.Text.Json;
 using ePrevzem.Domain.Identity;
-using ePrevzem.Domain.Lockers;
 using ePrevzem.Domain.Organizations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -30,19 +29,20 @@ public sealed class ProvisioningCodeConfiguration : IEntityTypeConfiguration<Pro
 
         builder.HasIndex(x => x.Code).IsUnique();
 
-        builder.Property(x => x.PreFilledFirstName)
-            .HasColumnName("pre_filled_first_name")
-            .HasColumnType("text")
-            .IsRequired();
-
-        builder.Property(x => x.PreFilledLastName)
-            .HasColumnName("pre_filled_last_name")
-            .HasColumnType("text")
-            .IsRequired();
-
-        builder.Property(x => x.PreFilledEmail)
-            .HasColumnName("pre_filled_email")
-            .HasColumnType("text");
+        builder.OwnsOne(x => x.PreFilledInfo, info =>
+        {
+            info.Property(x => x.FirstName)
+                .HasColumnName("pre_filled_first_name")
+                .HasColumnType("text")
+                .IsRequired();
+            info.Property(x => x.LastName)
+                .HasColumnName("pre_filled_last_name")
+                .HasColumnType("text")
+                .IsRequired();
+            info.Property(x => x.Email)
+                .HasColumnName("pre_filled_email")
+                .HasColumnType("text");
+        });
 
         builder.Property(x => x.Roles)
             .HasColumnName("roles")
@@ -51,15 +51,6 @@ public sealed class ProvisioningCodeConfiguration : IEntityTypeConfiguration<Pro
                 v => JsonSerializer.Serialize(v.Select(r => r.ToString()).ToList(), (JsonSerializerOptions?)null),
                 v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null)!
                     .Select(Enum.Parse<EmployeeAccountRole>).ToList())
-            .IsRequired();
-
-        builder.Property(x => x.StationAccess)
-            .HasColumnName("station_access")
-            .HasColumnType("text")
-            .HasConversion(
-                v => JsonSerializer.Serialize(v.Select(s => s.Value).ToList(), (JsonSerializerOptions?)null),
-                v => JsonSerializer.Deserialize<List<Guid>>(v, (JsonSerializerOptions?)null)!
-                    .Select(g => new PickupStationId(g)).ToList())
             .IsRequired();
 
         builder.Property(x => x.CreatedByOrganizationAdminId)

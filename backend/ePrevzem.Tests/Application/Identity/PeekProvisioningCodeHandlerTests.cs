@@ -1,7 +1,6 @@
 using ePrevzem.Application.Common.Abstractions;
 using ePrevzem.Application.Identity.PeekProvisioningCode;
 using ePrevzem.Domain.Identity;
-using ePrevzem.Domain.Lockers;
 using ePrevzem.Domain.Organizations;
 using FluentAssertions;
 
@@ -48,11 +47,8 @@ public class PeekProvisioningCodeHandlerTests
             ProvisioningCodeId.New(),
             OrgId,
             Code,
-            "Ana",
-            "Kovač",
-            "ana@example.com",
+            PersonalInfo.Create("Ana", "Kovač", "ana@example.com"),
             new[] { EmployeeAccountRole.Operator },
-            Array.Empty<PickupStationId>(),
             OrganizationAdminAccountId.New(),
             issuedAt,
             expiresAt,

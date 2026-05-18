@@ -29,7 +29,6 @@ public class IssueProvisioningCodeHandlerTests
             "Kovač",
             "ana@example.com",
             roles ?? new[] { EmployeeAccountRole.Operator },
-            Array.Empty<Guid>(),
             24);
 
     [Fact]
@@ -77,9 +76,9 @@ public class IssueProvisioningCodeHandlerTests
         await handler.Handle(ValidCommand(roles: new[] { EmployeeAccountRole.RecordManager }), CancellationToken.None);
 
         repo.Items[0].Roles.Should().ContainSingle(r => r == EmployeeAccountRole.RecordManager);
-        repo.Items[0].PreFilledFirstName.Should().Be("Ana");
-        repo.Items[0].PreFilledLastName.Should().Be("Kovač");
-        repo.Items[0].PreFilledEmail.Should().Be("ana@example.com");
+        repo.Items[0].PreFilledInfo.FirstName.Should().Be("Ana");
+        repo.Items[0].PreFilledInfo.LastName.Should().Be("Kovač");
+        repo.Items[0].PreFilledInfo.Email.Should().Be("ana@example.com");
     }
 
     [Fact]
