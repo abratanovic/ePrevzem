@@ -1,5 +1,6 @@
 using ePrevzem.Application.Common.Abstractions;
 using ePrevzem.Infrastructure.Identity;
+using ePrevzem.Infrastructure.Lockers;
 using ePrevzem.Infrastructure.Organizations;
 using ePrevzem.Infrastructure.Persistence;
 using ePrevzem.Infrastructure.Time;
@@ -30,6 +31,7 @@ public static class DependencyInjection
         services.AddScoped<IOrganizationRepository, OrganizationRepository>();
         services.AddScoped<IOrganizationAdminAccountRepository, OrganizationAdminAccountRepository>();
         services.AddScoped<IProvisioningCodeRepository, ProvisioningCodeRepository>();
+        services.AddScoped<IPickupStationRepository, PickupStationRepository>();
 
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IPasswordHasher, PasswordHasherAdapter>();
