@@ -86,4 +86,18 @@ public sealed class Package : AggregateRoot<PackageId>
         FinalizedAt = now;
         Raise(new PackagePickedUpByCitizen(Id, placement.Id, pickedUpBy, now));
     }
+
+    public void RemoveByEmployee(EmployeeAccountId removedBy, DateTimeOffset now)
+    {
+        if (Status != PackageStatus.InLocker)
+            throw new InvalidOperationException($"Removal is only allowed from InLocker (current: {Status}).");
+
+        var placement = ActivePlacement
+            ?? throw new InvalidOperationException("No active placement to close.");
+        placement.CloseByEmployeeRemoval(removedBy, now);
+
+        Status = PackageStatus.AwaitingPlacement;
+        DeadlineAt = null;
+        Raise(new PackageRemovedByEmployee(Id, placement.Id, removedBy, now));
+    }
 }
