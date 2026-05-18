@@ -24,11 +24,8 @@ public sealed class EmployeeAccount : AggregateRoot<EmployeeAccountId>
     public IReadOnlyCollection<EmployeeDevice> Devices => _devices.AsReadOnly();
     public EmployeeDevice? ActiveDevice => _devices.SingleOrDefault(d => d.IsActive);
 
-    public bool CanManageOrgAndEmployees => _roles.Contains(EmployeeAccountRole.OrganizationAdmin);
-    public bool CanManageRecords =>
-        _roles.Contains(EmployeeAccountRole.OrganizationAdmin) || _roles.Contains(EmployeeAccountRole.RecordManager);
-    public bool CanOperateLockers =>
-        _roles.Contains(EmployeeAccountRole.OrganizationAdmin) || _roles.Contains(EmployeeAccountRole.Operator);
+    public bool CanManageRecords => _roles.Contains(EmployeeAccountRole.RecordManager);
+    public bool CanOperateLockers => _roles.Contains(EmployeeAccountRole.Operator);
 
     private EmployeeAccount() { }
 

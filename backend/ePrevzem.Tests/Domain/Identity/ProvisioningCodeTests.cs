@@ -17,7 +17,7 @@ public class ProvisioningCodeTests
         var orgId = OrganizationId.New();
         var stationIds = new[] { PickupStationId.New() };
         var roles = new[] { EmployeeAccountRole.Operator };
-        var creator = EmployeeAccountId.New();
+        var creator = OrganizationAdminAccountId.New();
 
         var code = ProvisioningCode.Issue(
             id,
@@ -41,7 +41,7 @@ public class ProvisioningCodeTests
         code.PreFilledEmail.Should().Be("ana@example.com");
         code.Roles.Should().BeEquivalentTo(roles);
         code.StationAccess.Should().BeEquivalentTo(stationIds);
-        code.CreatedByEmployeeAccountId.Should().Be(creator);
+        code.CreatedByOrganizationAdminId.Should().Be(creator);
         code.CreatedAt.Should().Be(Now);
         code.ExpiresAt.Should().Be(Now.AddHours(24));
         code.RedeemedAt.Should().BeNull();
@@ -56,7 +56,7 @@ public class ProvisioningCodeTests
         var act = () => ProvisioningCode.Issue(
             ProvisioningCodeId.New(), OrganizationId.New(), "C", "F", "L", null,
             Array.Empty<EmployeeAccountRole>(), Array.Empty<PickupStationId>(),
-            EmployeeAccountId.New(), Now, Now.AddHours(1), null);
+            OrganizationAdminAccountId.New(), Now, Now.AddHours(1), null);
         act.Should().Throw<ArgumentException>().WithParameterName("roles");
     }
 
@@ -66,7 +66,7 @@ public class ProvisioningCodeTests
         var act = () => ProvisioningCode.Issue(
             ProvisioningCodeId.New(), OrganizationId.New(), "C", "F", "L", null,
             new[] { EmployeeAccountRole.Operator }, Array.Empty<PickupStationId>(),
-            EmployeeAccountId.New(), Now, Now.AddMinutes(-1), null);
+            OrganizationAdminAccountId.New(), Now, Now.AddMinutes(-1), null);
         act.Should().Throw<ArgumentException>().WithParameterName("expiresAt");
     }
 
@@ -78,7 +78,7 @@ public class ProvisioningCodeTests
         var act = () => ProvisioningCode.Issue(
             ProvisioningCodeId.New(), OrganizationId.New(), code, "F", "L", null,
             new[] { EmployeeAccountRole.Operator }, Array.Empty<PickupStationId>(),
-            EmployeeAccountId.New(), Now, Now.AddHours(1), null);
+            OrganizationAdminAccountId.New(), Now, Now.AddHours(1), null);
         act.Should().Throw<ArgumentException>().WithParameterName("code");
     }
 
@@ -132,7 +132,7 @@ public class ProvisioningCodeTests
             preFilledEmail: null,
             roles: new[] { EmployeeAccountRole.Operator },
             stationAccess: Array.Empty<PickupStationId>(),
-            createdBy: EmployeeAccountId.New(),
+            createdBy: OrganizationAdminAccountId.New(),
             now: Now,
             expiresAt: Now.AddHours(1),
             isReprovisioningOf: reprovisioningOf);

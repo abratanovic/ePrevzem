@@ -17,7 +17,7 @@ public sealed class ProvisioningCode : AggregateRoot<ProvisioningCodeId>
     public string? PreFilledEmail { get; private set; }
     public IReadOnlyCollection<EmployeeAccountRole> Roles => _roles.AsReadOnly();
     public IReadOnlyCollection<PickupStationId> StationAccess => _stationAccess.AsReadOnly();
-    public EmployeeAccountId CreatedByEmployeeAccountId { get; private set; }
+    public OrganizationAdminAccountId CreatedByOrganizationAdminId { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset ExpiresAt { get; private set; }
     public DateTimeOffset? RedeemedAt { get; private set; }
@@ -35,7 +35,7 @@ public sealed class ProvisioningCode : AggregateRoot<ProvisioningCodeId>
         string? preFilledEmail,
         IReadOnlyCollection<EmployeeAccountRole> roles,
         IReadOnlyCollection<PickupStationId> stationAccess,
-        EmployeeAccountId createdBy,
+        OrganizationAdminAccountId createdBy,
         DateTimeOffset now,
         DateTimeOffset expiresAt,
         EmployeeAccountId? isReprovisioningOf)
@@ -59,7 +59,7 @@ public sealed class ProvisioningCode : AggregateRoot<ProvisioningCodeId>
             PreFilledFirstName = preFilledFirstName,
             PreFilledLastName = preFilledLastName,
             PreFilledEmail = preFilledEmail,
-            CreatedByEmployeeAccountId = createdBy,
+            CreatedByOrganizationAdminId = createdBy,
             CreatedAt = now,
             ExpiresAt = expiresAt,
             IsReprovisioningOfEmployeeAccountId = isReprovisioningOf
