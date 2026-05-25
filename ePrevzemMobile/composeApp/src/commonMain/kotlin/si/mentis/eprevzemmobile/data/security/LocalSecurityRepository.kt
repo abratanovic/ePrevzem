@@ -30,7 +30,18 @@ class LocalSecurityRepository(
         storage.writeString(KEY_PRIVATE_KEY_NONCE, encryptedPrivateKey.nonce.toBase64())
 
         if (biometricEnabled) {
-            storage.writeBiometricString(KEY_BIOMETRIC_AES_KEY, aesKey.toBase64())
+            val enrolled = runCatching {
+                val authenticated = biometricAuthenticator.authenticate(
+                    "Aktivirajte biometrično zaščito za ePrevzem"
+                )
+                if (authenticated) {
+                    storage.writeBiometricString(KEY_BIOMETRIC_AES_KEY, aesKey.toBase64())
+                }
+                authenticated
+            }.getOrElse { false }
+            if (!enrolled) {
+                storage.remove(KEY_BIOMETRIC_AES_KEY)
+            }
         } else {
             storage.remove(KEY_BIOMETRIC_AES_KEY)
         }
