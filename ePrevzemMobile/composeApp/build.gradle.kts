@@ -49,6 +49,9 @@ kotlin {
             implementation(libs.camerax.lifecycle)
             implementation(libs.camerax.view)
             implementation(libs.mlkit.barcode.scanning)
+            implementation(libs.androidx.biometric)
+            implementation(libs.androidx.fragment)
+            implementation(libs.androidx.security.crypto)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
