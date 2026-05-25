@@ -160,6 +160,7 @@ fun PickupDetailsRoute(
     initialUnlockedAt: String? = null,
     user: si.mentis.eprevzemmobile.domain.User? = null,
     repository: si.mentis.eprevzemmobile.data.pickups.PickupRepository = si.mentis.eprevzemmobile.AppContainer.pickupRepository,
+    delegationRepository: si.mentis.eprevzemmobile.data.delegation.DelegationRepository = si.mentis.eprevzemmobile.AppContainer.delegationRepository,
     modifier: Modifier = Modifier,
 ) {
     var state by remember(pickupId, initialUnlockedAt) {
@@ -182,6 +183,7 @@ fun PickupDetailsRoute(
                 details = details.copy(unlockedAt = initialUnlockedAt ?: details.unlockedAt),
             )
         }
+        state = state.copy(delegates = delegationRepository.getDelegations(pickupId))
     }
 
     LaunchedEffect(state.showBiometricSheet) {
@@ -359,6 +361,26 @@ private fun IdlePhase(
                 NumberedStep(number = 2, text = "Potrdite identiteto z biometrijo ali PIN-om.")
                 NumberedStep(number = 3, text = "Predalček se bo odprl za 30 sekund.")
                 NumberedStep(number = 4, text = "Vzemite vsebino in zaprite vratca.")
+            }
+
+            ESummaryCard(title = "Pooblaščenci", icon = EPrevzemIcons.profile()) {
+                if (state.delegates.isEmpty()) {
+                    Text(
+                        text = "Nobena oseba ni pooblaščena za ta prevzem.",
+                        style = typo.bodySmall,
+                        color = colors.textSecondary,
+                    )
+                } else {
+                    Column {
+                        state.delegates.forEachIndexed { index, record ->
+                            if (index > 0) EDivider()
+                            DetailRow(
+                                label = record.person.fullName,
+                                value = record.person.email,
+                            )
+                        }
+                    }
+                }
             }
 
             EPrimaryButton(
