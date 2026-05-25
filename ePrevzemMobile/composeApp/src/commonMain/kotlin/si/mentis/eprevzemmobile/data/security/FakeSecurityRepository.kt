@@ -17,4 +17,8 @@ class FakeSecurityRepository : SecurityRepository {
 
     override suspend fun signChallengeWithBiometric(challenge: ByteArray): Result<ByteArray> =
         Result.success("fake-biometric-signature:${challenge.toBase64()}".encodeToByteArray())
+
+    override suspend fun reset() {
+        registered = false
+    }
 }

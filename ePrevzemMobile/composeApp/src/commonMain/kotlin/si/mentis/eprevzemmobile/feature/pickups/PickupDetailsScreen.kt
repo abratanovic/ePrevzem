@@ -24,6 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import si.mentis.eprevzemmobile.core.designsystem.components.buttons.EPrimaryButton
 import si.mentis.eprevzemmobile.core.designsystem.components.buttons.ESecondaryButton
 import si.mentis.eprevzemmobile.core.designsystem.components.buttons.ETextButton
@@ -176,8 +178,10 @@ fun PickupDetailsRoute(
     user: si.mentis.eprevzemmobile.domain.User? = null,
     repository: si.mentis.eprevzemmobile.data.pickups.PickupRepository = si.mentis.eprevzemmobile.AppContainer.pickupRepository,
     delegationRepository: si.mentis.eprevzemmobile.data.delegation.DelegationRepository = si.mentis.eprevzemmobile.AppContainer.delegationRepository,
+    securityRepository: si.mentis.eprevzemmobile.data.security.SecurityRepository = si.mentis.eprevzemmobile.AppContainer.securityRepository,
     modifier: Modifier = Modifier,
 ) {
+    val scope = rememberCoroutineScope()
     var state by remember(pickupId, initialUnlockedAt) {
         val starting = if (initialUnlockedAt != null) {
             PickupDetailsState(
@@ -201,13 +205,36 @@ fun PickupDetailsRoute(
         state = state.copy(delegates = delegationRepository.getDelegations(pickupId))
     }
 
+    fun verifyBiometric() {
+        scope.launch {
+            securityRepository.signChallengeWithBiometric("verify".encodeToByteArray())
+                .onSuccess {
+                    state = state.copy(showBiometricSheet = false)
+                    onIdentityVerified(state.details)
+                }
+                .onFailure {
+                    state = state.copy(showBiometricSheet = false, showPinSheet = true)
+                }
+        }
+    }
+
+    fun verifyPin(pin: String) {
+        scope.launch {
+            securityRepository.signChallengeWithPin(pin, "verify".encodeToByteArray())
+                .onSuccess {
+                    state = state.copy(showPinSheet = false, pinValue = "")
+                    onIdentityVerified(state.details)
+                }
+                .onFailure {
+                    // Could show error here if needed, but for now just clear pin
+                    state = state.copy(pinValue = "")
+                }
+        }
+    }
+
     LaunchedEffect(state.showBiometricSheet) {
         if (state.showBiometricSheet) {
-            delay(2000)
-            if (state.showBiometricSheet) {
-                state = state.copy(showBiometricSheet = false)
-                onIdentityVerified(state.details)
-            }
+            verifyBiometric()
         }
     }
 
@@ -270,8 +297,7 @@ fun PickupDetailsRoute(
                     }
                     state = state.copy(pinValue = newPin)
                     if (newPin.length == 6) {
-                        state = state.copy(showPinSheet = false, pinValue = "")
-                        onIdentityVerified(state.details)
+                        verifyPin(newPin)
                     }
                 }
                 PickupDetailsEvent.PinBackspace -> {

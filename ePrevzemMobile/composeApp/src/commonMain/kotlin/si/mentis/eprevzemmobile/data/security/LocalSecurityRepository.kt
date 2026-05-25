@@ -12,11 +12,12 @@ class LocalSecurityRepository(
     private val biometricAuthenticator: BiometricAuthenticator = BiometricAuthenticator(),
 ) : SecurityRepository {
 
-    override suspend fun isRegistered(): Boolean =
+    override suspend fun isRegistered(): Boolean = runCatching {
         storage.readString(KEY_PUBLIC_KEY) != null &&
             storage.readString(KEY_PRIVATE_KEY_CIPHERTEXT) != null &&
             storage.readString(KEY_PRIVATE_KEY_NONCE) != null &&
             storage.readString(KEY_PIN_SALT) != null
+    }.getOrElse { false }
 
     override suspend fun register(pin: String, biometricEnabled: Boolean): Result<String> = runCatching {
         val keyPair = crypto.generateEcdsaKeyPair()
@@ -75,5 +76,9 @@ class LocalSecurityRepository(
         val nonce = storage.readString(KEY_PRIVATE_KEY_NONCE)?.fromBase64()
             ?: throw SecurityNotRegisteredException()
         return crypto.decryptAesGcm(aesKey, EncryptedPayload(ciphertext, nonce))
+    }
+
+    override suspend fun reset() {
+        storage.clearAll()
     }
 }

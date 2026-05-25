@@ -75,7 +75,7 @@ fun ConfirmAccountRoute(
                                 .onFailure {
                                     state = state.copy(
                                         isLoading = false,
-                                        error = "Varnostna nastavitev ni uspela. Poskusite znova.",
+                                        error = "Varnostna nastavitev ni uspela: ${it::class.simpleName}: ${it.message}",
                                     )
                                 }
                         }

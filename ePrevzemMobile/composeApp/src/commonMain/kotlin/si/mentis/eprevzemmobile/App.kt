@@ -1,21 +1,30 @@
 package si.mentis.eprevzemmobile
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import kotlin.time.TimeSource
+import kotlinx.coroutines.launch
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
 import si.mentis.eprevzemmobile.domain.User
 import si.mentis.eprevzemmobile.feature.delegation.DelegatePersonRoute
+import si.mentis.eprevzemmobile.feature.login.LoginRoute
 import si.mentis.eprevzemmobile.feature.onboarding.WelcomeRoute
 import si.mentis.eprevzemmobile.feature.pickups.ActivePickupsRoute
 import si.mentis.eprevzemmobile.feature.pickups.PickupConfirmedRoute
@@ -26,7 +35,9 @@ import si.mentis.eprevzemmobile.feature.registration.confirm.ConfirmAccountRoute
 import si.mentis.eprevzemmobile.feature.unlock.UnlockRoute
 
 private sealed interface AppDestination {
+    data object Loading : AppDestination
     data object Welcome : AppDestination
+    data object Login : AppDestination
     data object RegistrationCode : AppDestination
     data class ConfirmAccount(val validatedCode: String) : AppDestination
     data object ActivePickups : AppDestination
@@ -37,7 +48,9 @@ private sealed interface AppDestination {
 }
 
 private val AppDestination.depth: Int get() = when (this) {
+    AppDestination.Loading -> -1
     AppDestination.Welcome -> 0
+    AppDestination.Login -> 0
     AppDestination.RegistrationCode -> 1
     is AppDestination.ConfirmAccount -> 2
     AppDestination.ActivePickups -> 3
@@ -47,27 +60,76 @@ private val AppDestination.depth: Int get() = when (this) {
     AppDestination.PickupConfirmed -> 6
 }
 
+private const val BACKGROUND_LOCK_SECONDS = 120L
+
 @Composable
 @Preview
 fun App() {
     EPrevzemTheme {
-        var destination: AppDestination by remember { mutableStateOf(AppDestination.Welcome) }
+        var destination: AppDestination by remember { mutableStateOf(AppDestination.Loading) }
         var currentUser: User? by remember { mutableStateOf(null) }
         var confirmedDetails: PickupDetails? by remember { mutableStateOf(null) }
+        val scope = rememberCoroutineScope()
+        val lifecycleOwner = LocalLifecycleOwner.current
+        var backgroundedAt by remember { mutableStateOf<TimeSource.Monotonic.ValueTimeMark?>(null) }
+
+        LaunchedEffect(Unit) {
+            destination = if (AppContainer.securityRepository.isRegistered()) {
+                AppDestination.Login
+            } else {
+                AppDestination.Welcome
+            }
+        }
+
+        DisposableEffect(lifecycleOwner) {
+            val observer = LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_PAUSE -> backgroundedAt = TimeSource.Monotonic.markNow()
+                    Lifecycle.Event.ON_RESUME -> {
+                        val since = backgroundedAt
+                        backgroundedAt = null
+                        if (since != null && since.elapsedNow().inWholeSeconds > BACKGROUND_LOCK_SECONDS) {
+                            scope.launch {
+                                if (AppContainer.securityRepository.isRegistered()) {
+                                    destination = AppDestination.Login
+                                }
+                            }
+                        }
+                    }
+                    else -> {}
+                }
+            }
+            lifecycleOwner.lifecycle.addObserver(observer)
+            onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+        }
 
         AnimatedContent(
             targetState = destination,
             transitionSpec = {
-                val forward = targetState.depth >= initialState.depth
-                val enter = slideInHorizontally(tween(280)) { if (forward) it / 5 else -it / 5 } +
-                    fadeIn(tween(280))
-                val exit = slideOutHorizontally(tween(280)) { if (forward) -it / 5 else it / 5 } +
-                    fadeOut(tween(200))
-                enter togetherWith exit
+                if (initialState is AppDestination.Loading) {
+                    fadeIn(tween(200)) togetherWith fadeOut(tween(200))
+                } else {
+                    val forward = targetState.depth >= initialState.depth
+                    val enter = slideInHorizontally(tween(280)) { if (forward) it / 5 else -it / 5 } +
+                        fadeIn(tween(280))
+                    val exit = slideOutHorizontally(tween(280)) { if (forward) -it / 5 else it / 5 } +
+                        fadeOut(tween(200))
+                    enter togetherWith exit
+                }
             },
             label = "screen_transition",
         ) { dest ->
             when (dest) {
+                AppDestination.Loading -> Unit
+                AppDestination.Login -> LoginRoute(
+                    onAuthenticated = { user ->
+                        currentUser = user
+                        destination = AppDestination.ActivePickups
+                    },
+                    onResetSecureStorage = {
+                        destination = AppDestination.Welcome
+                    },
+                )
                 AppDestination.Welcome -> WelcomeRoute(
                     onRegisterDeviceClick = { destination = AppDestination.RegistrationCode },
                 )

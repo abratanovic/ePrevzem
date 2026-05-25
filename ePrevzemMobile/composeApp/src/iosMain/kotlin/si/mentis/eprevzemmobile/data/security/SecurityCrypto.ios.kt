@@ -2,13 +2,17 @@ package si.mentis.eprevzemmobile.data.security
 
 import kotlinx.cinterop.COpaquePointerVar
 import kotlinx.cinterop.CPointer
+import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.allocArray
 import kotlinx.cinterop.convert
 import kotlinx.cinterop.get
+import kotlinx.cinterop.interpretCPointer
+import kotlinx.cinterop.interpretObjCPointer
 import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.objcPtr
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.reinterpret
 import kotlinx.cinterop.ULongVar
@@ -67,29 +71,31 @@ actual class SecurityCrypto actual constructor() {
     actual fun generateEcdsaKeyPair(): EcdsaKeyPair = memScoped {
         val error = alloc<CFErrorRefVar>()
         val attributes = NSMutableDictionary().apply {
-            setObject(kSecAttrKeyTypeECSECPrimeRandom, forKey = kSecAttrKeyType as NSString)
-            setObject(256, forKey = kSecAttrKeySizeInBits as NSString)
+            setObject(kSecAttrKeyTypeECSECPrimeRandom.asNSString(), forKey = kSecAttrKeyType.asNSString())
+            setObject(256, forKey = kSecAttrKeySizeInBits.asNSString())
             setObject(
                 NSMutableDictionary().apply {
-                    setObject(false, forKey = kSecAttrIsPermanent as NSString)
+                    setObject(cfBoolean(false), forKey = kSecAttrIsPermanent.asNSString())
                 },
-                forKey = kSecPrivateKeyAttrs as NSString,
+                forKey = kSecPrivateKeyAttrs.asNSString(),
             )
             setObject(
                 NSMutableDictionary().apply {
-                    setObject(false, forKey = kSecAttrIsPermanent as NSString)
+                    setObject(cfBoolean(false), forKey = kSecAttrIsPermanent.asNSString())
                 },
-                forKey = kSecPublicKeyAttrs as NSString,
+                forKey = kSecPublicKeyAttrs.asNSString(),
             )
         }
         val privateKey = SecKeyCreateRandomKey(attributes.asCfDictionary(), error.ptr)
             ?: error("Unable to generate P-256 key pair")
 
-        val privateData = SecKeyCopyExternalRepresentation(privateKey, error.ptr) as NSData?
+        val privateData = SecKeyCopyExternalRepresentation(privateKey, error.ptr)
+            ?.let { interpretObjCPointer<NSData>(it.rawValue) }
             ?: error("Unable to export private key")
         val publicKey = platform.Security.SecKeyCopyPublicKey(privateKey)
             ?: error("Unable to export public key")
-        val publicData = SecKeyCopyExternalRepresentation(publicKey, error.ptr) as NSData?
+        val publicData = SecKeyCopyExternalRepresentation(publicKey, error.ptr)
+            ?.let { interpretObjCPointer<NSData>(it.rawValue) }
             ?: error("Unable to export public key bytes")
 
         val publicDer = p256SubjectPublicKeyInfo(publicData.toByteArray())
@@ -142,9 +148,9 @@ actual class SecurityCrypto actual constructor() {
     actual fun signEcdsa(privateKeyBytes: ByteArray, challenge: ByteArray): ByteArray = memScoped {
         val error = alloc<CFErrorRefVar>()
         val attributes = NSMutableDictionary().apply {
-            setObject(kSecAttrKeyTypeECSECPrimeRandom, forKey = kSecAttrKeyType as NSString)
-            setObject(kSecAttrKeyClassPrivate, forKey = kSecAttrKeyClass as NSString)
-            setObject(256, forKey = kSecAttrKeySizeInBits as NSString)
+            setObject(kSecAttrKeyTypeECSECPrimeRandom.asNSString(), forKey = kSecAttrKeyType.asNSString())
+            setObject(kSecAttrKeyClassPrivate.asNSString(), forKey = kSecAttrKeyClass.asNSString())
+            setObject(256, forKey = kSecAttrKeySizeInBits.asNSString())
         }
         val privateKey = SecKeyCreateWithData(privateKeyBytes.toNSData().asCfData(), attributes.asCfDictionary(), error.ptr)
             ?: error("Unable to import private key")
@@ -153,7 +159,7 @@ actual class SecurityCrypto actual constructor() {
             kSecKeyAlgorithmECDSASignatureMessageX962SHA256,
             challenge.toNSData().asCfData(),
             error.ptr,
-        ) as NSData? ?: error("Unable to sign challenge")
+        )?.let { interpretObjCPointer<NSData>(it.rawValue) } ?: error("Unable to sign challenge")
         signature.toByteArray()
     }
 
@@ -226,13 +232,17 @@ actual class SecurityCrypto actual constructor() {
     }
 }
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 private fun NSMutableDictionary.asCfDictionary(): CFDictionaryRef =
-    this as CFDictionaryRef
+    checkNotNull(interpretCPointer(objcPtr()))
+
+@OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
+private fun NSData.asCfData(): CFDataRef =
+    checkNotNull(interpretCPointer(objcPtr()))
 
 @OptIn(ExperimentalForeignApi::class)
-private fun NSData.asCfData(): CFDataRef =
-    this as CFDataRef
+private fun CPointer<*>?.asNSString(): NSString =
+    interpretObjCPointer(checkNotNull(this).rawValue)
 
 private data class GcmResult(
     val ciphertext: ByteArray,

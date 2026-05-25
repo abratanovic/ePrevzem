@@ -6,4 +6,5 @@ expect class SecureStorage() {
     suspend fun remove(key: String)
     suspend fun readBiometricString(key: String): String?
     suspend fun writeBiometricString(key: String, value: String)
+    suspend fun clearAll()
 }
