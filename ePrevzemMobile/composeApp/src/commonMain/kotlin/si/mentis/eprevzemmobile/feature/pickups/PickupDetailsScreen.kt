@@ -156,6 +156,7 @@ fun PickupDetailsRoute(
     onPickupConfirmed: (PickupDetails) -> Unit,
     onIdentityVerified: (PickupDetails) -> Unit,
     onLockerDidNotOpen: (PickupDetails) -> Unit = onIdentityVerified,
+    onDelegatePerson: () -> Unit = {},
     initialUnlockedAt: String? = null,
     user: si.mentis.eprevzemmobile.domain.User? = null,
     repository: si.mentis.eprevzemmobile.data.pickups.PickupRepository = si.mentis.eprevzemmobile.AppContainer.pickupRepository,
@@ -251,6 +252,7 @@ fun PickupDetailsRoute(
                 PickupDetailsEvent.IdentityVerified -> onIdentityVerified(state.details)
                 PickupDetailsEvent.Finish -> onPickupConfirmed(state.details)
                 PickupDetailsEvent.LockerDidNotOpen -> onLockerDidNotOpen(state.details)
+                PickupDetailsEvent.DelegatePersonClicked -> onDelegatePerson()
             }
         },
     )
@@ -368,7 +370,7 @@ private fun IdlePhase(
             ESecondaryButton(
                 label = "Pooblasti drugo osebo",
                 icon = EPrevzemIcons.profile(),
-                onClick = {},
+                onClick = { onEvent(PickupDetailsEvent.DelegatePersonClicked) },
                 modifier = Modifier.fillMaxWidth(),
             )
             ETextButton(

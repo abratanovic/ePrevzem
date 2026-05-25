@@ -13,4 +13,5 @@ sealed interface PickupDetailsEvent {
     data object Finish : PickupDetailsEvent
     data object LockerDidNotOpen : PickupDetailsEvent
     data object IdentityVerified : PickupDetailsEvent
+    data object DelegatePersonClicked : PickupDetailsEvent
 }
