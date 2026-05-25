@@ -1,6 +1,7 @@
 package si.mentis.eprevzemmobile.core.designsystem.components.layout
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import si.mentis.eprevzemmobile.core.designsystem.components.buttons.ETextButton
@@ -35,10 +38,14 @@ fun EScaffold(
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val colors = EPrevzemTheme.colors
+    val focusManager = LocalFocusManager.current
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(colors.background),
+            .background(colors.background)
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = { focusManager.clearFocus() })
+            },
     ) {
         topBar()
         Box(modifier = Modifier.weight(1f)) {
