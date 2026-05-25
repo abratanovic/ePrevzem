@@ -1,21 +1,29 @@
 package si.mentis.eprevzemmobile.feature.delegation
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import si.mentis.eprevzemmobile.core.designsystem.components.buttons.EPrimaryButton
 import si.mentis.eprevzemmobile.core.designsystem.components.buttons.ESecondaryButton
+import si.mentis.eprevzemmobile.core.designsystem.components.buttons.ETextButton
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.EIconTint
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.ESummaryCard
+import si.mentis.eprevzemmobile.core.designsystem.components.dialogs.EBottomSheet
 import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EErrorBanner
+import si.mentis.eprevzemmobile.core.designsystem.components.inputs.EPinPad
 import si.mentis.eprevzemmobile.core.designsystem.components.inputs.ETextField
 import si.mentis.eprevzemmobile.core.designsystem.components.layout.EScaffold
 import si.mentis.eprevzemmobile.core.designsystem.components.layout.EScreen
@@ -37,6 +45,13 @@ private object Strings {
     const val PreviewDescription = "Preverite, ali je to prava oseba, in potrdite pooblastilo."
     const val AuthorizeCta = "Pooblasti osebo"
     const val SearchAgainCta = "Išči drugega"
+    const val ConfirmErrorTitle = "Napaka pri pooblastitvi"
+    const val BiometricLabel = "PREVERJANJE IDENTITETE"
+    const val BiometricHeading = "Preverjamo identiteto …"
+    const val SwitchToPin = "Uporabi PIN namesto biometrije"
+    const val PinHeading = "Vnesite PIN ePrevzem"
+    const val SwitchToBiometric = "Uporabi biometrijo"
+    const val CancelCta = "Prekliči"
 }
 
 @Composable
@@ -59,14 +74,85 @@ fun DelegatePersonScreen(
         bottomBar = {
             when (state.phase) {
                 DelegatePersonPhase.Preview -> PreviewActions(onEvent = onEvent)
-                else -> SearchActions(state = state, onEvent = onEvent)
+                DelegatePersonPhase.Confirming -> {}
+                DelegatePersonPhase.Search -> SearchActions(state = state, onEvent = onEvent)
             }
         },
     ) { _ ->
         EScreen(verticalGap = EPrevzemTheme.spacing.xl) {
             when (state.phase) {
-                DelegatePersonPhase.Preview -> PreviewPhaseContent(state = state)
-                else -> SearchPhaseContent(state = state, onEvent = onEvent)
+                DelegatePersonPhase.Preview, DelegatePersonPhase.Confirming ->
+                    PreviewPhaseContent(state = state)
+                DelegatePersonPhase.Search ->
+                    SearchPhaseContent(state = state, onEvent = onEvent)
+            }
+        }
+    }
+
+    if (state.showBiometricSheet) {
+        EBottomSheet(onDismiss = { onEvent(DelegatePersonEvent.ConfirmCancelled) }) {
+            val colors = EPrevzemTheme.colors
+            val typo = EPrevzemTheme.typography
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            ) {
+                Text(
+                    text = Strings.BiometricLabel,
+                    style = typo.caption,
+                    color = colors.textMuted,
+                )
+                BiometricSpinner()
+                Text(
+                    text = Strings.BiometricHeading,
+                    style = typo.section,
+                    color = colors.textPrimary,
+                )
+                ETextButton(
+                    label = Strings.SwitchToPin,
+                    onClick = { onEvent(DelegatePersonEvent.PinSelected) },
+                )
+                ESecondaryButton(
+                    label = Strings.CancelCta,
+                    onClick = { onEvent(DelegatePersonEvent.ConfirmCancelled) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+    }
+
+    if (state.showPinSheet) {
+        EBottomSheet(onDismiss = { onEvent(DelegatePersonEvent.ConfirmCancelled) }) {
+            val colors = EPrevzemTheme.colors
+            val typo = EPrevzemTheme.typography
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            ) {
+                Text(
+                    text = Strings.BiometricLabel,
+                    style = typo.caption,
+                    color = colors.textMuted,
+                )
+                Text(
+                    text = Strings.PinHeading,
+                    style = typo.section,
+                    color = colors.textPrimary,
+                )
+                EPinPad(
+                    value = state.pinValue,
+                    onDigit = { digit -> onEvent(DelegatePersonEvent.PinDigitEntered(digit)) },
+                    onBackspace = { onEvent(DelegatePersonEvent.PinBackspace) },
+                    onSwitchToFallback = { onEvent(DelegatePersonEvent.BiometricSelected) },
+                    switchFallbackLabel = Strings.SwitchToBiometric,
+                )
+                ESecondaryButton(
+                    label = Strings.CancelCta,
+                    onClick = { onEvent(DelegatePersonEvent.ConfirmCancelled) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
     }
@@ -161,6 +247,13 @@ private fun PreviewPhaseContent(state: DelegatePersonState) {
         icon = EPrevzemIcons.profile(),
         tint = EIconTint.Teal,
     )
+
+    if (state.confirmError != null) {
+        EErrorBanner(
+            title = Strings.ConfirmErrorTitle,
+            message = state.confirmError,
+        )
+    }
 }
 
 @Composable
@@ -207,6 +300,27 @@ private fun PreviewActions(onEvent: (DelegatePersonEvent) -> Unit) {
             icon = EPrevzemIcons.back(),
             onClick = { onEvent(DelegatePersonEvent.Back) },
             modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun BiometricSpinner() {
+    val colors = EPrevzemTheme.colors
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.size(80.dp),
+    ) {
+        CircularProgressIndicator(
+            color = colors.primary,
+            modifier = Modifier.size(80.dp),
+            strokeWidth = 3.dp,
+        )
+        Icon(
+            painter = EPrevzemIcons.biometric(),
+            contentDescription = null,
+            tint = colors.primary,
+            modifier = Modifier.size(36.dp),
         )
     }
 }

@@ -7,11 +7,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.delay
 import si.mentis.eprevzemmobile.AppContainer
 import si.mentis.eprevzemmobile.data.delegation.DelegationRepository
 
 private const val NotFoundTitle = "Oseba ni bila najdena"
 private const val NotFoundMessage = "Preverite EMŠO ali se prepričajte, da je oseba registrirana v ePrevzem."
+private const val DelegationErrorMessage = "Napaka pri pooblastitvi. Poskusite znova."
 
 @Composable
 fun DelegatePersonRoute(
@@ -44,6 +46,27 @@ fun DelegatePersonRoute(
             }
     }
 
+    LaunchedEffect(state.showBiometricSheet) {
+        if (!state.showBiometricSheet) return@LaunchedEffect
+        delay(2000)
+        if (state.showBiometricSheet) {
+            state = state.copy(showBiometricSheet = false, isConfirming = true)
+        }
+    }
+
+    LaunchedEffect(state.isConfirming) {
+        if (!state.isConfirming) return@LaunchedEffect
+        repository.addDelegation(pickupId, state.emso)
+            .onSuccess { onDelegated() }
+            .onFailure {
+                state = state.copy(
+                    isConfirming = false,
+                    phase = DelegatePersonPhase.Preview,
+                    confirmError = DelegationErrorMessage,
+                )
+            }
+    }
+
     DelegatePersonScreen(
         state = state,
         modifier = modifier,
@@ -61,23 +84,55 @@ fun DelegatePersonRoute(
                 }
                 DelegatePersonEvent.PersonSelected -> state = state.copy(
                     phase = DelegatePersonPhase.Confirming,
+                    showBiometricSheet = true,
+                    confirmError = null,
+                )
+                DelegatePersonEvent.BiometricSelected -> state = state.copy(
+                    showPinSheet = false,
+                    showBiometricSheet = true,
+                )
+                DelegatePersonEvent.PinSelected -> state = state.copy(
+                    showBiometricSheet = false,
+                    showPinSheet = true,
+                )
+                is DelegatePersonEvent.PinDigitEntered -> {
+                    val newPin = if (state.pinValue.length < 6) {
+                        state.pinValue + event.digit.toString()
+                    } else {
+                        state.pinValue
+                    }
+                    state = state.copy(pinValue = newPin)
+                    if (newPin.length == 6) {
+                        state = state.copy(showPinSheet = false, pinValue = "", isConfirming = true)
+                    }
+                }
+                DelegatePersonEvent.PinBackspace -> {
+                    if (state.pinValue.isNotEmpty()) {
+                        state = state.copy(pinValue = state.pinValue.dropLast(1))
+                    }
+                }
+                DelegatePersonEvent.ConfirmCancelled -> state = state.copy(
+                    phase = DelegatePersonPhase.Preview,
+                    showBiometricSheet = false,
+                    showPinSheet = false,
+                    pinValue = "",
+                    isConfirming = false,
                 )
                 DelegatePersonEvent.Back -> when (state.phase) {
                     DelegatePersonPhase.Search -> onBack()
                     DelegatePersonPhase.Preview -> state = state.copy(
                         phase = DelegatePersonPhase.Search,
                         foundPerson = null,
+                        confirmError = null,
                     )
                     DelegatePersonPhase.Confirming -> state = state.copy(
                         phase = DelegatePersonPhase.Preview,
+                        showBiometricSheet = false,
+                        showPinSheet = false,
+                        pinValue = "",
+                        isConfirming = false,
                     )
                 }
-                // Confirmation events wired in PRVZM-30
-                DelegatePersonEvent.BiometricSelected,
-                DelegatePersonEvent.PinSelected,
-                is DelegatePersonEvent.PinDigitEntered,
-                DelegatePersonEvent.PinBackspace,
-                DelegatePersonEvent.ConfirmCancelled -> {}
             }
         },
     )

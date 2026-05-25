@@ -13,6 +13,11 @@ data class DelegatePersonState(
     val foundPerson: DelegatePerson? = null,
     val errorTitle: String? = null,
     val errorMessage: String? = null,
+    val showBiometricSheet: Boolean = false,
+    val showPinSheet: Boolean = false,
+    val pinValue: String = "",
+    val isConfirming: Boolean = false,
+    val confirmError: String? = null,
 ) {
     val canSearch: Boolean get() = emso.length == EMSO_LENGTH && !isLoading
     val hasError: Boolean get() = errorTitle != null
