@@ -15,4 +15,7 @@ data class PickupDetailsState(
     val pinValue: String = "",
     val unlockPhase: UnlockPhase = UnlockPhase.Idle,
     val secondsRemaining: Int = 30,
+    val removingDelegateId: String? = null,
+    val pendingRemoval: DelegationRecord? = null,
+    val delegateRemoveError: String? = null,
 )

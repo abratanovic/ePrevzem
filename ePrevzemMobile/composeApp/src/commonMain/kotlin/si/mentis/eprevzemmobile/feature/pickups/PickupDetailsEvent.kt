@@ -14,4 +14,7 @@ sealed interface PickupDetailsEvent {
     data object LockerDidNotOpen : PickupDetailsEvent
     data object IdentityVerified : PickupDetailsEvent
     data object DelegatePersonClicked : PickupDetailsEvent
+    data class RemoveDelegateClicked(val delegationId: String) : PickupDetailsEvent
+    data object RemoveDelegateConfirmed : PickupDetailsEvent
+    data object RemoveDelegateCancelled : PickupDetailsEvent
 }

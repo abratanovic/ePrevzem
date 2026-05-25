@@ -2,6 +2,7 @@ package si.mentis.eprevzemmobile.feature.pickups
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -65,6 +66,20 @@ fun PickupDetailsScreen(
         UnlockPhase.Idle -> IdlePhase(state = state, onEvent = onEvent, modifier = modifier)
         UnlockPhase.Unlocked -> UnlockedPhase(state = state, onEvent = onEvent, modifier = modifier)
         UnlockPhase.Confirmed -> {}
+    }
+
+    val removingDelegate = state.delegates.find { it.id == state.removingDelegateId }
+    if (state.removingDelegateId != null && removingDelegate != null) {
+        EConfirmationDialog(
+            icon = EPrevzemIcons.profile(),
+            title = "Odstrani pooblastilo?",
+            message = "Ste prepričani, da želite odstraniti pooblastilo za ${removingDelegate.person.fullName}?",
+            confirmLabel = "Odstrani",
+            dismissLabel = "Prekliči",
+            destructive = true,
+            onConfirm = { onEvent(PickupDetailsEvent.RemoveDelegateConfirmed) },
+            onDismiss = { onEvent(PickupDetailsEvent.RemoveDelegateCancelled) },
+        )
     }
 
     if (state.showUnlockDialog) {
@@ -205,6 +220,19 @@ fun PickupDetailsRoute(
         }
     }
 
+    LaunchedEffect(state.pendingRemoval) {
+        val record = state.pendingRemoval ?: return@LaunchedEffect
+        delegationRepository.removeDelegation(record.id)
+            .onSuccess { state = state.copy(pendingRemoval = null) }
+            .onFailure {
+                state = state.copy(
+                    pendingRemoval = null,
+                    delegates = state.delegates + record,
+                    delegateRemoveError = "Napaka pri odvzemu pooblastila. Poskusite znova.",
+                )
+            }
+    }
+
     PickupDetailsScreen(
         state = state,
         modifier = modifier,
@@ -255,6 +283,23 @@ fun PickupDetailsRoute(
                 PickupDetailsEvent.Finish -> onPickupConfirmed(state.details)
                 PickupDetailsEvent.LockerDidNotOpen -> onLockerDidNotOpen(state.details)
                 PickupDetailsEvent.DelegatePersonClicked -> onDelegatePerson()
+                is PickupDetailsEvent.RemoveDelegateClicked -> state = state.copy(
+                    removingDelegateId = event.delegationId,
+                    delegateRemoveError = null,
+                )
+                PickupDetailsEvent.RemoveDelegateCancelled -> state = state.copy(
+                    removingDelegateId = null,
+                )
+                PickupDetailsEvent.RemoveDelegateConfirmed -> {
+                    val record = state.delegates.find { it.id == state.removingDelegateId }
+                    if (record != null) {
+                        state = state.copy(
+                            removingDelegateId = null,
+                            delegates = state.delegates - record,
+                            pendingRemoval = record,
+                        )
+                    }
+                }
             }
         },
     )
@@ -364,6 +409,13 @@ private fun IdlePhase(
             }
 
             ESummaryCard(title = "Pooblaščenci", icon = EPrevzemIcons.profile()) {
+                if (state.delegateRemoveError != null) {
+                    EAlertBanner(
+                        type = EAlertType.Error,
+                        title = "Napaka pri odvzemu pooblastila",
+                        message = state.delegateRemoveError,
+                    )
+                }
                 if (state.delegates.isEmpty()) {
                     Text(
                         text = "Nobena oseba ni pooblaščena za ta prevzem.",
@@ -374,9 +426,9 @@ private fun IdlePhase(
                     Column {
                         state.delegates.forEachIndexed { index, record ->
                             if (index > 0) EDivider()
-                            DetailRow(
-                                label = record.person.fullName,
-                                value = record.person.email,
+                            DelegateRow(
+                                record = record,
+                                onRemove = { onEvent(PickupDetailsEvent.RemoveDelegateClicked(record.id)) },
                             )
                         }
                     }
@@ -744,6 +796,37 @@ private fun UnlockedSummaryCard(details: PickupDetails) {
                     color = colors.textSecondary,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun DelegateRow(
+    record: si.mentis.eprevzemmobile.data.delegation.DelegationRecord,
+    onRemove: () -> Unit,
+) {
+    val colors = EPrevzemTheme.colors
+    val typo = EPrevzemTheme.typography
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = record.person.fullName, style = typo.bodySmall, color = colors.textPrimary)
+            Text(text = record.person.email, style = typo.bodySmall, color = colors.textSecondary)
+        }
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(32.dp)
+                .clickable(onClick = onRemove),
+        ) {
+            Icon(
+                painter = EPrevzemIcons.close(),
+                contentDescription = "Odstrani",
+                tint = colors.error,
+                modifier = Modifier.size(18.dp),
+            )
         }
     }
 }
