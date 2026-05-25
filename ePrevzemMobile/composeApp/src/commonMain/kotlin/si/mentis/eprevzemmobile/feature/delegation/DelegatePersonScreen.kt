@@ -12,6 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import si.mentis.eprevzemmobile.core.designsystem.components.buttons.EPrimaryButton
+import si.mentis.eprevzemmobile.core.designsystem.components.buttons.ESecondaryButton
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.EIconTint
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.ESummaryCard
 import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EErrorBanner
 import si.mentis.eprevzemmobile.core.designsystem.components.inputs.ETextField
 import si.mentis.eprevzemmobile.core.designsystem.components.layout.EScaffold
@@ -128,7 +131,36 @@ private fun SearchPhaseContent(
 
 @Composable
 private fun PreviewPhaseContent(state: DelegatePersonState) {
-    // Implemented in PRVZM-29 commit 3
+    val person = state.foundPerson ?: return
+    val typo = EPrevzemTheme.typography
+    val colors = EPrevzemTheme.colors
+    val spacing = EPrevzemTheme.spacing
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(spacing.xs),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(
+            text = Strings.PreviewHeading,
+            style = typo.title,
+            color = colors.textPrimary,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = Strings.PreviewDescription,
+            style = typo.body,
+            color = colors.textSecondary,
+            textAlign = TextAlign.Center,
+        )
+    }
+
+    ESummaryCard(
+        title = person.fullName,
+        subtitle = person.email,
+        icon = EPrevzemIcons.profile(),
+        tint = EIconTint.Teal,
+    )
 }
 
 @Composable
@@ -156,5 +188,25 @@ private fun SearchActions(
 
 @Composable
 private fun PreviewActions(onEvent: (DelegatePersonEvent) -> Unit) {
-    // Implemented in PRVZM-29 commit 3
+    val spacing = EPrevzemTheme.spacing
+    Column(
+        verticalArrangement = Arrangement.spacedBy(spacing.sm),
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = spacing.screenHorizontal, vertical = spacing.md),
+    ) {
+        EPrimaryButton(
+            label = Strings.AuthorizeCta,
+            icon = EPrevzemIcons.arrowRight(),
+            onClick = { onEvent(DelegatePersonEvent.PersonSelected) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        ESecondaryButton(
+            label = Strings.SearchAgainCta,
+            icon = EPrevzemIcons.back(),
+            onClick = { onEvent(DelegatePersonEvent.Back) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
 }
