@@ -15,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
 import si.mentis.eprevzemmobile.domain.User
+import si.mentis.eprevzemmobile.feature.delegation.DelegatePersonRoute
 import si.mentis.eprevzemmobile.feature.onboarding.WelcomeRoute
 import si.mentis.eprevzemmobile.feature.pickups.ActivePickupsRoute
 import si.mentis.eprevzemmobile.feature.pickups.PickupConfirmedRoute
@@ -31,6 +32,7 @@ private sealed interface AppDestination {
     data object ActivePickups : AppDestination
     data class PickupDetails(val pickupId: String, val unlockedAt: String? = null) : AppDestination
     data class Unlock(val pickupId: String, val lockerNumber: String) : AppDestination
+    data class DelegatePerson(val pickupId: String) : AppDestination
     data object PickupConfirmed : AppDestination
 }
 
@@ -41,6 +43,7 @@ private val AppDestination.depth: Int get() = when (this) {
     AppDestination.ActivePickups -> 3
     is AppDestination.PickupDetails -> 4
     is AppDestination.Unlock -> 5
+    is AppDestination.DelegatePerson -> 5
     AppDestination.PickupConfirmed -> 6
 }
 
@@ -111,6 +114,12 @@ fun App() {
                         confirmedDetails = details
                         destination = AppDestination.PickupConfirmed
                     },
+                    onDelegatePerson = { destination = AppDestination.DelegatePerson(dest.pickupId) },
+                )
+                is AppDestination.DelegatePerson -> DelegatePersonRoute(
+                    pickupId = dest.pickupId,
+                    onBack = { destination = AppDestination.PickupDetails(dest.pickupId) },
+                    onDelegated = { destination = AppDestination.PickupDetails(dest.pickupId) },
                 )
                 is AppDestination.Unlock -> UnlockRoute(
                     pickupId = dest.pickupId,
