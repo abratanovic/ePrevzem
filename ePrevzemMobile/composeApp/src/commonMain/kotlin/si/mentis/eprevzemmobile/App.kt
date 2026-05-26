@@ -22,7 +22,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlin.time.TimeSource
 import kotlinx.coroutines.launch
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
-import si.mentis.eprevzemmobile.domain.AppUser
+import androidx.compose.runtime.collectAsState
+import si.mentis.eprevzemmobile.data.auth.AuthSession
 import si.mentis.eprevzemmobile.feature.delegation.DelegatePersonRoute
 import si.mentis.eprevzemmobile.feature.login.LoginRoute
 import si.mentis.eprevzemmobile.feature.onboarding.WelcomeRoute
@@ -66,18 +67,33 @@ private const val BACKGROUND_LOCK_SECONDS = 120L
 @Preview
 fun App() {
     EPrevzemTheme {
+        val session by AppContainer.sessionStore.session.collectAsState()
         var destination: AppDestination by remember { mutableStateOf(AppDestination.Loading) }
-        var currentUser: AppUser? by remember { mutableStateOf(null) }
         var confirmedDetails: PickupDetails? by remember { mutableStateOf(null) }
         val scope = rememberCoroutineScope()
         val lifecycleOwner = LocalLifecycleOwner.current
         var backgroundedAt by remember { mutableStateOf<TimeSource.Monotonic.ValueTimeMark?>(null) }
 
         LaunchedEffect(Unit) {
-            destination = if (AppContainer.securityRepository.isRegistered()) {
-                AppDestination.Login
-            } else {
-                AppDestination.Welcome
+            AppContainer.sessionStore.hydrate()
+        }
+
+        LaunchedEffect(session) {
+            destination = when (session) {
+                AuthSession.Unknown -> AppDestination.Loading
+                AuthSession.Unauthenticated -> if (AppContainer.securityRepository.isRegistered()) {
+                    AppDestination.Login
+                } else {
+                    AppDestination.Welcome
+                }
+                is AuthSession.Authenticated -> when (destination) {
+                    AppDestination.Loading,
+                    AppDestination.Welcome,
+                    AppDestination.Login,
+                    AppDestination.RegistrationCode,
+                    is AppDestination.ConfirmAccount -> AppDestination.ActivePickups
+                    else -> destination
+                }
             }
         }
 
@@ -89,10 +105,8 @@ fun App() {
                         val since = backgroundedAt
                         backgroundedAt = null
                         if (since != null && since.elapsedNow().inWholeSeconds > BACKGROUND_LOCK_SECONDS) {
-                            scope.launch {
-                                if (AppContainer.securityRepository.isRegistered()) {
-                                    destination = AppDestination.Login
-                                }
+                            if (session is AuthSession.Authenticated) {
+                                scope.launch { AppContainer.sessionStore.clear() }
                             }
                         }
                     }
@@ -122,10 +136,6 @@ fun App() {
             when (dest) {
                 AppDestination.Loading -> Unit
                 AppDestination.Login -> LoginRoute(
-                    onAuthenticated = { user ->
-                        currentUser = user
-                        destination = AppDestination.ActivePickups
-                    },
                     onResetSecureStorage = {
                         destination = AppDestination.Welcome
                     },
@@ -141,13 +151,9 @@ fun App() {
                     validatedCode = dest.validatedCode,
                     onBack = { destination = AppDestination.RegistrationCode },
                     onUseAnotherCode = { destination = AppDestination.RegistrationCode },
-                    onConfirmed = { user ->
-                        currentUser = user
-                        destination = AppDestination.ActivePickups
-                    },
                 )
                 AppDestination.ActivePickups -> {
-                    val user = currentUser
+                    val user = (session as? AuthSession.Authenticated)?.user
                     if (user != null) {
                         ActivePickupsRoute(
                             user = user,
@@ -158,7 +164,7 @@ fun App() {
                 is AppDestination.PickupDetails -> PickupDetailsRoute(
                     pickupId = dest.pickupId,
                     initialUnlockedAt = dest.unlockedAt,
-                    user = currentUser,
+                    user = (session as? AuthSession.Authenticated)?.user,
                     onBack = { destination = AppDestination.ActivePickups },
                     onIdentityVerified = { details ->
                         destination = AppDestination.Unlock(

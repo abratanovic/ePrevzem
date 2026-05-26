@@ -1,5 +1,7 @@
 package si.mentis.eprevzemmobile
 
+import si.mentis.eprevzemmobile.data.auth.PersistedSessionStore
+import si.mentis.eprevzemmobile.data.auth.SessionStore
 import si.mentis.eprevzemmobile.data.delegation.DelegationRepository
 import si.mentis.eprevzemmobile.data.delegation.FakeDelegationRepository
 import si.mentis.eprevzemmobile.data.locker.Direct4MeLockerRepository
@@ -22,4 +24,5 @@ object AppContainer {
     val lockerRepository: LockerRepository = Direct4MeLockerRepository(
         apiKey = PlatformConfig.direct4MeApiKey,
     )
+    val sessionStore: SessionStore = PersistedSessionStore()
 }

@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.launch
 import si.mentis.eprevzemmobile.AppContainer
+import si.mentis.eprevzemmobile.data.auth.SessionStore
 import si.mentis.eprevzemmobile.data.registration.RegistrationRepository
 import si.mentis.eprevzemmobile.data.security.SecurityRepository
 import si.mentis.eprevzemmobile.domain.AppUser
@@ -19,9 +20,9 @@ fun ConfirmAccountRoute(
     validatedCode: String,
     onBack: () -> Unit,
     onUseAnotherCode: () -> Unit,
-    onConfirmed: (AppUser) -> Unit = {},
     repository: RegistrationRepository = AppContainer.registrationRepository,
     securityRepository: SecurityRepository = AppContainer.securityRepository,
+    sessionStore: SessionStore = AppContainer.sessionStore,
     modifier: Modifier = Modifier,
 ) {
     var state by remember { mutableStateOf(ConfirmAccountState()) }
@@ -72,7 +73,7 @@ fun ConfirmAccountRoute(
                                     repository.confirmAccount(validatedCode, publicKey)
                                         .onSuccess { user ->
                                             state = state.copy(isLoading = false)
-                                            onConfirmed(user)
+                                            sessionStore.setAuthenticated(user)
                                         }
                                         .onFailure {
                                             state = state.copy(
