@@ -13,26 +13,41 @@ fun LogEvent.toAuditLogEntry(): AuditLogEntry {
         lockerNumber = eventDetails?.lockerLabel ?: "Paketnik",
         location = eventDetails?.location ?: "",
         openedAt = occurredAt.toAuditLogDisplayTime(),
-        status = action.toAuditLogStatus(),
+        badge = action.toAuditLogBadge(),
     )
 }
 
-private fun LogAction.toAuditLogStatus(): AuditLogStatus = when (this) {
+private fun LogAction.toAuditLogBadge(): AuditLogBadge = when (this) {
     LogAction.PackagePickedUpByCitizen,
     LogAction.PackageMarkedPickedUpManually,
     LogAction.DelegationUsedAtPickup,
-    -> AuditLogStatus.Confirmed
+    -> AuditLogBadge(label = "Prevzeto", tone = AuditLogBadgeTone.Success)
 
-    LogAction.LockerOpened,
     LogAction.PackagePlaced,
-    -> AuditLogStatus.Opened
+    -> AuditLogBadge(label = "Vloženo", tone = AuditLogBadgeTone.Info)
+
+    LogAction.PackageRemovedByEmployee,
+    -> AuditLogBadge(label = "Odstranjeno", tone = AuditLogBadgeTone.Warning)
 
     LogAction.PackageExpired,
-    LogAction.PackageCancelled,
-    LogAction.PackageRemovedByEmployee,
-    -> AuditLogStatus.Failed
+    -> AuditLogBadge(label = "Poteklo", tone = AuditLogBadgeTone.Warning)
 
-    else -> AuditLogStatus.Opened
+    LogAction.PackageCancelled,
+    -> AuditLogBadge(label = "Preklicano", tone = AuditLogBadgeTone.Error)
+
+    LogAction.LockerOpened,
+    -> AuditLogBadge(label = "Odprto", tone = AuditLogBadgeTone.Info)
+
+    LogAction.ProvisioningCodeIssued,
+    -> AuditLogBadge(label = "Koda izdana", tone = AuditLogBadgeTone.Info)
+
+    LogAction.ProvisioningCodeRedeemed,
+    -> AuditLogBadge(label = "Koda uporabljena", tone = AuditLogBadgeTone.Success)
+
+    LogAction.CitizenOnboarded,
+    -> AuditLogBadge(label = "Registrirano", tone = AuditLogBadgeTone.Success)
+
+    else -> AuditLogBadge(label = "Zabeleženo", tone = AuditLogBadgeTone.Info)
 }
 
 private fun String.toAuditLogDisplayTime(): String {

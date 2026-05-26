@@ -1,6 +1,16 @@
 package si.mentis.eprevzemmobile.feature.pickups
 
-enum class AuditLogStatus {Opened, Confirmed, Failed}
+enum class AuditLogBadgeTone {
+    Info,
+    Success,
+    Warning,
+    Error,
+}
+
+data class AuditLogBadge(
+    val label: String,
+    val tone: AuditLogBadgeTone,
+)
 
 data class AuditLogEntry(
     val id:String,
@@ -9,5 +19,5 @@ data class AuditLogEntry(
     val lockerNumber: String,
     val location: String,
     val openedAt: String,
-    val status: AuditLogStatus
+    val badge: AuditLogBadge,
 )
