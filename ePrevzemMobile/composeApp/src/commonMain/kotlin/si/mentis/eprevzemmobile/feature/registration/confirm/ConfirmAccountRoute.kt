@@ -73,7 +73,8 @@ fun ConfirmAccountRoute(
                                     repository.confirmAccount(validatedCode, publicKey)
                                         .onSuccess { user ->
                                             state = state.copy(isLoading = false)
-                                            sessionStore.setAuthenticated(user)
+                                            sessionStore.addProfile(user)
+                                            sessionStore.setAuthenticated(user.id)
                                         }
                                         .onFailure {
                                             state = state.copy(

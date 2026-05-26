@@ -5,9 +5,13 @@ import si.mentis.eprevzemmobile.domain.AppUser
 
 interface SessionStore {
     val session: StateFlow<AuthSession>
+    val profiles: StateFlow<List<AppUser>>
     suspend fun hydrate()
-    suspend fun setAuthenticated(user: AppUser)
+    suspend fun addProfile(user: AppUser)
+    suspend fun switchProfile(userId: String)
+    suspend fun removeProfile(userId: String)
+    suspend fun setAuthenticated(userId: String)
     suspend fun clear()
-    suspend fun forgetIdentity()
-    suspend fun persistedUser(): AppUser?
+    suspend fun forgetAllIdentities()
+    suspend fun activeProfile(): AppUser?
 }

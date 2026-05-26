@@ -28,13 +28,7 @@ fun LoginRoute(
     val scope = rememberCoroutineScope()
 
     suspend fun finishAuthenticated() {
-        val user = sessionStore.persistedUser()
-        if (user != null) {
-            sessionStore.setAuthenticated(user)
-        } else {
-            securityRepository.reset()
-            onResetSecureStorage()
-        }
+        // Wired up in Task 8.
     }
 
     fun authWithBiometric() {
@@ -109,7 +103,7 @@ fun LoginRoute(
                 LoginEvent.ResetSecureStorageClicked -> {
                     scope.launch {
                         securityRepository.reset()
-                        sessionStore.forgetIdentity()
+                        sessionStore.forgetAllIdentities()
                         onResetSecureStorage()
                     }
                 }

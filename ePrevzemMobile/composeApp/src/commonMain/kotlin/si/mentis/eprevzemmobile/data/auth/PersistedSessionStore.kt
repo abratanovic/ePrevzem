@@ -6,8 +6,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.json.Json
 import si.mentis.eprevzemmobile.domain.AppUser
 
-private const val KEY_PERSISTED_USER = "auth.persisted_user"
-
 class PersistedSessionStore(
     private val storage: SessionStorage = SecureSessionStorage(),
     private val json: Json = DefaultJson,
@@ -16,30 +14,38 @@ class PersistedSessionStore(
     private val _session = MutableStateFlow<AuthSession>(AuthSession.Unknown)
     override val session: StateFlow<AuthSession> = _session.asStateFlow()
 
+    private val _profiles = MutableStateFlow<List<AppUser>>(emptyList())
+    override val profiles: StateFlow<List<AppUser>> = _profiles.asStateFlow()
+
     override suspend fun hydrate() {
-        _session.value = AuthSession.Unauthenticated
+        TODO("implemented in Task 6")
     }
-
-    override suspend fun setAuthenticated(user: AppUser) {
-        storage.write(KEY_PERSISTED_USER, json.encodeToString(AppUser.serializer(), user))
-        _session.value = AuthSession.Authenticated(user)
+    override suspend fun addProfile(user: AppUser) {
+        TODO("implemented in Task 6")
     }
-
+    override suspend fun switchProfile(userId: String) {
+        TODO("implemented in Task 6")
+    }
+    override suspend fun removeProfile(userId: String) {
+        TODO("implemented in Task 6")
+    }
+    override suspend fun setAuthenticated(userId: String) {
+        TODO("implemented in Task 6")
+    }
     override suspend fun clear() {
-        _session.value = AuthSession.Unauthenticated
+        TODO("implemented in Task 6")
+    }
+    override suspend fun forgetAllIdentities() {
+        TODO("implemented in Task 6")
+    }
+    override suspend fun activeProfile(): AppUser? {
+        TODO("implemented in Task 6")
     }
 
-    override suspend fun forgetIdentity() {
-        storage.remove(KEY_PERSISTED_USER)
-        _session.value = AuthSession.Unauthenticated
-    }
-
-    override suspend fun persistedUser(): AppUser? {
-        val raw = storage.read(KEY_PERSISTED_USER) ?: return null
-        return runCatching { json.decodeFromString(AppUser.serializer(), raw) }.getOrNull()
-    }
-
-    private companion object {
+    internal companion object {
+        const val KEY_PROFILES = "auth.persisted_profiles"
+        const val KEY_ACTIVE_PROFILE_ID = "auth.active_profile_id"
+        const val LEGACY_KEY_PERSISTED_USER = "auth.persisted_user"
         val DefaultJson = Json { ignoreUnknownKeys = true }
     }
 }
