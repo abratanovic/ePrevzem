@@ -24,9 +24,11 @@ import kotlinx.coroutines.launch
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
 import androidx.compose.runtime.collectAsState
 import si.mentis.eprevzemmobile.data.auth.AuthSession
+import si.mentis.eprevzemmobile.domain.AppUser
 import si.mentis.eprevzemmobile.feature.delegation.DelegatePersonRoute
 import si.mentis.eprevzemmobile.feature.login.LoginRoute
 import si.mentis.eprevzemmobile.feature.onboarding.WelcomeRoute
+import si.mentis.eprevzemmobile.feature.operator.OperatorHomeRoute
 import si.mentis.eprevzemmobile.feature.pickups.ActivePickupsRoute
 import si.mentis.eprevzemmobile.feature.pickups.PickupConfirmedRoute
 import si.mentis.eprevzemmobile.feature.pickups.PickupDetailsRoute
@@ -42,6 +44,7 @@ private sealed interface AppDestination {
     data object RegistrationCode : AppDestination
     data class ConfirmAccount(val validatedCode: String) : AppDestination
     data object ActivePickups : AppDestination
+    data object OperatorHome : AppDestination
     data class PickupDetails(val pickupId: String, val unlockedAt: String? = null) : AppDestination
     data class Unlock(val pickupId: String, val lockerNumber: String) : AppDestination
     data class DelegatePerson(val pickupId: String) : AppDestination
@@ -55,6 +58,7 @@ private val AppDestination.depth: Int get() = when (this) {
     AppDestination.RegistrationCode -> 1
     is AppDestination.ConfirmAccount -> 2
     AppDestination.ActivePickups -> 3
+    AppDestination.OperatorHome -> 3
     is AppDestination.PickupDetails -> 4
     is AppDestination.Unlock -> 5
     is AppDestination.DelegatePerson -> 5
@@ -86,13 +90,20 @@ fun App() {
                 } else {
                     AppDestination.Welcome
                 }
-                is AuthSession.Authenticated -> when (destination) {
-                    AppDestination.Loading,
-                    AppDestination.Welcome,
-                    AppDestination.Login,
-                    AppDestination.RegistrationCode,
-                    is AppDestination.ConfirmAccount -> AppDestination.ActivePickups
-                    else -> destination
+                is AuthSession.Authenticated -> {
+                    val authedSession = session as AuthSession.Authenticated
+                    val target = when (authedSession.user) {
+                        is AppUser.RegularUser -> AppDestination.ActivePickups
+                        is AppUser.Employee    -> AppDestination.OperatorHome
+                    }
+                    when (destination) {
+                        AppDestination.Loading,
+                        AppDestination.Welcome,
+                        AppDestination.Login,
+                        AppDestination.RegistrationCode,
+                        is AppDestination.ConfirmAccount -> target
+                        else -> destination
+                    }
                 }
             }
         }
@@ -158,6 +169,18 @@ fun App() {
                         ActivePickupsRoute(
                             user = user,
                             onPickupClicked = { id -> destination = AppDestination.PickupDetails(id) },
+                        )
+                    }
+                }
+                AppDestination.OperatorHome -> {
+                    val authenticated = session as? AuthSession.Authenticated
+                    val employee = authenticated?.user as? AppUser.Employee
+                    if (employee != null) {
+                        OperatorHomeRoute(
+                            user = employee,
+                            onScanQrClicked = {
+                                // TODO(operator-paketnik-plan): navigate to OperatorScan
+                            },
                         )
                     }
                 }
