@@ -2,6 +2,8 @@ package si.mentis.eprevzemmobile
 
 import si.mentis.eprevzemmobile.data.delegation.DelegationRepository
 import si.mentis.eprevzemmobile.data.delegation.FakeDelegationRepository
+import si.mentis.eprevzemmobile.data.logevent.FakeLogEventRepository
+import si.mentis.eprevzemmobile.data.logevent.LogEventRepository
 import si.mentis.eprevzemmobile.data.locker.Direct4MeLockerRepository
 import si.mentis.eprevzemmobile.data.locker.LockerRepository
 import si.mentis.eprevzemmobile.data.pickups.FakePickupRepository
@@ -17,6 +19,7 @@ object AppContainer {
     val registrationRepository: RegistrationRepository = FakeRegistrationRepository()
     val pickupRepository: PickupRepository = FakePickupRepository()
     val delegationRepository: DelegationRepository = FakeDelegationRepository()
+    val logEventRepository: LogEventRepository = FakeLogEventRepository()
     val securityRepository: SecurityRepository = LocalSecurityRepository()
     val authRepository: AuthRepository = FakeAuthRepository()
     val lockerRepository: LockerRepository = Direct4MeLockerRepository(
