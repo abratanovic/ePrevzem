@@ -4,13 +4,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.json.Json
-import si.mentis.eprevzemmobile.data.security.SecureStorage
 import si.mentis.eprevzemmobile.domain.AppUser
 
 private const val KEY_PERSISTED_USER = "auth.persisted_user"
 
 class PersistedSessionStore(
-    private val storage: SecureStorage = SecureStorage(),
+    private val storage: SessionStorage = SecureSessionStorage(),
     private val json: Json = DefaultJson,
 ) : SessionStore {
 
@@ -22,7 +21,7 @@ class PersistedSessionStore(
     }
 
     override suspend fun setAuthenticated(user: AppUser) {
-        storage.writeString(KEY_PERSISTED_USER, json.encodeToString(AppUser.serializer(), user))
+        storage.write(KEY_PERSISTED_USER, json.encodeToString(AppUser.serializer(), user))
         _session.value = AuthSession.Authenticated(user)
     }
 
@@ -36,7 +35,7 @@ class PersistedSessionStore(
     }
 
     override suspend fun persistedUser(): AppUser? {
-        val raw = storage.readString(KEY_PERSISTED_USER) ?: return null
+        val raw = storage.read(KEY_PERSISTED_USER) ?: return null
         return runCatching { json.decodeFromString(AppUser.serializer(), raw) }.getOrNull()
     }
 
