@@ -12,14 +12,14 @@ import kotlinx.coroutines.launch
 import si.mentis.eprevzemmobile.AppContainer
 import si.mentis.eprevzemmobile.data.registration.RegistrationRepository
 import si.mentis.eprevzemmobile.data.security.SecurityRepository
-import si.mentis.eprevzemmobile.domain.User
+import si.mentis.eprevzemmobile.domain.AppUser
 
 @Composable
 fun ConfirmAccountRoute(
     validatedCode: String,
     onBack: () -> Unit,
     onUseAnotherCode: () -> Unit,
-    onConfirmed: (User) -> Unit = {},
+    onConfirmed: (AppUser) -> Unit = {},
     repository: RegistrationRepository = AppContainer.registrationRepository,
     securityRepository: SecurityRepository = AppContainer.securityRepository,
     modifier: Modifier = Modifier,
@@ -30,20 +30,29 @@ fun ConfirmAccountRoute(
     LaunchedEffect(validatedCode) {
         repository.fetchAccountPreview(validatedCode)
             .onSuccess { user ->
-                state = state.copy(
-                    account = ConfirmAccountData(
-                        fullName = user.fullName,
-                        email = user.email,
-                        phone = user.phone,
-                        status = user.status,
-                        validUntil = user.validUntil,
-                    ),
-                    organization = ConfirmOrganizationData(
-                        name = user.organizationName,
-                        type = user.organizationType,
-                        location = user.organizationLocation,
-                    ),
-                )
+                state = when (user) {
+                    is AppUser.Employee -> state.copy(
+                        account = ConfirmAccountData(
+                            fullName = user.fullName,
+                            email = user.email,
+                            phone = user.phone,
+                            status = user.status,
+                            validUntil = user.validUntil,
+                        ),
+                        organization = ConfirmOrganizationData(
+                            name = user.organizationName,
+                            type = user.organizationType,
+                            location = user.organizationLocation,
+                        ),
+                    )
+                    is AppUser.RegularUser -> state.copy(
+                        account = ConfirmAccountData(
+                            fullName = user.fullName,
+                            email = user.email,
+                            phone = user.phone,
+                        ),
+                    )
+                }
             }
     }
 

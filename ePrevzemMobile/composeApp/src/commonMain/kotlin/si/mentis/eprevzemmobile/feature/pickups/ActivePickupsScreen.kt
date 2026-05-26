@@ -28,7 +28,7 @@ import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.launch
 import si.mentis.eprevzemmobile.AppContainer
 import si.mentis.eprevzemmobile.data.pickups.PickupRepository
-import si.mentis.eprevzemmobile.domain.User
+import si.mentis.eprevzemmobile.domain.AppUser
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.EPickupCard
 import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EEmptyState
 import si.mentis.eprevzemmobile.core.designsystem.components.feedback.ELoadingState
@@ -110,7 +110,7 @@ fun ActivePickupsScreen(
 
 @Composable
 fun ActivePickupsRoute(
-    user: User,
+    user: AppUser,
     onPickupClicked: (String) -> Unit,
     repository: PickupRepository = AppContainer.pickupRepository,
     modifier: Modifier = Modifier,

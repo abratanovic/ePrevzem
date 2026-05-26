@@ -175,7 +175,7 @@ fun PickupDetailsRoute(
     onLockerDidNotOpen: (PickupDetails) -> Unit = onIdentityVerified,
     onDelegatePerson: () -> Unit = {},
     initialUnlockedAt: String? = null,
-    user: si.mentis.eprevzemmobile.domain.User? = null,
+    user: si.mentis.eprevzemmobile.domain.AppUser? = null,
     repository: si.mentis.eprevzemmobile.data.pickups.PickupRepository = si.mentis.eprevzemmobile.AppContainer.pickupRepository,
     delegationRepository: si.mentis.eprevzemmobile.data.delegation.DelegationRepository = si.mentis.eprevzemmobile.AppContainer.delegationRepository,
     securityRepository: si.mentis.eprevzemmobile.data.security.SecurityRepository = si.mentis.eprevzemmobile.AppContainer.securityRepository,

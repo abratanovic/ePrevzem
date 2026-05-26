@@ -22,7 +22,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlin.time.TimeSource
 import kotlinx.coroutines.launch
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
-import si.mentis.eprevzemmobile.domain.User
+import si.mentis.eprevzemmobile.domain.AppUser
 import si.mentis.eprevzemmobile.feature.delegation.DelegatePersonRoute
 import si.mentis.eprevzemmobile.feature.login.LoginRoute
 import si.mentis.eprevzemmobile.feature.onboarding.WelcomeRoute
@@ -67,7 +67,7 @@ private const val BACKGROUND_LOCK_SECONDS = 120L
 fun App() {
     EPrevzemTheme {
         var destination: AppDestination by remember { mutableStateOf(AppDestination.Loading) }
-        var currentUser: User? by remember { mutableStateOf(null) }
+        var currentUser: AppUser? by remember { mutableStateOf(null) }
         var confirmedDetails: PickupDetails? by remember { mutableStateOf(null) }
         val scope = rememberCoroutineScope()
         val lifecycleOwner = LocalLifecycleOwner.current

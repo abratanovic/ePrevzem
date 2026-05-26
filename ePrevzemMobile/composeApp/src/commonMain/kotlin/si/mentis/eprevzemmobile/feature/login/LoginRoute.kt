@@ -12,13 +12,14 @@ import kotlinx.coroutines.launch
 import si.mentis.eprevzemmobile.AppContainer
 import si.mentis.eprevzemmobile.data.security.AuthRepository
 import si.mentis.eprevzemmobile.data.security.SecurityRepository
-import si.mentis.eprevzemmobile.domain.User
+import si.mentis.eprevzemmobile.domain.AppUser
+import si.mentis.eprevzemmobile.domain.EmployeeRole
 
 private const val DEVICE_ID = "device-01"
 
 @Composable
 fun LoginRoute(
-    onAuthenticated: (User) -> Unit,
+    onAuthenticated: (AppUser) -> Unit,
     onResetSecureStorage: () -> Unit,
     securityRepository: SecurityRepository = AppContainer.securityRepository,
     authRepository: AuthRepository = AppContainer.authRepository,
@@ -107,14 +108,16 @@ fun LoginRoute(
     )
 }
 
-private fun cachedUser() = User(
+private fun cachedUser() = AppUser.Employee(
     id = DEVICE_ID,
     fullName = "Marko Horvat",
     email = "marko.horvat@gov.si",
     phone = "+386 41 234 567",
     status = "Aktiven",
     validUntil = "14. nov 2025",
+    organizationId = "org-001",
     organizationName = "Upravna enota Ljubljana",
     organizationType = "Javna uprava",
     organizationLocation = "Adamič-Lundrovo nabrežje 2, Ljubljana",
+    roles = listOf(EmployeeRole.Operator),
 )
