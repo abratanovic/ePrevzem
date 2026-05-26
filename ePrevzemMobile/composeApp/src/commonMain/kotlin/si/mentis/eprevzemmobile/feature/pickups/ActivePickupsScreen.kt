@@ -25,8 +25,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import si.mentis.eprevzemmobile.AppContainer
+import si.mentis.eprevzemmobile.data.logevent.LogEventRepository
 import si.mentis.eprevzemmobile.data.pickups.PickupRepository
 import si.mentis.eprevzemmobile.domain.User
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.EPickupCard
@@ -113,17 +116,26 @@ fun ActivePickupsRoute(
     user: User,
     onPickupClicked: (String) -> Unit,
     repository: PickupRepository = AppContainer.pickupRepository,
+    logEventRepository: LogEventRepository = AppContainer.logEventRepository,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
     var state by remember {
-        mutableStateOf(ActivePickupsState(userName = user.fullName, activeTab = ActiveTab.Pickups,
-            auditLogEntries=demoAuditLogEntries()))
+        mutableStateOf(ActivePickupsState(userName = user.fullName, activeTab = ActiveTab.Pickups))
     }
 
     LaunchedEffect(Unit) {
         state = state.copy(isRefreshing = true)
-        state = state.copy(pickups = repository.getActivePickups(), isRefreshing = false)
+        val (pickups, logEvents) = coroutineScope {
+            val pickups = async { repository.getActivePickups() }
+            val logEvents = async { logEventRepository.getLogEventsForCurrentUser() }
+            pickups.await() to logEvents.await()
+        }
+        state = state.copy(
+            pickups = pickups,
+            auditLogEntries = logEvents.map { it.toAuditLogEntry() },
+            isRefreshing = false,
+        )
     }
 
     ActivePickupsScreen(
@@ -144,26 +156,6 @@ fun ActivePickupsRoute(
     )
 }
 
-private fun demoAuditLogEntries()=listOf(
-    AuditLogEntry(
-        id = "1",
-        documentTitle = "Diploma",
-        organization = "Univerza v Ljubljani",
-        lockerNumber = "Paketnik #7",
-        location = "Kongresni trg, Ljubljana",
-        openedAt = "12. 5. 2026 ob 14:32",
-        status = AuditLogStatus.Confirmed,
-    ),
-    AuditLogEntry(
-        id = "2",
-        documentTitle = "Osebna izkaznica",
-        organization = "Upravna enota Ljubljana",
-        lockerNumber = "Paketnik #3",
-        location = "BTC City, Ljubljana",
-        openedAt = "9. 5. 2026 ob 09:18",
-        status = AuditLogStatus.Opened,
-    )
-)
 @Composable
 private fun ActivePickupContent(
     state: ActivePickupsState,
@@ -241,4 +233,3 @@ private fun ActivePickupContent(
         )
     }
 }
-
