@@ -72,11 +72,23 @@ fun ConfirmAccountRoute(
                                 .onSuccess { publicKey ->
                                     repository.confirmAccount(validatedCode, publicKey)
                                         .onSuccess { user ->
-                                            state = state.copy(isLoading = false)
-                                            sessionStore.addProfile(user)
-                                            sessionStore.setAuthenticated(user.id)
+                                            runCatching {
+                                                sessionStore.addProfile(user)
+                                                sessionStore.setAuthenticated(user.id)
+                                            }.onSuccess {
+                                                state = state.copy(isLoading = false)
+                                            }.onFailure {
+                                                securityRepository.reset()
+                                                sessionStore.forgetAllIdentities()
+                                                state = state.copy(
+                                                    isLoading = false,
+                                                    error = "Registracija ni uspela. Poskusite znova.",
+                                                )
+                                            }
                                         }
                                         .onFailure {
+                                            securityRepository.reset()
+                                            sessionStore.forgetAllIdentities()
                                             state = state.copy(
                                                 isLoading = false,
                                                 error = "Registracija ni uspela. Poskusite znova.",

@@ -218,4 +218,45 @@ class PersistedSessionStoreTest {
         assertEquals(sampleEmployee.id, snapshot["auth.active_profile_id"])
         assertTrue("auth.persisted_user" !in snapshot)
     }
+
+    @Test
+    fun hydrate_does_not_overwrite_profiles_when_legacy_key_coexists() = runTest {
+        val json = Json { ignoreUnknownKeys = true }
+        val storage = FakeSessionStorage(
+            mapOf(
+                "auth.persisted_profiles" to json.encodeToString(
+                    ListSerializer(AppUser.serializer()),
+                    listOf(sampleRegularUser, sampleEmployee),
+                ),
+                "auth.active_profile_id" to sampleRegularUser.id,
+                "auth.persisted_user" to json.encodeToString(AppUser.serializer(), sampleEmployee),
+            ),
+        )
+        val store = PersistedSessionStore(storage, json)
+
+        store.hydrate()
+
+        assertEquals(listOf(sampleRegularUser, sampleEmployee), store.profiles.value)
+        assertEquals(sampleRegularUser, store.activeProfile())
+        assertTrue("auth.persisted_user" !in storage.snapshot())
+    }
+
+    @Test
+    fun hydrate_with_invalid_profiles_payload_clears_dangling_active_id() = runTest {
+        val storage = FakeSessionStorage(
+            mapOf(
+                "auth.persisted_profiles" to "{not-json",
+                "auth.active_profile_id" to sampleEmployee.id,
+            ),
+        )
+        val store = PersistedSessionStore(storage)
+
+        store.hydrate()
+
+        assertEquals(emptyList(), store.profiles.value)
+        assertNull(store.activeProfile())
+        val snapshot = storage.snapshot()
+        assertTrue("auth.persisted_profiles" !in snapshot)
+        assertTrue("auth.active_profile_id" !in snapshot)
+    }
 }

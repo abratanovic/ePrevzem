@@ -25,7 +25,11 @@ class PersistedSessionStore(
     override suspend fun hydrate() {
         migrateLegacyIfPresent()
         _profiles.value = readProfiles()
-        activeId = storage.read(KEY_ACTIVE_PROFILE_ID)
+        val storedActiveId = storage.read(KEY_ACTIVE_PROFILE_ID)
+        activeId = storedActiveId?.takeIf { id -> _profiles.value.any { it.id == id } }
+        if (storedActiveId != null && activeId == null) {
+            storage.remove(KEY_ACTIVE_PROFILE_ID)
+        }
         _session.value = AuthSession.Unauthenticated
     }
 
@@ -83,13 +87,18 @@ class PersistedSessionStore(
 
     private suspend fun readProfiles(): List<AppUser> {
         val raw = storage.read(KEY_PROFILES) ?: return emptyList()
-        return runCatching { json.decodeFromString(profilesSerializer, raw) }.getOrDefault(emptyList())
+        return runCatching { json.decodeFromString(profilesSerializer, raw) }
+            .getOrElse {
+                storage.remove(KEY_PROFILES)
+                emptyList()
+            }
     }
 
     private suspend fun migrateLegacyIfPresent() {
         val legacy = storage.read(LEGACY_KEY_PERSISTED_USER) ?: return
+        val hasProfiles = storage.read(KEY_PROFILES) != null
         val user = runCatching { json.decodeFromString(AppUser.serializer(), legacy) }.getOrNull()
-        if (user != null) {
+        if (!hasProfiles && user != null) {
             storage.write(KEY_PROFILES, json.encodeToString(profilesSerializer, listOf(user)))
             storage.write(KEY_ACTIVE_PROFILE_ID, user.id)
         }
