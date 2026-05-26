@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import kotlinx.coroutines.launch
 import si.mentis.eprevzemmobile.AppContainer
 import si.mentis.eprevzemmobile.data.registration.RegistrationRepository
+import si.mentis.eprevzemmobile.data.security.SecurityRepository
 import si.mentis.eprevzemmobile.domain.User
 
 @Composable
@@ -20,6 +21,7 @@ fun ConfirmAccountRoute(
     onUseAnotherCode: () -> Unit,
     onConfirmed: (User) -> Unit = {},
     repository: RegistrationRepository = AppContainer.registrationRepository,
+    securityRepository: SecurityRepository = AppContainer.securityRepository,
     modifier: Modifier = Modifier,
 ) {
     var state by remember { mutableStateOf(ConfirmAccountState()) }
@@ -54,15 +56,27 @@ fun ConfirmAccountRoute(
                 ConfirmAccountEvent.UseAnotherCodeClicked -> onUseAnotherCode()
                 ConfirmAccountEvent.SubmitClicked -> {
                     if (state.canSubmit && !state.isLoading) {
-                        state = state.copy(isLoading = true)
+                        state = state.copy(isLoading = true, error = null)
                         scope.launch {
-                            repository.confirmAccount(validatedCode, state.pin, state.isBiometricEnabled)
-                                .onSuccess { user ->
-                                    state = state.copy(isLoading = false)
-                                    onConfirmed(user)
+                            securityRepository.register(state.pin, state.isBiometricEnabled)
+                                .onSuccess { publicKey ->
+                                    repository.confirmAccount(validatedCode, publicKey)
+                                        .onSuccess { user ->
+                                            state = state.copy(isLoading = false)
+                                            onConfirmed(user)
+                                        }
+                                        .onFailure {
+                                            state = state.copy(
+                                                isLoading = false,
+                                                error = "Registracija ni uspela. Poskusite znova.",
+                                            )
+                                        }
                                 }
                                 .onFailure {
-                                    state = state.copy(isLoading = false)
+                                    state = state.copy(
+                                        isLoading = false,
+                                        error = "Varnostna nastavitev ni uspela: ${it::class.simpleName}: ${it.message}",
+                                    )
                                 }
                         }
                     }
@@ -71,10 +85,10 @@ fun ConfirmAccountRoute(
                     state = state.copy(isBiometricEnabled = event.enabled)
                 }
                 is ConfirmAccountEvent.PinChanged -> {
-                    state = state.copy(pin = event.pin)
+                    state = state.copy(pin = event.pin, error = null)
                 }
                 is ConfirmAccountEvent.PinConfirmationChanged -> {
-                    state = state.copy(pinConfirmation = event.pin)
+                    state = state.copy(pinConfirmation = event.pin, error = null)
                 }
                 ConfirmAccountEvent.PinVisibilityToggled -> {
                     state = state.copy(isPinVisible = !state.isPinVisible)

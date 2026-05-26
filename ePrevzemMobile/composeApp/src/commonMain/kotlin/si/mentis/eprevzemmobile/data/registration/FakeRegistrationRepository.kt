@@ -24,14 +24,13 @@ class FakeRegistrationRepository : RegistrationRepository {
 
     override suspend fun confirmAccount(
         validatedCode: String,
-        pin: String,
-        biometricEnabled: Boolean,
+        publicKey: String,
     ): Result<User> {
         delay(800)
-        return Result.success(fakeUser(validatedCode, biometricEnabled))
+        return Result.success(fakeUser(validatedCode))
     }
 
-    private fun fakeUser(code: String, biometricEnabled: Boolean = true) = User(
+    private fun fakeUser(code: String) = User(
         id = "user-$code",
         fullName = "Marko Horvat",
         email = "marko.horvat@gov.si",
@@ -41,7 +40,6 @@ class FakeRegistrationRepository : RegistrationRepository {
         organizationName = "Upravna enota Ljubljana",
         organizationType = "Javna uprava",
         organizationLocation = "Adamič-Lundrovo nabrežje 2, Ljubljana",
-        isBiometricEnabled = biometricEnabled,
     )
 }
 

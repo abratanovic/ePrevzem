@@ -12,6 +12,7 @@ data class ConfirmAccountState(
     val isPinVisible: Boolean = false,
     val isPinConfirmationVisible: Boolean = false,
     val isLoading: Boolean = false,
+    val error: String? = null,
 ) {
     val isPinTooShort: Boolean get() = pin.isNotEmpty() && pin.length < PIN_LENGTH
     val isPinMismatch: Boolean get() =

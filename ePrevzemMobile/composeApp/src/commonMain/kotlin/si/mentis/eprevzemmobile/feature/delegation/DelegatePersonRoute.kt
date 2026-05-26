@@ -5,9 +5,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import si.mentis.eprevzemmobile.AppContainer
 import si.mentis.eprevzemmobile.data.delegation.DelegationRepository
 
@@ -21,9 +23,11 @@ fun DelegatePersonRoute(
     onBack: () -> Unit,
     onDelegated: () -> Unit,
     repository: DelegationRepository = AppContainer.delegationRepository,
+    securityRepository: si.mentis.eprevzemmobile.data.security.SecurityRepository = AppContainer.securityRepository,
     modifier: Modifier = Modifier,
 ) {
     var state by remember { mutableStateOf(DelegatePersonState()) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(state.isLoading) {
         if (!state.isLoading) return@LaunchedEffect
@@ -46,11 +50,33 @@ fun DelegatePersonRoute(
             }
     }
 
+    fun verifyBiometric() {
+        scope.launch {
+            securityRepository.signChallengeWithBiometric("verify".encodeToByteArray())
+                .onSuccess {
+                    state = state.copy(showBiometricSheet = false, isConfirming = true)
+                }
+                .onFailure {
+                    state = state.copy(showBiometricSheet = false, showPinSheet = true)
+                }
+        }
+    }
+
+    fun verifyPin(pin: String) {
+        scope.launch {
+            securityRepository.signChallengeWithPin(pin, "verify".encodeToByteArray())
+                .onSuccess {
+                    state = state.copy(showPinSheet = false, pinValue = "", isConfirming = true)
+                }
+                .onFailure {
+                    state = state.copy(pinValue = "")
+                }
+        }
+    }
+
     LaunchedEffect(state.showBiometricSheet) {
-        if (!state.showBiometricSheet) return@LaunchedEffect
-        delay(2000)
         if (state.showBiometricSheet) {
-            state = state.copy(showBiometricSheet = false, isConfirming = true)
+            verifyBiometric()
         }
     }
 
@@ -103,7 +129,7 @@ fun DelegatePersonRoute(
                     }
                     state = state.copy(pinValue = newPin)
                     if (newPin.length == 6) {
-                        state = state.copy(showPinSheet = false, pinValue = "", isConfirming = true)
+                        verifyPin(newPin)
                     }
                 }
                 DelegatePersonEvent.PinBackspace -> {

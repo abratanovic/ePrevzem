@@ -22,6 +22,7 @@ import si.mentis.eprevzemmobile.core.designsystem.components.cards.EDetailsRow
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.EDetailsSectionLabel
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.EIconChip
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.EIconTint
+import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EErrorBanner
 import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EPickupStatus
 import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EStatusChip
 import si.mentis.eprevzemmobile.core.designsystem.components.inputs.ESecurePinField
@@ -110,6 +111,10 @@ fun ConfirmAccountScreen(
                     style = typo.body,
                     color = colors.textSecondary,
                 )
+            }
+
+            if (state.error != null) {
+                EErrorBanner(title = state.error)
             }
 
             AccountDetailsCard(account = state.account)
