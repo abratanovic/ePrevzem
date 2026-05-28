@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.LaunchedEffect
@@ -34,9 +35,16 @@ import si.mentis.eprevzemmobile.data.pickups.PickupRepository
 import si.mentis.eprevzemmobile.data.security.SecurityRepository
 import si.mentis.eprevzemmobile.data.settings.UserSettingsRepository
 import si.mentis.eprevzemmobile.domain.User
+import si.mentis.eprevzemmobile.core.designsystem.components.buttons.EPrimaryButton
+import si.mentis.eprevzemmobile.core.designsystem.components.buttons.ESecondaryButton
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.EPickupCard
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.EIconChip
+import si.mentis.eprevzemmobile.core.designsystem.components.dialogs.EBottomSheet
 import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EEmptyState
+import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EErrorBanner
 import si.mentis.eprevzemmobile.core.designsystem.components.feedback.ELoadingState
+import si.mentis.eprevzemmobile.core.designsystem.components.inputs.ESecurePinField
+import si.mentis.eprevzemmobile.core.designsystem.components.inputs.ESwitch
 import si.mentis.eprevzemmobile.core.designsystem.components.layout.EScaffold
 import si.mentis.eprevzemmobile.core.designsystem.components.layout.EScreen
 import si.mentis.eprevzemmobile.core.designsystem.components.navigation.EBottomNavItem
@@ -104,12 +112,16 @@ fun ActivePickupsScreen(
                     entries=state.auditLogEntries
                 )
 
-                ActiveTab.Profile->ActivePickupContent(
+                ActiveTab.Profile->ProfileSettingsContent(
                     state=state,
                     onEvent=onEvent
                 )
             }
         }
+    }
+
+    if (state.isBiometricPinSheetVisible) {
+        BiometricPinSheet(state = state, onEvent = onEvent)
     }
 }
 
@@ -181,6 +193,7 @@ fun ActivePickupsRoute(
                         state = state.copy(
                             isBiometricPinSheetVisible = true,
                             biometricPin = "",
+                            isBiometricPinVisible = false,
                             settingsError = null,
                         )
                     } else if (!state.isUpdatingSettings) {
@@ -211,6 +224,9 @@ fun ActivePickupsRoute(
                         settingsError = null,
                     )
                 }
+                ActivePickupsEvent.BiometricPinVisibilityToggled -> {
+                    state = state.copy(isBiometricPinVisible = !state.isBiometricPinVisible)
+                }
                 ActivePickupsEvent.BiometricEnableConfirmed -> {
                     if (state.canConfirmBiometric && !state.isUpdatingSettings) {
                         val pin = state.biometricPin
@@ -223,6 +239,7 @@ fun ActivePickupsRoute(
                                         isBiometricEnabled = true,
                                         isBiometricPinSheetVisible = false,
                                         biometricPin = "",
+                                        isBiometricPinVisible = false,
                                         isUpdatingSettings = false,
                                         settingsError = null,
                                     )
@@ -241,6 +258,7 @@ fun ActivePickupsRoute(
                     state = state.copy(
                         isBiometricPinSheetVisible = false,
                         biometricPin = "",
+                        isBiometricPinVisible = false,
                         settingsError = null,
                     )
                 }
@@ -275,6 +293,198 @@ private fun User.toProfileData(): ProfileData = ProfileData(
     organizationType = organizationType,
     organizationLocation = organizationLocation,
 )
+
+@Composable
+private fun ProfileSettingsContent(
+    state: ActivePickupsState,
+    onEvent: (ActivePickupsEvent) -> Unit,
+) {
+    val colors = EPrevzemTheme.colors
+    val spacing = EPrevzemTheme.spacing
+    val typo = EPrevzemTheme.typography
+    val profile = state.profile
+
+    Column(verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
+        Text(
+            text = "PROFIL",
+            style = typo.caption,
+            color = colors.textMuted,
+        )
+        Text(
+            text = profile.fullName.ifBlank { state.userName },
+            style = typo.title,
+            color = colors.textPrimary,
+        )
+        Text(
+            text = profile.organizationName,
+            style = typo.body,
+            color = colors.textSecondary,
+        )
+    }
+
+    if (state.settingsError != null && !state.isBiometricPinSheetVisible) {
+        EErrorBanner(title = state.settingsError)
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
+        EDetailsSectionLabel(title = "Uporabnik")
+        EDetailsCard {
+            EDetailsRow(
+                icon = EPrevzemIcons.profile(),
+                label = "Ime in priimek",
+                value = profile.fullName,
+            )
+            EDetailsDivider()
+            EDetailsRow(
+                icon = EPrevzemIcons.inbox(),
+                label = "E-pošta",
+                value = profile.email,
+                tint = EIconTint.Teal,
+            )
+            EDetailsDivider()
+            EDetailsRow(
+                icon = EPrevzemIcons.notifications(),
+                label = "Telefon",
+                value = profile.phone,
+                tint = EIconTint.Teal,
+                mono = true,
+            )
+            EDetailsDivider()
+            EDetailsRow(
+                icon = EPrevzemIcons.clock(),
+                label = "Veljavnost",
+                value = "Do ${profile.validUntil}",
+                tint = EIconTint.Gold,
+            )
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
+        EDetailsSectionLabel(title = "Nastavitve")
+        EDetailsCard {
+            SettingsSwitchRow(
+                icon = EPrevzemIcons.biometric(),
+                title = "Biometrično preverjanje",
+                description = "Uporabite prstni odtis ali prepoznavo obraza pri odpiranju predalčka.",
+                checked = state.isBiometricEnabled,
+                enabled = !state.isUpdatingSettings,
+                tint = EIconTint.Green,
+                onCheckedChange = { enabled ->
+                    onEvent(ActivePickupsEvent.BiometricToggleRequested(enabled))
+                },
+            )
+            EDetailsDivider()
+            SettingsSwitchRow(
+                icon = EPrevzemIcons.notifications(),
+                title = "Obvestila o prevzemih",
+                description = "Prejmite obvestilo, ko vas čaka nov dokument ali se bliža rok prevzema.",
+                checked = state.areNotificationsEnabled,
+                enabled = !state.isUpdatingSettings,
+                tint = EIconTint.Teal,
+                onCheckedChange = { enabled ->
+                    onEvent(ActivePickupsEvent.NotificationsToggled(enabled))
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsSwitchRow(
+    icon: Painter,
+    title: String,
+    description: String,
+    checked: Boolean,
+    enabled: Boolean,
+    tint: EIconTint,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    val colors = EPrevzemTheme.colors
+    val spacing = EPrevzemTheme.spacing
+    val typo = EPrevzemTheme.typography
+
+    Row(
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        EIconChip(painter = icon, tint = tint)
+        Column(
+            verticalArrangement = Arrangement.spacedBy(spacing.xxs),
+            modifier = Modifier.weight(1f),
+        ) {
+            Text(
+                text = title,
+                style = typo.cardTitle,
+                color = colors.textPrimary,
+            )
+            Text(
+                text = description,
+                style = typo.bodySmall,
+                color = colors.textSecondary,
+            )
+        }
+        ESwitch(
+            checked = checked,
+            enabled = enabled,
+            onCheckedChange = onCheckedChange,
+        )
+    }
+}
+
+@Composable
+private fun BiometricPinSheet(
+    state: ActivePickupsState,
+    onEvent: (ActivePickupsEvent) -> Unit,
+) {
+    val colors = EPrevzemTheme.colors
+    val spacing = EPrevzemTheme.spacing
+    val typo = EPrevzemTheme.typography
+
+    EBottomSheet(
+        title = "Vklop biometrije",
+        onDismiss = { onEvent(ActivePickupsEvent.BiometricEnableCancelled) },
+    ) {
+        Text(
+            text = "Za vklop biometričnega preverjanja najprej potrdite identiteto s PIN-om.",
+            style = typo.body,
+            color = colors.textSecondary,
+        )
+
+        if (state.settingsError != null) {
+            EErrorBanner(title = state.settingsError)
+        }
+
+        ESecurePinField(
+            value = state.biometricPin,
+            onValueChange = { pin -> onEvent(ActivePickupsEvent.BiometricPinChanged(pin)) },
+            label = "PIN",
+            visible = state.isBiometricPinVisible,
+            onVisibilityToggle = { onEvent(ActivePickupsEvent.BiometricPinVisibilityToggled) },
+            enabled = !state.isUpdatingSettings,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            ESecondaryButton(
+                label = "Prekliči",
+                onClick = { onEvent(ActivePickupsEvent.BiometricEnableCancelled) },
+                enabled = !state.isUpdatingSettings,
+                modifier = Modifier.weight(1f),
+            )
+            EPrimaryButton(
+                label = "Potrdi",
+                onClick = { onEvent(ActivePickupsEvent.BiometricEnableConfirmed) },
+                enabled = state.canConfirmBiometric,
+                loading = state.isUpdatingSettings,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
 
 @Composable
 private fun ActivePickupContent(

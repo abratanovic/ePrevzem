@@ -17,6 +17,7 @@ data class ActivePickupsState(
     val areNotificationsEnabled: Boolean = false,
     val isBiometricPinSheetVisible: Boolean = false,
     val biometricPin: String = "",
+    val isBiometricPinVisible: Boolean = false,
     val isUpdatingSettings: Boolean = false,
     val settingsError: String? = null,
 ) {
