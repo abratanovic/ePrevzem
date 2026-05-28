@@ -14,6 +14,8 @@ import si.mentis.eprevzemmobile.data.security.AuthRepository
 import si.mentis.eprevzemmobile.data.security.FakeAuthRepository
 import si.mentis.eprevzemmobile.data.security.LocalSecurityRepository
 import si.mentis.eprevzemmobile.data.security.SecurityRepository
+import si.mentis.eprevzemmobile.data.settings.LocalUserSettingsRepository
+import si.mentis.eprevzemmobile.data.settings.UserSettingsRepository
 
 object AppContainer {
     val registrationRepository: RegistrationRepository = FakeRegistrationRepository()
@@ -21,6 +23,7 @@ object AppContainer {
     val delegationRepository: DelegationRepository = FakeDelegationRepository()
     val logEventRepository: LogEventRepository = FakeLogEventRepository()
     val securityRepository: SecurityRepository = LocalSecurityRepository()
+    val userSettingsRepository: UserSettingsRepository = LocalUserSettingsRepository()
     val authRepository: AuthRepository = FakeAuthRepository()
     val lockerRepository: LockerRepository = Direct4MeLockerRepository(
         apiKey = PlatformConfig.direct4MeApiKey,

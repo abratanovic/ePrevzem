@@ -19,6 +19,10 @@ class LocalSecurityRepository(
             storage.readString(KEY_PIN_SALT) != null
     }.getOrElse { false }
 
+    override suspend fun isBiometricEnabled(): Boolean = runCatching {
+        storage.readBiometricString(KEY_BIOMETRIC_AES_KEY) != null
+    }.getOrElse { false }
+
     override suspend fun register(pin: String, biometricEnabled: Boolean): Result<String> = runCatching {
         val keyPair = crypto.generateEcdsaKeyPair()
         val salt = crypto.randomBytes(size = 16)
@@ -48,6 +52,29 @@ class LocalSecurityRepository(
         }
 
         keyPair.publicKeyPem
+    }
+
+    override suspend fun enableBiometric(pin: String): Result<Unit> = runCatching {
+        val salt = storage.readString(KEY_PIN_SALT)?.fromBase64() ?: throw SecurityNotRegisteredException()
+        val aesKey = crypto.deriveAesKey(pin = pin, salt = salt)
+        decryptStoredPrivateKey(aesKey)
+
+        val authenticated = biometricAuthenticator.authenticate(
+            "Aktivirajte biometrično zaščito za ePrevzem"
+        )
+        if (!authenticated) throw BiometricAuthenticationException()
+
+        storage.writeBiometricString(KEY_BIOMETRIC_AES_KEY, aesKey.toBase64())
+    }.recoverCatching { error ->
+        when (error) {
+            is SecurityNotRegisteredException,
+            is BiometricAuthenticationException -> throw error
+            else -> throw InvalidPinException()
+        }
+    }
+
+    override suspend fun disableBiometric(): Result<Unit> = runCatching {
+        storage.remove(KEY_BIOMETRIC_AES_KEY)
     }
 
     override suspend fun signChallengeWithPin(pin: String, challenge: ByteArray): Result<ByteArray> = runCatching {
