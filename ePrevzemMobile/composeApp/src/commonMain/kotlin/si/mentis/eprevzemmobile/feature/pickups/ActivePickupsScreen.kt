@@ -123,6 +123,9 @@ fun ActivePickupsScreen(
     if (state.isBiometricPinSheetVisible) {
         BiometricPinSheet(state = state, onEvent = onEvent)
     }
+    if (state.isChangePinSheetVisible) {
+        ChangePinSheet(state = state, onEvent = onEvent)
+    }
 }
 
 @Composable
@@ -271,6 +274,87 @@ fun ActivePickupsRoute(
                         userSettingsRepository.setNotificationsEnabled(event.enabled)
                     }
                 }
+                ActivePickupsEvent.ChangePinClicked -> {
+                    state = state.copy(
+                        isChangePinSheetVisible = true,
+                        currentPin = "",
+                        newPin = "",
+                        newPinConfirmation = "",
+                        isCurrentPinVisible = false,
+                        isNewPinVisible = false,
+                        isNewPinConfirmationVisible = false,
+                        pinChangeError = null,
+                    )
+                }
+                ActivePickupsEvent.ChangePinCancelled -> {
+                    state = state.copy(
+                        isChangePinSheetVisible = false,
+                        currentPin = "",
+                        newPin = "",
+                        newPinConfirmation = "",
+                        isCurrentPinVisible = false,
+                        isNewPinVisible = false,
+                        isNewPinConfirmationVisible = false,
+                        isChangingPin = false,
+                        pinChangeError = null,
+                    )
+                }
+                is ActivePickupsEvent.CurrentPinChanged -> {
+                    state = state.copy(
+                        currentPin = event.pin.take(ActivePickupsState.PIN_LENGTH),
+                        pinChangeError = null,
+                    )
+                }
+                is ActivePickupsEvent.NewPinChanged -> {
+                    state = state.copy(
+                        newPin = event.pin.take(ActivePickupsState.PIN_LENGTH),
+                        pinChangeError = null,
+                    )
+                }
+                is ActivePickupsEvent.NewPinConfirmationChanged -> {
+                    state = state.copy(
+                        newPinConfirmation = event.pin.take(ActivePickupsState.PIN_LENGTH),
+                        pinChangeError = null,
+                    )
+                }
+                ActivePickupsEvent.CurrentPinVisibilityToggled -> {
+                    state = state.copy(isCurrentPinVisible = !state.isCurrentPinVisible)
+                }
+                ActivePickupsEvent.NewPinVisibilityToggled -> {
+                    state = state.copy(isNewPinVisible = !state.isNewPinVisible)
+                }
+                ActivePickupsEvent.NewPinConfirmationVisibilityToggled -> {
+                    state = state.copy(isNewPinConfirmationVisible = !state.isNewPinConfirmationVisible)
+                }
+                ActivePickupsEvent.ChangePinConfirmed -> {
+                    if (state.canConfirmPinChange && !state.isChangingPin) {
+                        val currentPin = state.currentPin
+                        val newPin = state.newPin
+                        state = state.copy(isChangingPin = true, pinChangeError = null)
+                        scope.launch {
+                            securityRepository.changePin(currentPin, newPin)
+                                .onSuccess {
+                                    state = state.copy(
+                                        isChangePinSheetVisible = false,
+                                        currentPin = "",
+                                        newPin = "",
+                                        newPinConfirmation = "",
+                                        isCurrentPinVisible = false,
+                                        isNewPinVisible = false,
+                                        isNewPinConfirmationVisible = false,
+                                        isChangingPin = false,
+                                        pinChangeError = null,
+                                    )
+                                }
+                                .onFailure {
+                                    state = state.copy(
+                                        isChangingPin = false,
+                                        pinChangeError = "Trenutni PIN ni pravilen. Poskusite znova.",
+                                    )
+                                }
+                        }
+                    }
+                }
             }
         },
     )
@@ -385,6 +469,14 @@ private fun ProfileSettingsContent(
                     onEvent(ActivePickupsEvent.NotificationsToggled(enabled))
                 },
             )
+            EDetailsDivider()
+            SettingsActionRow(
+                icon = EPrevzemIcons.key(),
+                title = "Spremeni PIN",
+                description = "Zamenjajte 6-mestni PIN, ki ga uporabljate kot rezervno potrditev identitete.",
+                enabled = !state.isUpdatingSettings && !state.isChangingPin,
+                onClick = { onEvent(ActivePickupsEvent.ChangePinClicked) },
+            )
         }
     }
 }
@@ -428,6 +520,47 @@ private fun SettingsSwitchRow(
             checked = checked,
             enabled = enabled,
             onCheckedChange = onCheckedChange,
+        )
+    }
+}
+
+@Composable
+private fun SettingsActionRow(
+    icon: Painter,
+    title: String,
+    description: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    val colors = EPrevzemTheme.colors
+    val spacing = EPrevzemTheme.spacing
+    val typo = EPrevzemTheme.typography
+
+    Row(
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        EIconChip(painter = icon, tint = EIconTint.Gold)
+        Column(
+            verticalArrangement = Arrangement.spacedBy(spacing.xxs),
+            modifier = Modifier.weight(1f),
+        ) {
+            Text(
+                text = title,
+                style = typo.cardTitle,
+                color = colors.textPrimary,
+            )
+            Text(
+                text = description,
+                style = typo.bodySmall,
+                color = colors.textSecondary,
+            )
+        }
+        ESecondaryButton(
+            label = "Uredi",
+            onClick = onClick,
+            enabled = enabled,
         )
     }
 }
@@ -480,6 +613,83 @@ private fun BiometricPinSheet(
                 onClick = { onEvent(ActivePickupsEvent.BiometricEnableConfirmed) },
                 enabled = state.canConfirmBiometric,
                 loading = state.isUpdatingSettings,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ChangePinSheet(
+    state: ActivePickupsState,
+    onEvent: (ActivePickupsEvent) -> Unit,
+) {
+    val colors = EPrevzemTheme.colors
+    val spacing = EPrevzemTheme.spacing
+    val typo = EPrevzemTheme.typography
+
+    EBottomSheet(
+        title = "Spremeni PIN",
+        onDismiss = { onEvent(ActivePickupsEvent.ChangePinCancelled) },
+    ) {
+        Text(
+            text = "Vnesite trenutni PIN in izberite nov 6-mestni PIN.",
+            style = typo.body,
+            color = colors.textSecondary,
+        )
+
+        if (state.pinChangeError != null) {
+            EErrorBanner(title = state.pinChangeError)
+        }
+
+        ESecurePinField(
+            value = state.currentPin,
+            onValueChange = { pin -> onEvent(ActivePickupsEvent.CurrentPinChanged(pin)) },
+            label = "Trenutni PIN",
+            visible = state.isCurrentPinVisible,
+            onVisibilityToggle = { onEvent(ActivePickupsEvent.CurrentPinVisibilityToggled) },
+            enabled = !state.isChangingPin,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        ESecurePinField(
+            value = state.newPin,
+            onValueChange = { pin -> onEvent(ActivePickupsEvent.NewPinChanged(pin)) },
+            label = "Nov PIN",
+            visible = state.isNewPinVisible,
+            onVisibilityToggle = { onEvent(ActivePickupsEvent.NewPinVisibilityToggled) },
+            enabled = !state.isChangingPin,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        ESecurePinField(
+            value = state.newPinConfirmation,
+            onValueChange = { pin -> onEvent(ActivePickupsEvent.NewPinConfirmationChanged(pin)) },
+            label = "Ponovite nov PIN",
+            visible = state.isNewPinConfirmationVisible,
+            onVisibilityToggle = { onEvent(ActivePickupsEvent.NewPinConfirmationVisibilityToggled) },
+            isError = state.isNewPinMismatch,
+            enabled = !state.isChangingPin,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        if (state.isNewPinMismatch) {
+            EErrorBanner(title = "Nova PIN-a se ne ujemata.")
+        }
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            ESecondaryButton(
+                label = "Prekliči",
+                onClick = { onEvent(ActivePickupsEvent.ChangePinCancelled) },
+                enabled = !state.isChangingPin,
+                modifier = Modifier.weight(1f),
+            )
+            EPrimaryButton(
+                label = "Shrani",
+                onClick = { onEvent(ActivePickupsEvent.ChangePinConfirmed) },
+                enabled = state.canConfirmPinChange,
+                loading = state.isChangingPin,
                 modifier = Modifier.weight(1f),
             )
         }

@@ -18,13 +18,30 @@ data class ActivePickupsState(
     val isBiometricPinSheetVisible: Boolean = false,
     val biometricPin: String = "",
     val isBiometricPinVisible: Boolean = false,
+    val isChangePinSheetVisible: Boolean = false,
+    val currentPin: String = "",
+    val newPin: String = "",
+    val newPinConfirmation: String = "",
+    val isCurrentPinVisible: Boolean = false,
+    val isNewPinVisible: Boolean = false,
+    val isNewPinConfirmationVisible: Boolean = false,
+    val isChangingPin: Boolean = false,
+    val pinChangeError: String? = null,
     val isUpdatingSettings: Boolean = false,
     val settingsError: String? = null,
 ) {
     val canConfirmBiometric: Boolean get() = biometricPin.length == BIOMETRIC_PIN_LENGTH
+    val isNewPinMismatch: Boolean get() =
+        newPin.length == PIN_LENGTH && newPinConfirmation.length == PIN_LENGTH && newPin != newPinConfirmation
+    val canConfirmPinChange: Boolean get() =
+        currentPin.length == PIN_LENGTH &&
+            newPin.length == PIN_LENGTH &&
+            newPinConfirmation.length == PIN_LENGTH &&
+            newPin == newPinConfirmation
 
     companion object {
-        const val BIOMETRIC_PIN_LENGTH = 6
+        const val PIN_LENGTH = 6
+        const val BIOMETRIC_PIN_LENGTH = PIN_LENGTH
     }
 }
 

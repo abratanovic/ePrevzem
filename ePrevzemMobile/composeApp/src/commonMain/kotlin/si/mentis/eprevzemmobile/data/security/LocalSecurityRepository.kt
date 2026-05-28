@@ -77,6 +77,27 @@ class LocalSecurityRepository(
         storage.remove(KEY_BIOMETRIC_AES_KEY)
     }
 
+    override suspend fun changePin(currentPin: String, newPin: String): Result<Unit> = runCatching {
+        val currentSalt = storage.readString(KEY_PIN_SALT)?.fromBase64() ?: throw SecurityNotRegisteredException()
+        val currentAesKey = crypto.deriveAesKey(pin = currentPin, salt = currentSalt)
+        val privateKey = decryptStoredPrivateKey(currentAesKey)
+        val biometricEnabled = storage.readBiometricString(KEY_BIOMETRIC_AES_KEY) != null
+
+        val newSalt = crypto.randomBytes(size = 16)
+        val newAesKey = crypto.deriveAesKey(pin = newPin, salt = newSalt)
+        val encryptedPrivateKey = crypto.encryptAesGcm(newAesKey, privateKey)
+
+        storage.writeString(KEY_PIN_SALT, newSalt.toBase64())
+        storage.writeString(KEY_PRIVATE_KEY_CIPHERTEXT, encryptedPrivateKey.ciphertext.toBase64())
+        storage.writeString(KEY_PRIVATE_KEY_NONCE, encryptedPrivateKey.nonce.toBase64())
+        if (biometricEnabled) {
+            storage.writeBiometricString(KEY_BIOMETRIC_AES_KEY, newAesKey.toBase64())
+        }
+    }.recoverCatching { error ->
+        if (error is SecurityNotRegisteredException) throw error
+        throw InvalidPinException()
+    }
+
     override suspend fun signChallengeWithPin(pin: String, challenge: ByteArray): Result<ByteArray> = runCatching {
         val salt = storage.readString(KEY_PIN_SALT)?.fromBase64() ?: throw SecurityNotRegisteredException()
         val aesKey = crypto.deriveAesKey(pin = pin, salt = salt)

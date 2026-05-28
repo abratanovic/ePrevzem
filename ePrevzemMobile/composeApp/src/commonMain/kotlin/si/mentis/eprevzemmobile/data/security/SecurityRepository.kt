@@ -6,6 +6,7 @@ interface SecurityRepository {
     suspend fun register(pin: String, biometricEnabled: Boolean): Result<String>
     suspend fun enableBiometric(pin: String): Result<Unit>
     suspend fun disableBiometric(): Result<Unit>
+    suspend fun changePin(currentPin: String, newPin: String): Result<Unit>
     suspend fun signChallengeWithPin(pin: String, challenge: ByteArray): Result<ByteArray>
     suspend fun signChallengeWithBiometric(challenge: ByteArray): Result<ByteArray>
     suspend fun reset()
