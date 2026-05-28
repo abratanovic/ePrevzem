@@ -31,6 +31,8 @@ import kotlinx.coroutines.launch
 import si.mentis.eprevzemmobile.AppContainer
 import si.mentis.eprevzemmobile.data.logevent.LogEventRepository
 import si.mentis.eprevzemmobile.data.pickups.PickupRepository
+import si.mentis.eprevzemmobile.data.security.SecurityRepository
+import si.mentis.eprevzemmobile.data.settings.UserSettingsRepository
 import si.mentis.eprevzemmobile.domain.User
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.EPickupCard
 import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EEmptyState
@@ -115,27 +117,50 @@ fun ActivePickupsScreen(
 fun ActivePickupsRoute(
     user: User,
     onPickupClicked: (String) -> Unit,
+    onUserUpdated: (User) -> Unit = {},
     repository: PickupRepository = AppContainer.pickupRepository,
     logEventRepository: LogEventRepository = AppContainer.logEventRepository,
+    securityRepository: SecurityRepository = AppContainer.securityRepository,
+    userSettingsRepository: UserSettingsRepository = AppContainer.userSettingsRepository,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
     var state by remember {
-        mutableStateOf(ActivePickupsState(userName = user.fullName, activeTab = ActiveTab.Pickups))
+        mutableStateOf(
+            ActivePickupsState(
+                userName = user.fullName,
+                profile = user.toProfileData(),
+                isBiometricEnabled = user.isBiometricEnabled,
+                activeTab = ActiveTab.Pickups,
+            )
+        )
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(user.id) {
         state = state.copy(isRefreshing = true)
-        val (pickups, logEvents) = coroutineScope {
+        val (pickups, logEvents, biometricEnabled, notificationsEnabled) = coroutineScope {
             val pickups = async { repository.getActivePickups() }
             val logEvents = async { logEventRepository.getLogEventsForCurrentUser() }
-            pickups.await() to logEvents.await()
+            val biometricEnabled = async { securityRepository.isBiometricEnabled() }
+            val notificationsEnabled = async { userSettingsRepository.areNotificationsEnabled() }
+            LoadedActivePickupsData(
+                pickups = pickups.await(),
+                auditLogEntries = logEvents.await().map { it.toAuditLogEntry() },
+                biometricEnabled = biometricEnabled.await(),
+                notificationsEnabled = notificationsEnabled.await(),
+            )
         }
+        val syncedUser = user.copy(isBiometricEnabled = biometricEnabled)
         state = state.copy(
             pickups = pickups,
-            auditLogEntries = logEvents.map { it.toAuditLogEntry() },
+            auditLogEntries = logEvents,
+            userName = user.fullName,
+            profile = user.toProfileData(),
+            isBiometricEnabled = biometricEnabled,
+            areNotificationsEnabled = notificationsEnabled,
             isRefreshing = false,
         )
+        if (syncedUser != user) onUserUpdated(syncedUser)
     }
 
     ActivePickupsScreen(
@@ -151,10 +176,105 @@ fun ActivePickupsRoute(
                 }
                 is ActivePickupsEvent.PickupClicked -> onPickupClicked(event.id)
                 is ActivePickupsEvent.TabSelected -> state = state.copy(activeTab = event.tab)
+                is ActivePickupsEvent.BiometricToggleRequested -> {
+                    if (event.enabled) {
+                        state = state.copy(
+                            isBiometricPinSheetVisible = true,
+                            biometricPin = "",
+                            settingsError = null,
+                        )
+                    } else if (!state.isUpdatingSettings) {
+                        state = state.copy(isUpdatingSettings = true, settingsError = null)
+                        scope.launch {
+                            securityRepository.disableBiometric()
+                                .onSuccess {
+                                    val updatedUser = user.copy(isBiometricEnabled = false)
+                                    state = state.copy(
+                                        isBiometricEnabled = false,
+                                        isUpdatingSettings = false,
+                                        settingsError = null,
+                                    )
+                                    onUserUpdated(updatedUser)
+                                }
+                                .onFailure {
+                                    state = state.copy(
+                                        isUpdatingSettings = false,
+                                        settingsError = "Biometrije ni bilo mogoče izklopiti. Poskusite znova.",
+                                    )
+                                }
+                        }
+                    }
+                }
+                is ActivePickupsEvent.BiometricPinChanged -> {
+                    state = state.copy(
+                        biometricPin = event.pin.take(ActivePickupsState.BIOMETRIC_PIN_LENGTH),
+                        settingsError = null,
+                    )
+                }
+                ActivePickupsEvent.BiometricEnableConfirmed -> {
+                    if (state.canConfirmBiometric && !state.isUpdatingSettings) {
+                        val pin = state.biometricPin
+                        state = state.copy(isUpdatingSettings = true, settingsError = null)
+                        scope.launch {
+                            securityRepository.enableBiometric(pin)
+                                .onSuccess {
+                                    val updatedUser = user.copy(isBiometricEnabled = true)
+                                    state = state.copy(
+                                        isBiometricEnabled = true,
+                                        isBiometricPinSheetVisible = false,
+                                        biometricPin = "",
+                                        isUpdatingSettings = false,
+                                        settingsError = null,
+                                    )
+                                    onUserUpdated(updatedUser)
+                                }
+                                .onFailure {
+                                    state = state.copy(
+                                        isUpdatingSettings = false,
+                                        settingsError = "PIN ni pravilen ali biometrična potrditev ni uspela.",
+                                    )
+                                }
+                        }
+                    }
+                }
+                ActivePickupsEvent.BiometricEnableCancelled -> {
+                    state = state.copy(
+                        isBiometricPinSheetVisible = false,
+                        biometricPin = "",
+                        settingsError = null,
+                    )
+                }
+                is ActivePickupsEvent.NotificationsToggled -> {
+                    state = state.copy(
+                        areNotificationsEnabled = event.enabled,
+                        settingsError = null,
+                    )
+                    scope.launch {
+                        userSettingsRepository.setNotificationsEnabled(event.enabled)
+                    }
+                }
             }
         },
     )
 }
+
+private data class LoadedActivePickupsData(
+    val pickups: List<si.mentis.eprevzemmobile.feature.pickups.model.PickupItem>,
+    val auditLogEntries: List<AuditLogEntry>,
+    val biometricEnabled: Boolean,
+    val notificationsEnabled: Boolean,
+)
+
+private fun User.toProfileData(): ProfileData = ProfileData(
+    fullName = fullName,
+    email = email,
+    phone = phone,
+    status = status,
+    validUntil = validUntil,
+    organizationName = organizationName,
+    organizationType = organizationType,
+    organizationLocation = organizationLocation,
+)
 
 @Composable
 private fun ActivePickupContent(
