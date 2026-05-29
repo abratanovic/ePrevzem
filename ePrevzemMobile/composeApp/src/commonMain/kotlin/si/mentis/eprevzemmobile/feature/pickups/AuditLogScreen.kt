@@ -30,11 +30,6 @@ fun AuditLogScreen(entries: List<AuditLogEntry>){
                 style = typo.title,
                 color = colors.textPrimary,
             )
-            Text(
-                text = "Pregled zabeleženih odpiranj paketnikov.",
-                style = typo.body,
-                color = colors.textSecondary,
-            )
         }
 
         EDetailsSectionLabel(
@@ -61,7 +56,7 @@ private fun AuditLogCard(entry: AuditLogEntry) {
             label = "Dokument",
             value = entry.documentTitle,
             tint = EIconTint.Green,
-            trailing = { AuditStatusBadge(status = entry.status) },
+            trailing = { AuditStatusBadge(badge = entry.badge) },
         )
         EDetailsDivider()
         EDetailsRow(
@@ -87,27 +82,23 @@ private fun AuditLogCard(entry: AuditLogEntry) {
     }
 }
 @Composable
-private fun AuditStatusBadge(status: AuditLogStatus) {
+private fun AuditStatusBadge(badge: AuditLogBadge) {
     val colors = EPrevzemTheme.colors
     val typo = EPrevzemTheme.typography
     val spacing = EPrevzemTheme.spacing
 
-    val label = when (status) {
-        AuditLogStatus.Opened -> "Odprto"
-        AuditLogStatus.Confirmed -> "Potrjeno"
-        AuditLogStatus.Failed -> "Neuspešno"
+    val background = when (badge.tone) {
+        AuditLogBadgeTone.Info -> colors.infoBg
+        AuditLogBadgeTone.Success -> colors.successBg
+        AuditLogBadgeTone.Warning -> colors.warningBg
+        AuditLogBadgeTone.Error -> colors.errorBg
     }
 
-    val background = when (status) {
-        AuditLogStatus.Opened -> colors.infoBg
-        AuditLogStatus.Confirmed -> colors.successBg
-        AuditLogStatus.Failed -> colors.errorBg
-    }
-
-    val foreground = when (status) {
-        AuditLogStatus.Opened -> colors.info
-        AuditLogStatus.Confirmed -> colors.success
-        AuditLogStatus.Failed -> colors.error
+    val foreground = when (badge.tone) {
+        AuditLogBadgeTone.Info -> colors.info
+        AuditLogBadgeTone.Success -> colors.success
+        AuditLogBadgeTone.Warning -> colors.warning
+        AuditLogBadgeTone.Error -> colors.error
     }
 
     Box(
@@ -116,6 +107,6 @@ private fun AuditStatusBadge(status: AuditLogStatus) {
             .background(background)
             .padding(horizontal = spacing.sm, vertical = spacing.xxs),
     ) {
-        Text(text = label, style = typo.caption, color = foreground)
+        Text(text = badge.label, style = typo.caption, color = foreground)
     }
 }
