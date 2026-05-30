@@ -1,6 +1,6 @@
 import { LayoutDashboard, LogOut, type LucideIcon } from "lucide-react";
 import sloveniaBadge from "../assets/slovenia-badge.png";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useState, useRef, useEffect } from "react";
 
@@ -38,6 +38,8 @@ function NavButton({ item }: { item: NavItem }) {
 export default function Sidebar() {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const isProfileActive = pathname === "/profil";
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -77,9 +79,9 @@ export default function Sidebar() {
       <div ref={menuRef} className="relative mb-4">
         <button
           onClick={() => setMenuOpen((v) => !v)}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 ring-2 ring-transparent transition hover:ring-accent/30"
+          className={`flex h-10 w-10 items-center justify-center rounded-full transition ring-2 ${isProfileActive ? "bg-accent text-white ring-accent/30" : "bg-accent/10 text-accent ring-transparent hover:ring-accent/30"}`}
         >
-          <span className="text-xs font-semibold text-accent">{initials}</span>
+          <span className="text-xs font-semibold">{initials}</span>
         </button>
 
         {menuOpen && (
@@ -92,6 +94,13 @@ export default function Sidebar() {
                 {user?.organizationName ?? (user?.role === "OrganizationAdmin" ? "Administrator" : "Član organizacije")}
               </p>
             </div>
+            <button
+              onClick={() => { navigate("/profil"); setMenuOpen(false); }}
+              className="flex w-full items-center gap-2.5 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              Moj profil
+            </button>
+            <div className="border-t border-slate-100" />
             <button
               onClick={handleLogout}
               className="flex w-full items-center gap-2.5 px-4 py-3 text-sm font-medium text-red-500 transition hover:bg-red-50"

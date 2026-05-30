@@ -3,6 +3,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./layouts/AppLayout";
 import DashboardPage from "./pages/DashboardPage";
+import ProfilePage from "./pages/ProfilePage";
 import LoginPage from "./pages/LoginPage";
 import AdminLoginPage from "./pages/AdminLoginPage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
@@ -27,6 +28,7 @@ export default function App() {
             </ProtectedRoute>
           }>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/profil" element={<ProfilePage />} />
           </Route>
         </Routes>
       </AuthProvider>

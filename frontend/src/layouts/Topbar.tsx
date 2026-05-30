@@ -9,6 +9,7 @@ interface RouteMeta {
 
 const ROUTE_TITLES: Record<string, string> = {
   "/dashboard": "Nadzorna plošča",
+  "/profil": "Moj profil",
 };
 
 const NOTIFICATION_COUNT = 4;
@@ -17,9 +18,11 @@ export default function Topbar() {
   const { pathname } = useLocation();
   const { user } = useAuth();
   const title = ROUTE_TITLES[pathname] ?? "";
-  const subtitle = user?.organizationName
-    ? `Pregled prevzemov in paketnikov · ${user.organizationName}`
-    : "Pregled prevzemov in paketnikov";
+  const subtitle = pathname === "/profil"
+    ? ""
+    : user?.organizationName
+      ? `Pregled prevzemov in paketnikov · ${user.organizationName}`
+      : "Pregled prevzemov in paketnikov";
 
   return (
     <header className="fixed inset-x-0 top-0 left-20 z-10 flex h-[72px] items-center gap-4 border-b border-slate-200 bg-white px-6">
