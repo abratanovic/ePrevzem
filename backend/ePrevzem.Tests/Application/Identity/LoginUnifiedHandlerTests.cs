@@ -19,6 +19,7 @@ public class LoginUnifiedHandlerTests
     private static LoginUnifiedCommandHandler BuildHandler(
         TestOrgAdminRepoForUnifiedLogin? orgAdminRepo = null,
         TestEmployeeRepoForUnifiedLogin? employeeRepo = null,
+        TestOrganizationRepoForUnifiedLogin? orgRepo = null,
         TestRefreshTokenRepoForUnifiedLogin? rtRepo = null,
         TestPasswordHasherForUnifiedLogin? hasher = null,
         TestTokenServiceForUnifiedLogin? tokenService = null,
@@ -26,6 +27,7 @@ public class LoginUnifiedHandlerTests
         => new(
             orgAdminRepo ?? new TestOrgAdminRepoForUnifiedLogin(),
             employeeRepo ?? new TestEmployeeRepoForUnifiedLogin(),
+            orgRepo ?? new TestOrganizationRepoForUnifiedLogin(),
             rtRepo ?? new TestRefreshTokenRepoForUnifiedLogin(),
             uow ?? new TestUnitOfWorkForUnifiedLogin(),
             new TestClockForUnifiedLogin(Now),
@@ -159,6 +161,18 @@ public sealed class TestEmployeeRepoForUnifiedLogin : IEmployeeAccountRepository
         => Task.FromResult(_items.SingleOrDefault(x => x.Email == email));
     public Task<EmployeeAccount?> GetByIdAsync(EmployeeAccountId id, CancellationToken ct = default)
         => Task.FromResult(_items.SingleOrDefault(x => x.Id == id));
+}
+
+public sealed class TestOrganizationRepoForUnifiedLogin : IOrganizationRepository
+{
+    public Task<Organization?> GetByIdAsync(OrganizationId id, CancellationToken ct = default)
+        => Task.FromResult<Organization?>(null);
+    public Task<bool> ExistsByTaxNumberAsync(string taxNumber, CancellationToken ct = default)
+        => Task.FromResult(false);
+    public Task<bool> ExistsByRegistrationNumberAsync(string registrationNumber, CancellationToken ct = default)
+        => Task.FromResult(false);
+    public Task AddAsync(Organization organization, CancellationToken ct = default)
+        => Task.CompletedTask;
 }
 
 public sealed class TestRefreshTokenRepoForUnifiedLogin : IRefreshTokenRepository

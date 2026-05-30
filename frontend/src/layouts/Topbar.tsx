@@ -1,33 +1,35 @@
 import { Bell, Plus, Search } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 interface RouteMeta {
   title: string;
   subtitle: string;
 }
 
-const ROUTE_META: Record<string, RouteMeta> = {
-  "/dashboard": {
-    title: "Nadzorna plošča",
-    subtitle: "Pregled prevzemov in paketnikov · UE Maribor",
-  },
+const ROUTE_TITLES: Record<string, string> = {
+  "/dashboard": "Nadzorna plošča",
 };
 
 const NOTIFICATION_COUNT = 4;
 
 export default function Topbar() {
   const { pathname } = useLocation();
-  const meta = ROUTE_META[pathname];
+  const { user } = useAuth();
+  const title = ROUTE_TITLES[pathname] ?? "";
+  const subtitle = user?.organizationName
+    ? `Pregled prevzemov in paketnikov · ${user.organizationName}`
+    : "Pregled prevzemov in paketnikov";
 
   return (
     <header className="fixed inset-x-0 top-0 left-20 z-10 flex h-[72px] items-center gap-4 border-b border-slate-200 bg-white px-6">
       {/* page heading */}
       <div className="min-w-0 shrink-0">
         <h1 className="text-[22px] font-bold tracking-tight text-slate-900 leading-tight">
-          {meta?.title ?? ""}
+          {title}
         </h1>
-        {meta?.subtitle && (
-          <p className="text-xs text-slate-500 leading-tight">{meta.subtitle}</p>
+        {subtitle && (
+          <p className="text-xs text-slate-500 leading-tight">{subtitle}</p>
         )}
       </div>
 
