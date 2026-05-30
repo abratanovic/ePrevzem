@@ -94,9 +94,10 @@ export default function AdminLoginPage() {
                 id="password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className={`w-full rounded-xl border bg-white py-3 pl-10 pr-10 text-sm text-slate-900 outline-none transition focus:ring-2 ${passwordError ? "border-red-400 focus:ring-red-200" : "border-slate-200 focus:border-[#1a3d2b] focus:ring-[#1a3d2b]/10"}`}
+                className={`w-full rounded-xl border bg-white py-3 pl-10 pr-10 text-sm text-slate-900 placeholder-slate-300 outline-none transition focus:ring-2 ${passwordError ? "border-red-400 focus:ring-red-200" : "border-slate-200 focus:border-[#1a3d2b] focus:ring-[#1a3d2b]/10"}`}
               />
               <button
                 type="button"

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Lock, Mail, FileText, Bell, History } from "lucide-react";
 import AuthLayout from "../components/auth/AuthLayout";
 import { useAuth } from "../contexts/AuthContext";
@@ -93,9 +93,10 @@ export default function LoginPage() {
                 id="password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className={`w-full rounded-xl border bg-white py-3 pl-10 pr-10 text-sm text-slate-900 outline-none transition focus:ring-2 ${passwordError ? "border-red-400 focus:ring-red-200" : "border-slate-200 focus:border-[#1a3d2b] focus:ring-[#1a3d2b]/10"}`}
+                className={`w-full rounded-xl border bg-white py-3 pl-10 pr-10 text-sm text-slate-900 placeholder-slate-300 outline-none transition focus:ring-2 ${passwordError ? "border-red-400 focus:ring-red-200" : "border-slate-200 focus:border-[#1a3d2b] focus:ring-[#1a3d2b]/10"}`}
               />
               <button
                 type="button"
@@ -128,28 +129,7 @@ export default function LoginPage() {
             )}
           </button>
 
-          <div className="flex items-center gap-3">
-            <div className="h-px flex-1 bg-slate-200" />
-            <span className="text-xs text-slate-400">ali</span>
-            <div className="h-px flex-1 bg-slate-200" />
-          </div>
-
-          <button
-            type="button"
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-[#1a3d2b]">
-              <rect x="2" y="3" width="20" height="18" rx="3" stroke="currentColor" strokeWidth="1.8" />
-              <path d="M8 9h8M8 13h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-            Prijava s SI-PASS
-          </button>
         </form>
-
-        <p className="text-center text-sm text-slate-500">
-          Nimate računa?{" "}
-          <Link to="/registracija" className="font-semibold text-[#1a3d2b] hover:underline">Registracija s kodo</Link>
-        </p>
       </div>
     </AuthLayout>
   );

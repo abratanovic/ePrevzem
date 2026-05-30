@@ -136,9 +136,10 @@ export default function ChangePasswordPage() {
                 id="current"
                 type={showCurrent ? "text" : "password"}
                 autoComplete="current-password"
+                placeholder="••••••••"
                 value={current}
                 onChange={(e) => setCurrent(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-10 text-sm text-slate-900 outline-none transition focus:border-[#1a3d2b] focus:ring-2 focus:ring-[#1a3d2b]/10"
+                className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-10 text-sm text-slate-900 placeholder-slate-300 outline-none transition focus:border-[#1a3d2b] focus:ring-2 focus:ring-[#1a3d2b]/10"
               />
               <button type="button" onClick={() => setShowCurrent((v) => !v)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                 {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -155,9 +156,10 @@ export default function ChangePasswordPage() {
                 id="newpw"
                 type={showNew ? "text" : "password"}
                 autoComplete="new-password"
+                placeholder="••••••••"
                 value={newPw}
                 onChange={(e) => setNewPw(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-10 text-sm text-slate-900 outline-none transition focus:border-[#1a3d2b] focus:ring-2 focus:ring-[#1a3d2b]/10"
+                className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-10 text-sm text-slate-900 placeholder-slate-300 outline-none transition focus:border-[#1a3d2b] focus:ring-2 focus:ring-[#1a3d2b]/10"
               />
               <button type="button" onClick={() => setShowNew((v) => !v)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                 {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -180,9 +182,10 @@ export default function ChangePasswordPage() {
                 id="repeat"
                 type={showRepeat ? "text" : "password"}
                 autoComplete="new-password"
+                placeholder="••••••••"
                 value={repeat}
                 onChange={(e) => setRepeat(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-10 text-sm text-slate-900 outline-none transition focus:border-[#1a3d2b] focus:ring-2 focus:ring-[#1a3d2b]/10"
+                className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-10 text-sm text-slate-900 placeholder-slate-300 outline-none transition focus:border-[#1a3d2b] focus:ring-2 focus:ring-[#1a3d2b]/10"
               />
               <button type="button" onClick={() => setShowRepeat((v) => !v)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                 {showRepeat ? <EyeOff size={16} /> : <Eye size={16} />}

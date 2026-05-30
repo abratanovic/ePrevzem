@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import sloveniaBadge from "../../assets/slovenia-badge.png";
+import sloveniaBadge from "../../assets/slovenia-badge-white.png";
 
 interface Bullet {
   icon: ReactNode;
@@ -34,7 +34,7 @@ export default function AuthLayout({ leftHeadline, leftSubtitle, leftBullets, ch
         {/* Logo */}
         <div className="flex items-center gap-3">
           <img src={sloveniaBadge} alt="Slovenija" className="h-10 w-10 object-contain" />
-          <div className="flex flex-col leading-tight">
+          <div className="flex h-10 flex-col justify-center leading-tight">
             <span className="text-[10px] font-semibold uppercase tracking-widest text-white/60">Republika Slovenija</span>
             <span className="text-lg font-bold text-white">ePrevzem</span>
           </div>
@@ -48,8 +48,8 @@ export default function AuthLayout({ leftHeadline, leftSubtitle, leftBullets, ch
           </div>
           <ul className="space-y-4">
             {leftBullets.map((b, i) => (
-              <li key={i} className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/80">
+              <li key={i} className="flex items-center gap-3">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/80">
                   {b.icon}
                 </span>
                 <span className="text-sm font-medium text-white/80">{b.text}</span>
@@ -59,7 +59,7 @@ export default function AuthLayout({ leftHeadline, leftSubtitle, leftBullets, ch
         </div>
 
         {/* Footer */}
-        <p className="text-xs text-white/40">© 2026 Republika Slovenija · Ministrstvo za digitalno preobrazbo</p>
+        <p className="text-xs text-white/40">© 2026 Republika Slovenija · ePrevzem</p>
       </div>
 
       {/* Right panel */}
