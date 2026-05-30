@@ -1,4 +1,7 @@
+import { useNavigate } from "react-router-dom";
+
 export default function LandingPage() {
+  const navigate = useNavigate();
   const sipassUrl = import.meta.env.VITE_SIPASS_URL ?? "";
 
   const handleRegister = () => {
@@ -29,6 +32,13 @@ export default function LandingPage() {
                 className="rounded-2xl bg-slate-900 px-6 py-3 text-base font-semibold text-white shadow-lg transition hover:bg-slate-700"
               >
                 Registriraj se
+              </button>
+
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="rounded-2xl bg-blue-600 px-6 py-3 text-base font-semibold text-white shadow-lg transition hover:bg-blue-500"
+              >
+                Prijava
               </button>
 
               <button className="rounded-2xl border border-slate-300 bg-white px-6 py-3 text-base font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50">
