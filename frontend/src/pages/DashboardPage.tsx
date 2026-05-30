@@ -4,6 +4,7 @@ import type { DashboardStats } from "../types/dashboard";
 import { getDashboardStats } from "../services/dashboardService";
 import StatCard from "../components/dashboard/StatCard";
 import PickupsTable from "../components/dashboard/PickupsTable";
+import LockerOccupancyPanel from "../components/dashboard/LockerOccupancyPanel";
 
 function StatCardSkeleton() {
   return (
@@ -63,7 +64,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-[1fr_360px] gap-4">
         <PickupsTable />
-        <div />
+        <LockerOccupancyPanel />
       </div>
     </div>
   );
