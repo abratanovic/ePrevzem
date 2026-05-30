@@ -1,8 +1,11 @@
+using ePrevzem.Application.Identity.ChangeOrgAdminPassword;
+using ePrevzem.Application.Identity.ChangePasswordUnified;
 using ePrevzem.Application.Identity.Dtos;
 using ePrevzem.Application.Identity.Login;
 using ePrevzem.Application.Identity.LoginUnified;
 using FluentValidation;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ePrevzem.Api.Controllers.Auth;
@@ -49,6 +52,36 @@ public sealed class AuthController : ControllerBase
         }
     }
 
+    [Authorize]
+    [HttpPost("change-password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ChangePassword(
+        [FromBody] ChangePasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _mediator.Send(
+                new ChangePasswordUnifiedCommand(request.CurrentPassword, request.NewPassword),
+                cancellationToken);
+            return NoContent();
+        }
+        catch (ValidationException ex)
+        {
+            return ValidationProblem(CreateValidationProblemDetails(ex));
+        }
+        catch (WrongCurrentPasswordException)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Wrong current password",
+                type: "urn:eprevzem:identity:wrong-current-password",
+                detail: "Trenutno geslo ni pravilno.");
+        }
+    }
+
     private static ValidationProblemDetails CreateValidationProblemDetails(ValidationException exception)
     {
         var errors = exception.Errors
@@ -61,3 +94,4 @@ public sealed class AuthController : ControllerBase
 }
 
 public sealed record UnifiedLoginRequest(string Email, string Password);
+public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
