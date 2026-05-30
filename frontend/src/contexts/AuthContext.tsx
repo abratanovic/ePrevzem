@@ -6,6 +6,11 @@ interface AuthUser {
   id: string;
   role: "OrganizationAdmin" | "Employee";
   mustChangePassword: boolean;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  organizationId: string | null;
+  organizationName: string | null;
 }
 
 interface AuthState {
@@ -14,7 +19,7 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ mustChangePassword: boolean }>;
   logout: () => void;
   clearMustChangePassword: () => void;
 }
@@ -53,17 +58,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { token: null, user: null };
   });
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<{ mustChangePassword: boolean }> => {
     const response: LoginResponse = await authService.login(email, password);
     const id = parseJwtSub(response.accessToken) ?? "";
     const user: AuthUser = {
       id,
       role: response.role,
       mustChangePassword: response.mustChangePassword,
+      firstName: response.firstName,
+      lastName: response.lastName,
+      email: response.email,
+      organizationId: response.organizationId,
+      organizationName: response.organizationName,
     };
     localStorage.setItem("access_token", response.accessToken);
     localStorage.setItem("auth_user", JSON.stringify(user));
     setState({ token: response.accessToken, user });
+    return { mustChangePassword: response.mustChangePassword };
   };
 
   const logout = () => {

@@ -17,11 +17,6 @@ export default function AdminLoginPage() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  if (user) {
-    navigate("/dashboard", { replace: true });
-    return null;
-  }
-
   const validate = () => {
     let ok = true;
     setEmailError(null);
@@ -38,8 +33,8 @@ export default function AdminLoginPage() {
     setError(null);
     setLoading(true);
     try {
-      await login(email, password);
-      navigate("/dashboard");
+      const { mustChangePassword } = await login(email, password);
+      navigate(mustChangePassword ? "/sprememba-gesla" : "/dashboard");
     } catch {
       setError("Napačen e-poštni naslov ali geslo.");
     } finally {

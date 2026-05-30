@@ -52,11 +52,6 @@ export default function ChangePasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (user && !user.mustChangePassword) {
-    navigate("/dashboard", { replace: true });
-    return null;
-  }
-
   const strength = checkStrength(newPw);
   const score = strengthScore(strength);
 

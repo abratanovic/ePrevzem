@@ -1,4 +1,4 @@
-const API_BASE = "/api/auth";
+const API_BASE = `${import.meta.env.VITE_API_URL ?? ""}/api/auth`;
 
 export interface LoginResponse {
   accessToken: string;
@@ -7,6 +7,11 @@ export interface LoginResponse {
   refreshTokenExpiresAt: string;
   role: "OrganizationAdmin" | "Employee";
   mustChangePassword: boolean;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  organizationId: string | null;
+  organizationName: string | null;
 }
 
 export async function login(email: string, password: string): Promise<LoginResponse> {

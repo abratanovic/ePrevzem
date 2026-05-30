@@ -14,6 +14,7 @@ public sealed class LoginUnifiedCommandHandler : IRequestHandler<LoginUnifiedCom
 
     private readonly IOrganizationAdminAccountRepository _orgAdminRepository;
     private readonly IEmployeeAccountRepository _employeeRepository;
+    private readonly IOrganizationRepository _organizationRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IClock _clock;
@@ -23,6 +24,7 @@ public sealed class LoginUnifiedCommandHandler : IRequestHandler<LoginUnifiedCom
     public LoginUnifiedCommandHandler(
         IOrganizationAdminAccountRepository orgAdminRepository,
         IEmployeeAccountRepository employeeRepository,
+        IOrganizationRepository organizationRepository,
         IRefreshTokenRepository refreshTokenRepository,
         IUnitOfWork unitOfWork,
         IClock clock,
@@ -31,6 +33,7 @@ public sealed class LoginUnifiedCommandHandler : IRequestHandler<LoginUnifiedCom
     {
         _orgAdminRepository = orgAdminRepository;
         _employeeRepository = employeeRepository;
+        _organizationRepository = organizationRepository;
         _refreshTokenRepository = refreshTokenRepository;
         _unitOfWork = unitOfWork;
         _clock = clock;
@@ -72,6 +75,8 @@ public sealed class LoginUnifiedCommandHandler : IRequestHandler<LoginUnifiedCom
 
         account.RecordLogin(now);
 
+        var org = await _organizationRepository.GetByIdAsync(account.OrganizationId, cancellationToken);
+
         var accessResult = _tokenService.IssueAccessToken(account);
         var refreshResult = _tokenService.IssueRefreshToken(now);
         var refreshToken = RefreshToken.IssueForOrganizationAdmin(
@@ -83,7 +88,9 @@ public sealed class LoginUnifiedCommandHandler : IRequestHandler<LoginUnifiedCom
         return new UnifiedLoginResponse(
             accessResult.Token, accessResult.ExpiresAt,
             refreshResult.Plaintext, refreshResult.ExpiresAt,
-            "OrganizationAdmin", account.MustChangePassword);
+            "OrganizationAdmin", account.MustChangePassword,
+            account.FirstName, account.LastName, account.Email,
+            account.OrganizationId.Value, org?.Name);
     }
 
     private async Task<UnifiedLoginResponse> HandleEmployee(
@@ -106,6 +113,8 @@ public sealed class LoginUnifiedCommandHandler : IRequestHandler<LoginUnifiedCom
 
         account.RecordLogin(now);
 
+        var org = await _organizationRepository.GetByIdAsync(account.OrganizationId, cancellationToken);
+
         var accessResult = _tokenService.IssueAccessToken(account);
         var refreshResult = _tokenService.IssueRefreshToken(now);
         var refreshToken = RefreshToken.IssueForEmployee(
@@ -117,6 +126,8 @@ public sealed class LoginUnifiedCommandHandler : IRequestHandler<LoginUnifiedCom
         return new UnifiedLoginResponse(
             accessResult.Token, accessResult.ExpiresAt,
             refreshResult.Plaintext, refreshResult.ExpiresAt,
-            "Employee", account.MustChangePassword);
+            "Employee", account.MustChangePassword,
+            account.FirstName, account.LastName, account.Email,
+            account.OrganizationId.Value, org?.Name);
     }
 }
