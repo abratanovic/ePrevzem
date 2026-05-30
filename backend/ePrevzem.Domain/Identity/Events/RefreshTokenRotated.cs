@@ -7,4 +7,5 @@ public sealed record RefreshTokenRotated(
     RefreshTokenId NewTokenId,
     SystemAdminId? SystemAdminId,
     OrganizationAdminAccountId? OrganizationAdminAccountId,
+    EmployeeAccountId? EmployeeAccountId,
     DateTimeOffset OccurredOn) : IDomainEvent;

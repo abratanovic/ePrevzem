@@ -11,7 +11,7 @@ public sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refresh
         builder.ToTable("refresh_tokens", t =>
             t.HasCheckConstraint(
                 "CK_refresh_tokens_single_actor",
-                "(system_admin_id IS NOT NULL AND organization_admin_account_id IS NULL) OR (system_admin_id IS NULL AND organization_admin_account_id IS NOT NULL)"));
+                "(system_admin_id IS NOT NULL AND organization_admin_account_id IS NULL AND employee_account_id IS NULL) OR (system_admin_id IS NULL AND organization_admin_account_id IS NOT NULL AND employee_account_id IS NULL) OR (system_admin_id IS NULL AND organization_admin_account_id IS NULL AND employee_account_id IS NOT NULL)"));
 
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id)
@@ -64,9 +64,21 @@ public sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refresh
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.Property(x => x.EmployeeAccountId)
+            .HasColumnName("employee_account_id")
+            .HasConversion(
+                x => x.HasValue ? x.Value.Value : (Guid?)null,
+                x => x.HasValue ? new EmployeeAccountId(x.Value) : null);
+
         builder.HasOne<OrganizationAdminAccount>()
             .WithMany()
             .HasForeignKey(x => x.OrganizationAdminAccountId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne<EmployeeAccount>()
+            .WithMany()
+            .HasForeignKey(x => x.EmployeeAccountId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Cascade);
 

@@ -169,6 +169,9 @@ public sealed class TestTokenServiceForOrgRefresh : ITokenService
     public AccessTokenResult IssueAccessToken(OrganizationAdminAccount admin)
         => new("org_admin_token", DateTimeOffset.UtcNow.AddMinutes(15));
 
+    public AccessTokenResult IssueAccessToken(EmployeeAccount employee)
+        => new("emp_token", DateTimeOffset.UtcNow.AddMinutes(15));
+
     public RefreshTokenResult IssueRefreshToken(DateTimeOffset now)
         => new("new_plain", "new_hash", now.AddDays(14));
 }

@@ -1,6 +1,5 @@
 using ePrevzem.Domain.Identity;
 using ePrevzem.Domain.Identity.Events;
-using ePrevzem.Domain.Organizations;
 using FluentAssertions;
 
 namespace ePrevzem.Tests.Domain.Identity;
@@ -76,6 +75,39 @@ public class RefreshTokenTests
         var ev = token.DomainEvents.OfType<RefreshTokenRotated>().Should().ContainSingle().Subject;
         ev.OrganizationAdminAccountId.Should().Be(orgAdminId);
         ev.SystemAdminId.Should().BeNull();
+    }
+
+    // ── Employee variant ─────────────────────────────────────────────────────
+
+    [Fact]
+    public void IssueForEmployee_creates_token_with_expected_properties()
+    {
+        var id = RefreshTokenId.New();
+        var employeeId = EmployeeAccountId.New();
+
+        var token = RefreshToken.IssueForEmployee(id, employeeId, "sha256_hash", Now.AddDays(14), Now);
+
+        token.Id.Should().Be(id);
+        token.EmployeeAccountId.Should().Be(employeeId);
+        token.SystemAdminId.Should().BeNull();
+        token.OrganizationAdminAccountId.Should().BeNull();
+        token.TokenHash.Should().Be("sha256_hash");
+        token.DomainEvents.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void IssueForEmployee_Rotate_raises_event_with_employee_id()
+    {
+        var employeeId = EmployeeAccountId.New();
+        var token = RefreshToken.IssueForEmployee(RefreshTokenId.New(), employeeId, "hash", Now.AddDays(14), Now);
+        var newTokenId = RefreshTokenId.New();
+
+        token.Rotate(newTokenId, Now.AddHours(1));
+
+        var ev = token.DomainEvents.OfType<RefreshTokenRotated>().Should().ContainSingle().Subject;
+        ev.EmployeeAccountId.Should().Be(employeeId);
+        ev.SystemAdminId.Should().BeNull();
+        ev.OrganizationAdminAccountId.Should().BeNull();
     }
 
     // ── Shared behaviour ─────────────────────────────────────────────────────
