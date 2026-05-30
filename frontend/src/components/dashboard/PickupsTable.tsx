@@ -1,0 +1,100 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { CheckCircle, Clock, Package, XCircle } from "lucide-react";
+import type { Pickup, PickupDisplayStatus, PickupPage } from "../../types/dashboard";
+import { getRecentPickups } from "../../services/dashboardService";
+
+const SL_MONTHS = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "avg", "sep", "okt", "nov", "dec"];
+
+function formatDeadline(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getDate()}. ${SL_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+const STATUS_CONFIG: Record<PickupDisplayStatus, { label: string; icon: typeof CheckCircle; className: string }> = {
+  ready:    { label: "Pripravljen",  icon: CheckCircle, className: "bg-emerald-100 text-emerald-700" },
+  expiring: { label: "Poteče kmalu", icon: Clock,        className: "bg-orange-100 text-orange-700" },
+  picked:   { label: "Prevzeto",     icon: Package,      className: "bg-blue-100 text-blue-700" },
+  expired:  { label: "Poteklo",      icon: XCircle,      className: "bg-red-100 text-red-700" },
+};
+
+function StatusBadge({ status }: { status: PickupDisplayStatus }) {
+  const { label, icon: Icon, className } = STATUS_CONFIG[status];
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${className}`}>
+      <Icon size={12} strokeWidth={2} />
+      {label}
+    </span>
+  );
+}
+
+function TableSkeleton() {
+  return (
+    <div className="animate-pulse space-y-3 p-4 pt-0">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="flex gap-4 py-3">
+          <div className="h-4 w-28 rounded bg-slate-200" />
+          <div className="h-4 w-36 rounded bg-slate-200" />
+          <div className="h-4 w-24 rounded bg-slate-200" />
+          <div className="h-4 w-32 rounded bg-slate-200" />
+          <div className="h-6 w-24 rounded-full bg-slate-200" />
+          <div className="h-4 w-20 rounded bg-slate-200" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function PickupsTable() {
+  const [data, setData] = useState<PickupPage | null>(null);
+
+  useEffect(() => {
+    getRecentPickups().then(setData);
+  }, []);
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex items-baseline justify-between px-5 pt-5 pb-3">
+        <div>
+          <h2 className="text-base font-semibold text-slate-900">Nedavni prevzemi</h2>
+          <p className="text-xs text-slate-400">Zadnjih 30 dni</p>
+        </div>
+        <Link to="/prevzemi" className="text-sm font-medium text-accent hover:underline">
+          Vsi prevzemi
+        </Link>
+      </div>
+
+      {data === null ? (
+        <TableSkeleton />
+      ) : (
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-t border-slate-100">
+              {["REFERENCA", "DOKUMENT", "PREJEMNIK", "LOKACIJA", "STATUS", "ROK"].map((h) => (
+                <th key={h} className="px-5 py-2.5 text-left text-[11px] font-semibold tracking-wide text-slate-400">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.items.map((row: Pickup) => (
+              <tr key={row.id} className="border-t border-slate-100 hover:bg-slate-50">
+                <td className="px-5 py-3.5 font-mono text-xs text-slate-500">{row.reference}</td>
+                <td className="px-5 py-3.5 font-medium text-slate-800">{row.documentType}</td>
+                <td className="px-5 py-3.5 text-slate-600">{row.recipientName}</td>
+                <td className="px-5 py-3.5 text-slate-600">{row.locationName}</td>
+                <td className="px-5 py-3.5">
+                  <StatusBadge status={row.status} />
+                </td>
+                <td className={`px-5 py-3.5 ${row.status === "expiring" ? "font-medium text-orange-600" : "text-slate-500"}`}>
+                  {formatDeadline(row.deadlineAt)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
