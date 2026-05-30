@@ -12,6 +12,7 @@ public class EPrevzemDbContext : DbContext, IUnitOfWork
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
     public DbSet<Organization> Organizations { get; set; } = null!;
     public DbSet<OrganizationAdminAccount> OrganizationAdminAccounts { get; set; } = null!;
+    public DbSet<EmployeeAccount> EmployeeAccounts { get; set; } = null!;
     public DbSet<ProvisioningCode> ProvisioningCodes { get; set; } = null!;
     public DbSet<PickupStation> PickupStations { get; set; } = null!;
     public DbSet<Locker> Lockers { get; set; } = null!;
