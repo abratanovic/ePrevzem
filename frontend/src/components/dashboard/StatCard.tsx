@@ -25,7 +25,7 @@ export default function StatCard({ icon, iconBg = "bg-slate-50", value, label, t
         )}
       </div>
       <div>
-        <div className="text-3xl font-bold tracking-tight text-slate-900">{value}</div>
+        <div className="text-3xl font-extrabold tracking-tight text-slate-900">{value}</div>
         <div className="mt-0.5 text-sm text-slate-500">{label}</div>
         {subtitle && (
           <div className="mt-0.5 text-xs text-slate-400">{subtitle}</div>

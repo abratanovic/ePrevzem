@@ -12,10 +12,10 @@ function formatDeadline(iso: string): string {
 }
 
 const STATUS_CONFIG: Record<PickupDisplayStatus, { label: string; icon: typeof CheckCircle; className: string }> = {
-  ready:    { label: "Pripravljen",  icon: CheckCircle, className: "bg-emerald-100 text-emerald-700" },
-  expiring: { label: "Poteče kmalu", icon: Clock,        className: "bg-orange-100 text-orange-700" },
-  picked:   { label: "Prevzeto",     icon: Package,      className: "bg-blue-100 text-blue-700" },
-  expired:  { label: "Poteklo",      icon: XCircle,      className: "bg-red-100 text-red-700" },
+  ready:    { label: "Prijavljen",   icon: CheckCircle, className: "bg-green-100 text-green-700" },
+  expiring: { label: "Poteče kmalu", icon: Clock,        className: "bg-orange-100 text-orange-600" },
+  picked:   { label: "Prevzeto",     icon: Package,      className: "bg-blue-100 text-blue-600" },
+  expired:  { label: "Poteklo",      icon: XCircle,      className: "bg-red-100 text-red-600" },
 };
 
 function StatusBadge({ status }: { status: PickupDisplayStatus }) {
@@ -56,7 +56,7 @@ export default function PickupsTable() {
     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-baseline justify-between px-5 pt-5 pb-3">
         <div>
-          <h2 className="text-base font-semibold text-slate-900">Nedavni prevzemi</h2>
+          <h2 className="text-lg font-bold text-slate-900">Nedavni prevzemi</h2>
           <p className="text-xs text-slate-400">Zadnjih 30 dni</p>
         </div>
         <Link to="/prevzemi" className="text-sm font-medium text-accent hover:underline">
@@ -80,8 +80,8 @@ export default function PickupsTable() {
           <tbody>
             {data.items.map((row: Pickup) => (
               <tr key={row.id} className="border-t border-slate-100 hover:bg-slate-50">
-                <td className="px-5 py-3.5 font-mono text-xs text-slate-500">{row.reference}</td>
-                <td className="px-5 py-3.5 font-medium text-slate-800">{row.documentType}</td>
+                <td className="px-5 py-3.5 text-sm text-slate-400">{row.reference}</td>
+                <td className="px-5 py-3.5 font-semibold text-slate-900">{row.documentType}</td>
                 <td className="px-5 py-3.5 text-slate-600">{row.recipientName}</td>
                 <td className="px-5 py-3.5 text-slate-600">{row.locationName}</td>
                 <td className="px-5 py-3.5">
