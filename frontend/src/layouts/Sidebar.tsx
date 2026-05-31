@@ -1,7 +1,7 @@
-import { LayoutDashboard, LogOut, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, LogOut, Package, type LucideIcon } from "lucide-react";
 import sloveniaBadge from "../assets/slovenia-badge.png";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/useAuth";
 import { useState, useRef, useEffect } from "react";
 
 interface NavItem {
@@ -12,6 +12,10 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { icon: LayoutDashboard, label: "Nadzorna plošča", path: "/dashboard" },
+];
+
+const ADMIN_NAV_ITEMS: NavItem[] = [
+  { icon: Package, label: "Paketomati", path: "/paketniki" },
 ];
 
 function NavButton({ item }: { item: NavItem }) {
@@ -70,7 +74,7 @@ export default function Sidebar() {
 
       {/* nav */}
       <nav className="mt-1 flex flex-1 flex-col items-center gap-0.5">
-        {NAV_ITEMS.map((item) => (
+        {[...NAV_ITEMS, ...(user?.role === "OrganizationAdmin" ? ADMIN_NAV_ITEMS : [])].map((item) => (
           <NavButton key={item.path} item={item} />
         ))}
       </nav>

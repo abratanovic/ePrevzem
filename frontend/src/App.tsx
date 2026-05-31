@@ -8,6 +8,11 @@ import LoginPage from "./pages/LoginPage";
 import AdminLoginPage from "./pages/AdminLoginPage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import LandingPage from "./pages/LandingPage";
+import OrganizationAdminRoute from "./components/OrganizationAdminRoute";
+import PickupStationsPage from "./pages/PickupStationsPage";
+import AddPickupStationPage from "./pages/AddPickupStationPage";
+import PickupStationDetailsPage from "./pages/PickupStationDetailsPage";
+import EditPickupStationPage from "./pages/EditPickupStationPage";
 
 export default function App() {
   return (
@@ -29,6 +34,10 @@ export default function App() {
           }>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/profil" element={<ProfilePage />} />
+            <Route path="/paketniki" element={<OrganizationAdminRoute><PickupStationsPage /></OrganizationAdminRoute>} />
+            <Route path="/paketniki/dodaj" element={<OrganizationAdminRoute><AddPickupStationPage /></OrganizationAdminRoute>} />
+            <Route path="/paketniki/:claimId" element={<OrganizationAdminRoute><PickupStationDetailsPage /></OrganizationAdminRoute>} />
+            <Route path="/paketniki/:claimId/uredi" element={<OrganizationAdminRoute><EditPickupStationPage /></OrganizationAdminRoute>} />
           </Route>
         </Routes>
       </AuthProvider>

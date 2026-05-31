@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Package } from "lucide-react";
 import type { LockerStation } from "../../types/dashboard";
 import { getLockerOccupancy } from "../../services/dashboardService";
+import { useAuth } from "../../contexts/useAuth";
 
 const HIGH_OCCUPANCY_THRESHOLD = 0.85;
 
@@ -38,6 +39,7 @@ function PanelSkeleton() {
 }
 
 export default function LockerOccupancyPanel() {
+  const { user } = useAuth();
   const [stations, setStations] = useState<LockerStation[] | null>(null);
 
   useEffect(() => {
@@ -72,13 +74,15 @@ export default function LockerOccupancyPanel() {
             );
           })}
 
-          <Link
-            to="/paketniki"
-            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            <Package size={16} className="text-accent" />
-            Upravljaj paketnike
-          </Link>
+          {user?.role === "OrganizationAdmin" && (
+            <Link
+              to="/paketniki"
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              <Package size={16} className="text-accent" />
+              Upravljaj paketnike
+            </Link>
+          )}
         </div>
       )}
     </div>
