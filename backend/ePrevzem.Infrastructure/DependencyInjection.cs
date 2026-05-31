@@ -32,8 +32,15 @@ public static class DependencyInjection
         services.AddScoped<IOrganizationAdminAccountRepository, OrganizationAdminAccountRepository>();
         services.AddScoped<IEmployeeAccountRepository, EmployeeAccountRepository>();
         services.AddScoped<IProvisioningCodeRepository, ProvisioningCodeRepository>();
+        services.AddScoped<ICitizenUserRepository, CitizenUserRepository>();
+        services.AddScoped<ICitizenActivationCodeRepository, CitizenActivationCodeRepository>();
         services.AddScoped<IPickupStationRepository, PickupStationRepository>();
         services.AddScoped<IStationClaimRepository, StationClaimRepository>();
+
+        var siTrustSecret = configuration["SiTrust:Secret"]
+            ?? throw new InvalidOperationException("SiTrust:Secret is not configured");
+        services.AddSingleton<ISiTrustTokenValidator>(
+            new SiTrustTokenValidator(new SiTrustOptions { Secret = siTrustSecret }));
 
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IPasswordHasher, PasswordHasherAdapter>();
