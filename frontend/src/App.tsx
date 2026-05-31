@@ -8,6 +8,7 @@ import LoginPage from "./pages/LoginPage";
 import AdminLoginPage from "./pages/AdminLoginPage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import LandingPage from "./pages/LandingPage";
+import ProvisioningCodePage from "./pages/ProvisioningCodePage";
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/registracija" element={<ProvisioningCodePage />} />
           <Route path="/prijava" element={<LoginPage />} />
           <Route path="/prijava/skrbnik" element={<AdminLoginPage />} />
           <Route path="/sprememba-gesla" element={
