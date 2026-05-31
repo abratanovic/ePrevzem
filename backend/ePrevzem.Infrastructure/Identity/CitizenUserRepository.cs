@@ -1,0 +1,22 @@
+using ePrevzem.Application.Common.Abstractions;
+using ePrevzem.Domain.Identity;
+using ePrevzem.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+
+namespace ePrevzem.Infrastructure.Identity;
+
+public sealed class CitizenUserRepository : ICitizenUserRepository
+{
+    private readonly EPrevzemDbContext _dbContext;
+
+    public CitizenUserRepository(EPrevzemDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    public Task<CitizenUser?> GetByEmsoAsync(string emso, CancellationToken cancellationToken = default)
+        => _dbContext.CitizenUsers.SingleOrDefaultAsync(x => x.Emso == emso, cancellationToken);
+
+    public Task AddAsync(CitizenUser user, CancellationToken cancellationToken = default)
+        => _dbContext.CitizenUsers.AddAsync(user, cancellationToken).AsTask();
+}
