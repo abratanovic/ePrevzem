@@ -1,15 +1,11 @@
 import { Bell, Plus, Search } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
-
-interface RouteMeta {
-  title: string;
-  subtitle: string;
-}
+import { useAuth } from "../contexts/useAuth";
 
 const ROUTE_TITLES: Record<string, string> = {
   "/dashboard": "Nadzorna plošča",
   "/profil": "Moj profil",
+  "/paketniki": "Paketomati",
 };
 
 const NOTIFICATION_COUNT = 4;
@@ -17,7 +13,7 @@ const NOTIFICATION_COUNT = 4;
 export default function Topbar() {
   const { pathname } = useLocation();
   const { user } = useAuth();
-  const title = ROUTE_TITLES[pathname] ?? "";
+  const title = ROUTE_TITLES[pathname] ?? (pathname.startsWith("/paketniki/") ? "Paketomati" : "");
   const subtitle = pathname === "/profil"
     ? ""
     : user?.organizationName

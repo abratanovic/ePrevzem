@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Lock, History, KeyRound, ShieldCheck } from "lucide-react";
 import AuthLayout from "../components/auth/AuthLayout";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/useAuth";
 import { changePassword } from "../services/authService";
 
 interface PasswordStrength {
@@ -39,9 +39,33 @@ function strengthColor(score: number): string {
   return "bg-[#1a3d2b]";
 }
 
+function StrengthBar({ score }: { score: number }) {
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4].map((level) => (
+        <div
+          key={level}
+          className={`h-1 flex-1 rounded-full transition-all ${score >= level ? strengthColor(score) : "bg-slate-200"}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function Requirement({ met, label }: { met: boolean; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className={`flex h-4 w-4 items-center justify-center rounded-full text-xs ${met ? "bg-[#1a3d2b] text-white" : "border border-slate-300 text-transparent"}`}>
+        {met ? "✓" : "○"}
+      </span>
+      <span className={`text-xs ${met ? "text-slate-700" : "text-slate-400"}`}>{label}</span>
+    </div>
+  );
+}
+
 export default function ChangePasswordPage() {
   const navigate = useNavigate();
-  const { clearMustChangePassword, user } = useAuth();
+  const { clearMustChangePassword } = useAuth();
 
   const [current, setCurrent] = useState("");
   const [newPw, setNewPw] = useState("");
@@ -78,26 +102,6 @@ export default function ChangePasswordPage() {
       setLoading(false);
     }
   };
-
-  const StrengthBar = () => (
-    <div className="flex gap-1">
-      {[1, 2, 3, 4].map((level) => (
-        <div
-          key={level}
-          className={`h-1 flex-1 rounded-full transition-all ${score >= level ? strengthColor(score) : "bg-slate-200"}`}
-        />
-      ))}
-    </div>
-  );
-
-  const Req = ({ met, label }: { met: boolean; label: string }) => (
-    <div className="flex items-center gap-1.5">
-      <span className={`flex h-4 w-4 items-center justify-center rounded-full text-xs ${met ? "bg-[#1a3d2b] text-white" : "border border-slate-300 text-transparent"}`}>
-        {met ? "✓" : "○"}
-      </span>
-      <span className={`text-xs ${met ? "text-slate-700" : "text-slate-400"}`}>{label}</span>
-    </div>
-  );
 
   return (
     <AuthLayout
@@ -162,7 +166,7 @@ export default function ChangePasswordPage() {
             </div>
             {newPw && (
               <div className="space-y-1">
-                <StrengthBar />
+                <StrengthBar score={score} />
                 <p className={`text-xs font-medium ${score >= 4 ? "text-[#1a3d2b]" : "text-slate-500"}`}>{strengthLabel(score)}</p>
               </div>
             )}
@@ -191,10 +195,10 @@ export default function ChangePasswordPage() {
           {/* Requirements grid */}
           {newPw && (
             <div className="grid grid-cols-2 gap-2 rounded-xl border border-slate-100 bg-slate-50 p-4">
-              <Req met={strength.minLength} label="Najmanj 12 znakov" />
-              <Req met={strength.hasUpperLower} label="Velika in mala črka" />
-              <Req met={strength.hasNumber} label="Vsaj ena številka" />
-              <Req met={strength.hasSpecial} label="Poseben znak (!?#)" />
+              <Requirement met={strength.minLength} label="Najmanj 12 znakov" />
+              <Requirement met={strength.hasUpperLower} label="Velika in mala črka" />
+              <Requirement met={strength.hasNumber} label="Vsaj ena številka" />
+              <Requirement met={strength.hasSpecial} label="Poseben znak (!?#)" />
             </div>
           )}
 
