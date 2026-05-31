@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { LocateFixed, Save } from "lucide-react";
 import type { ClaimPickupStationRequest } from "../../types/stations";
 import { SLOVENIAN_POSTAL_CODES } from "../../data/slovenianPostalCodes";
+import StationMapPicker from "./StationMapPicker";
 
 interface StationFormValues {
   latitude: number | "";
@@ -127,11 +128,10 @@ export default function StationForm({
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
-        setValues((current) => ({
-          ...current,
+        setCoordinates({
           latitude: Number(coords.latitude.toFixed(6)),
           longitude: Number(coords.longitude.toFixed(6)),
-        }));
+        });
         setLocationMessage("Koordinati sta bili uspešno izpolnjeni.");
         setIsLocating(false);
       },
@@ -140,6 +140,11 @@ export default function StationForm({
         setIsLocating(false);
       },
     );
+  };
+
+  const setCoordinates = ({ latitude, longitude }: { latitude: number; longitude: number }) => {
+    setValues((current) => ({ ...current, latitude, longitude }));
+    setErrors((current) => ({ ...current, latitude: undefined, longitude: undefined }));
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -207,8 +212,27 @@ export default function StationForm({
           <Field id="houseNumber" label="Hišna številka" value={values.houseNumber} error={errors.houseNumber} onChange={(value) => setValue("houseNumber", value)} />
           <Field id="zipCode" label="Poštna številka" value={values.zipCode} error={errors.zipCode} onChange={setZipCode} />
           <Field id="city" label="Kraj" value={values.city} error={errors.city} onChange={(value) => setValue("city", value)} />
-          <Field id="latitude" type="number" step="any" label="Zemljepisna širina" value={values.latitude} error={errors.latitude} onChange={(value) => setValue("latitude", value)} />
-          <Field id="longitude" type="number" step="any" label="Zemljepisna dolžina" value={values.longitude} error={errors.longitude} onChange={(value) => setValue("longitude", value)} />
+        </div>
+
+        <div className="mt-5 space-y-3">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-800">Natančna lokacija paketomata</h3>
+            <p className="text-xs text-slate-500">Kliknite na zemljevid ali premaknite marker do vhoda oziroma mesta, kjer je paketomat postavljen.</p>
+          </div>
+          <StationMapPicker
+            coordinates={values.latitude === "" || values.longitude === ""
+              ? null
+              : { latitude: values.latitude, longitude: values.longitude }}
+            onChange={setCoordinates}
+          />
+          {(errors.latitude || errors.longitude) && (
+            <p className="text-xs text-red-500">Na zemljevidu določite natančno lokacijo paketomata.</p>
+          )}
+          {values.latitude !== "" && values.longitude !== "" && (
+            <p className="text-xs text-slate-400">
+              Koordinate: <span className="font-mono">{values.latitude.toFixed(6)}, {values.longitude.toFixed(6)}</span>
+            </p>
+          )}
         </div>
       </div>
 
