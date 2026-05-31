@@ -1,12 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Copy, Check, AlertCircle, Loader2, X, Users } from "lucide-react";
-import { addMember, getMembers, disableEmployee, enableEmployee, type AddMemberResponse, type Member } from "../services/membersService";
+import {
+  addMember, getMembers, disableEmployee, enableEmployee, revokeRole, grantRole,
+  type AddMemberResponse, type Member
+} from "../services/membersService";
 
 type ModalState =
   | { step: "closed" }
   | { step: "form" }
   | { step: "credentials"; data: AddMemberResponse; codeOnly?: boolean };
+
+type ActionState = { memberId: string; action: string } | null;
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -30,6 +35,74 @@ function TableSkeleton() {
   );
 }
 
+function RowDropdown({
+  member,
+  activeAction,
+  onAction,
+}: {
+  member: Member;
+  activeAction: ActionState;
+  onAction: (memberId: string, action: string, fn: () => Promise<void>) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const isLoading = activeAction?.memberId === member.id;
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+      >
+        Akcije
+      </button>
+      {open && (
+        <div className="absolute right-0 z-20 mt-1 w-52 rounded-xl border border-slate-100 bg-white shadow-xl">
+          <button
+            onClick={() => {
+              onAction(member.id, "toggle", () =>
+                member.status === "Active" ? disableEmployee(member.id) : enableEmployee(member.id)
+              );
+              setOpen(false);
+            }}
+            disabled={isLoading}
+            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          >
+            {isLoading && activeAction?.action === "toggle" && <Loader2 size={12} className="animate-spin" />}
+            {member.status === "Active" ? "Onemogoči" : "Omogoči"}
+          </button>
+          <div className="border-t border-slate-100" />
+          {(["RecordManager", "Operator"] as const).map(role => (
+            <button
+              key={role}
+              onClick={() => {
+                onAction(member.id, role, () =>
+                  member.roles.includes(role) ? revokeRole(member.id, role) : grantRole(member.id, role)
+                );
+                setOpen(false);
+              }}
+              disabled={isLoading}
+              className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            >
+              {isLoading && activeAction?.action === role && <Loader2 size={12} className="animate-spin" />}
+              {member.roles.includes(role) ? `Odvzemi ${role}` : `Dodeli ${role}`}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function OrganizacijaClaniPage() {
   const [modal, setModal] = useState<ModalState>({ step: "closed" });
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "" });
@@ -37,7 +110,7 @@ export default function OrganizacijaClaniPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [members, setMembers] = useState<Member[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [activeAction, setActiveAction] = useState<ActionState>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const loadMembers = () => {
@@ -70,20 +143,16 @@ export default function OrganizacijaClaniPage() {
     }
   };
 
-  const handleToggle = async (member: Member) => {
-    setActionLoading(member.id);
+  const handleAction = async (memberId: string, action: string, fn: () => Promise<void>) => {
+    setActiveAction({ memberId, action });
     setActionError(null);
     try {
-      if (member.status === "Active") {
-        await disableEmployee(member.id);
-      } else {
-        await enableEmployee(member.id);
-      }
+      await fn();
       loadMembers();
     } catch {
       setActionError("Akcija ni uspela. Poskusite znova.");
     } finally {
-      setActionLoading(null);
+      setActiveAction(null);
     }
   };
 
@@ -121,54 +190,49 @@ export default function OrganizacijaClaniPage() {
             <p className="mt-1 text-sm text-slate-500">Dodajte prvega člana z gumbom zgoraj.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 text-left text-[11px] font-semibold tracking-wide text-slate-400">
-                  <th className="px-5 py-3">IME IN PRIIMEK</th>
-                  <th className="px-5 py-3">E-POŠTA</th>
-                  <th className="px-5 py-3">STATUS</th>
-                  <th className="px-5 py-3">VLOGE</th>
-                  <th className="px-5 py-3 text-right">AKCIJE</th>
-                </tr>
-              </thead>
-              <tbody>
-                {members.map(m => (
-                  <tr key={m.id} className="border-t border-slate-100 hover:bg-slate-50">
-                    <td className="px-5 py-4 font-medium text-slate-900">{m.firstName} {m.lastName}</td>
-                    <td className="px-5 py-4 text-slate-600">{m.email ?? "—"}</td>
-                    <td className="px-5 py-4">
-                      {m.status === "Active" ? (
-                        <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">Aktiven</span>
-                      ) : (
-                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500 ring-1 ring-slate-200">Onemogočen</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {m.roles.map(r => (
-                          <span key={r} className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-blue-100">{r}</span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      <button
-                        onClick={() => void handleToggle(m)}
-                        disabled={actionLoading === m.id}
-                        className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-                      >
-                        {actionLoading === m.id && <Loader2 size={12} className="animate-spin" />}
-                        {m.status === "Active" ? "Onemogoči" : "Omogoči"}
-                      </button>
-                    </td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-slate-50 text-left text-[11px] font-semibold tracking-wide text-slate-400">
+                    <th className="px-5 py-3">IME IN PRIIMEK</th>
+                    <th className="px-5 py-3">E-POŠTA</th>
+                    <th className="px-5 py-3">STATUS</th>
+                    <th className="px-5 py-3">VLOGE</th>
+                    <th className="px-5 py-3 text-right">AKCIJE</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {members.map(m => (
+                    <tr key={m.id} className="border-t border-slate-100 hover:bg-slate-50">
+                      <td className="px-5 py-4 font-medium text-slate-900">{m.firstName} {m.lastName}</td>
+                      <td className="px-5 py-4 text-slate-600">{m.email ?? "—"}</td>
+                      <td className="px-5 py-4">
+                        {m.status === "Active" ? (
+                          <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">Aktiven</span>
+                        ) : (
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500 ring-1 ring-slate-200">Onemogočen</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {m.roles.map(r => (
+                            <span key={r} className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-blue-100">{r}</span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        <RowDropdown member={m} activeAction={activeAction} onAction={handleAction} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             {actionError && (
               <p className="px-5 py-3 text-sm text-red-600">{actionError}</p>
             )}
-          </div>
+          </>
         )}
       </div>
 

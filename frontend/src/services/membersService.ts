@@ -55,3 +55,21 @@ export async function enableEmployee(id: string): Promise<void> {
   });
   if (!res.ok) throw res;
 }
+
+export async function revokeRole(id: string, role: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/${id}/roles/revoke`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${localStorage.getItem("access_token") ?? ""}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ role }),
+  });
+  if (!res.ok) throw res;
+}
+
+export async function grantRole(id: string, role: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/${id}/roles/grant`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${localStorage.getItem("access_token") ?? ""}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ role }),
+  });
+  if (!res.ok) throw res;
+}

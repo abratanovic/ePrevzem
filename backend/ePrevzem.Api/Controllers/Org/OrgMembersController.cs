@@ -2,8 +2,10 @@ using ePrevzem.Application.Common.Abstractions;
 using ePrevzem.Application.Organizations;
 using ePrevzem.Application.Organizations.AddMember;
 using ePrevzem.Application.Organizations.DisableEmployee;
+using ePrevzem.Application.Organizations.GrantEmployeeRole;
 using ePrevzem.Application.Organizations.ListMembers;
 using ePrevzem.Application.Organizations.ReenableEmployee;
+using ePrevzem.Application.Organizations.RevokeEmployeeRole;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -132,6 +134,62 @@ public sealed class OrgMembersController : ControllerBase
         }
     }
 
+    [HttpPatch("{id:guid}/roles/revoke")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RevokeRole([FromRoute] Guid id, [FromBody] RoleRequest request, CancellationToken cancellationToken)
+    {
+        var organizationId = _currentUser.OrganizationId
+            ?? throw new InvalidOperationException("Organization not resolved.");
+        try
+        {
+            await _mediator.Send(new RevokeEmployeeRoleCommand(organizationId, id, request.Role), cancellationToken);
+            return NoContent();
+        }
+        catch (EmployeeNotFoundException)
+        {
+            return Problem(statusCode: StatusCodes.Status404NotFound, type: EmployeeNotFoundType, title: "Employee not found");
+        }
+        catch (EmployeeForbiddenException)
+        {
+            return Problem(statusCode: StatusCodes.Status403Forbidden, type: EmployeeForbiddenType, title: "Forbidden");
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Problem(statusCode: StatusCodes.Status409Conflict, type: EmployeeAlreadyInStateType, title: "Role conflict", detail: ex.Message);
+        }
+    }
+
+    [HttpPatch("{id:guid}/roles/grant")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> GrantRole([FromRoute] Guid id, [FromBody] RoleRequest request, CancellationToken cancellationToken)
+    {
+        var organizationId = _currentUser.OrganizationId
+            ?? throw new InvalidOperationException("Organization not resolved.");
+        try
+        {
+            await _mediator.Send(new GrantEmployeeRoleCommand(organizationId, id, request.Role), cancellationToken);
+            return NoContent();
+        }
+        catch (EmployeeNotFoundException)
+        {
+            return Problem(statusCode: StatusCodes.Status404NotFound, type: EmployeeNotFoundType, title: "Employee not found");
+        }
+        catch (EmployeeForbiddenException)
+        {
+            return Problem(statusCode: StatusCodes.Status403Forbidden, type: EmployeeForbiddenType, title: "Forbidden");
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Problem(statusCode: StatusCodes.Status409Conflict, type: EmployeeAlreadyInStateType, title: "Role conflict", detail: ex.Message);
+        }
+    }
+
     private static ValidationProblemDetails CreateValidationProblemDetails(ValidationException exception)
     {
         var errors = exception.Errors
@@ -142,3 +200,4 @@ public sealed class OrgMembersController : ControllerBase
 }
 
 public sealed record AddEmployeeMemberRequest(string FirstName, string LastName, string Email);
+public sealed record RoleRequest(string Role);
