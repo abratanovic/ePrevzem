@@ -6,6 +6,6 @@ class VirtualId {
 }
 
 const mockVirtualId = VirtualId(
-  name: 'Adnan Bratanović',
-  emso: '1234567890123',
+  name: 'Edvin Bečič',
+  emso: '2222222222222',
 );
