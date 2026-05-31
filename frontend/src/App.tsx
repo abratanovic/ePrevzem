@@ -14,6 +14,8 @@ import AddPickupStationPage from "./pages/AddPickupStationPage";
 import PickupStationDetailsPage from "./pages/PickupStationDetailsPage";
 import EditPickupStationPage from "./pages/EditPickupStationPage";
 import ProvisioningCodePage from "./pages/ProvisioningCodePage";
+import OrganizacijaPage from "./pages/OrganizacijaPage";
+import OrganizacijaClaniPage from "./pages/OrganizacijaClaniPage";
 
 export default function App() {
   return (
@@ -40,6 +42,8 @@ export default function App() {
             <Route path="/paketniki/dodaj" element={<OrganizationAdminRoute><AddPickupStationPage /></OrganizationAdminRoute>} />
             <Route path="/paketniki/:claimId" element={<OrganizationAdminRoute><PickupStationDetailsPage /></OrganizationAdminRoute>} />
             <Route path="/paketniki/:claimId/uredi" element={<OrganizationAdminRoute><EditPickupStationPage /></OrganizationAdminRoute>} />
+            <Route path="/organizacija" element={<OrganizationAdminRoute><OrganizacijaPage /></OrganizationAdminRoute>} />
+            <Route path="/organizacija/clani" element={<OrganizationAdminRoute><OrganizacijaClaniPage /></OrganizationAdminRoute>} />
           </Route>
         </Routes>
       </AuthProvider>

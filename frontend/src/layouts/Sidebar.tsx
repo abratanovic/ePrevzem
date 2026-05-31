@@ -1,4 +1,4 @@
-import { LayoutDashboard, LogOut, Package, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, LogOut, Package, Users, type LucideIcon } from "lucide-react";
 import sloveniaBadge from "../assets/slovenia-badge.png";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/useAuth";
@@ -16,6 +16,7 @@ const NAV_ITEMS: NavItem[] = [
 
 const ADMIN_NAV_ITEMS: NavItem[] = [
   { icon: Package, label: "Paketomati", path: "/paketniki" },
+  { icon: Users, label: "Organizacija", path: "/organizacija" },
 ];
 
 function NavButton({ item }: { item: NavItem }) {
