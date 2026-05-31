@@ -12,4 +12,5 @@ export interface StationAdapter {
     claimId: string,
     request: UpdatePickupStationLocationRequest,
   ): Promise<OrganizationPickupStation>;
+  deleteStation(claimId: string): Promise<void>;
 }

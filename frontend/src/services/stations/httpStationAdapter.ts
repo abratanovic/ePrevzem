@@ -57,4 +57,12 @@ export const httpStationAdapter: StationAdapter = {
       }),
     );
   },
+
+  async deleteStation(claimId) {
+    const response = await fetch(`${API_BASE}/${claimId}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    if (!response.ok) throw response;
+  },
 };

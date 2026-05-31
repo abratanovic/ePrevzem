@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { MapPin, Package, Pencil, Radio, Warehouse } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { MapPin, Package, Pencil, Radio, Trash2, Warehouse } from "lucide-react";
 import StationPageHeader from "../components/stations/StationPageHeader";
 import { formatCoordinates, formatStationAddress, formatStationDate } from "../components/stations/stationFormatters";
 import { stationService } from "../services/stations/stationService";
@@ -17,8 +17,10 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 
 export default function PickupStationDetailsPage() {
   const { claimId = "" } = useParams();
+  const navigate = useNavigate();
   const [station, setStation] = useState<OrganizationPickupStation | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     stationService.getStation(claimId)
@@ -31,14 +33,37 @@ export default function PickupStationDetailsPage() {
 
   const serviceable = station.lockers.filter((locker) => locker.isServiceable).length;
 
+  const deleteStation = async () => {
+    const confirmed = window.confirm(
+      `Ali ste prepričani, da želite odstraniti paketomat ${station.serialNumber} iz organizacije?`,
+    );
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    setError(null);
+    try {
+      await stationService.deleteStation(station.claimId);
+      navigate("/paketniki");
+    } catch {
+      setError("Paketomata ni bilo mogoče odstraniti. Poskusite znova.");
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-5 p-6">
       <div className="flex items-center justify-between">
         <StationPageHeader title={station.serialNumber} subtitle="Podrobnosti paketomata in registrirane lokacije." />
-        <Link to={`/paketniki/${station.claimId}/uredi`} className="flex items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-dark">
-          <Pencil size={16} />
-          Uredi lokacijo
-        </Link>
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={deleteStation} disabled={isDeleting} className="flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60">
+            <Trash2 size={16} />
+            {isDeleting ? "Odstranjujem ..." : "Odstrani paketomat"}
+          </button>
+          <Link to={`/paketniki/${station.claimId}/uredi`} className="flex items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-dark">
+            <Pencil size={16} />
+            Uredi lokacijo
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4">

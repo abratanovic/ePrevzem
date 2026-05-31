@@ -127,4 +127,11 @@ export const mockStationAdapter: StationAdapter = {
     stations = stations.map((station) => station.claimId === claimId ? updated : station);
     return updated;
   },
+
+  async deleteStation(claimId) {
+    await wait();
+    const current = findStation(claimId);
+    const released = { ...current, releasedAt: new Date().toISOString() };
+    stations = stations.map((station) => station.claimId === claimId ? released : station);
+  },
 };
