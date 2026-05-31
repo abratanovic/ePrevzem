@@ -6,4 +6,5 @@ public interface IEmployeeAccountRepository
 {
     Task<EmployeeAccount?> GetByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default);
     Task<EmployeeAccount?> GetByIdAsync(EmployeeAccountId id, CancellationToken cancellationToken = default);
+    Task AddAsync(EmployeeAccount account, CancellationToken cancellationToken = default);
 }

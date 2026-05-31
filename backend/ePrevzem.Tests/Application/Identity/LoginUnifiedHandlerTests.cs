@@ -161,6 +161,7 @@ public sealed class TestEmployeeRepoForUnifiedLogin : IEmployeeAccountRepository
         => Task.FromResult(_items.SingleOrDefault(x => x.Email == email));
     public Task<EmployeeAccount?> GetByIdAsync(EmployeeAccountId id, CancellationToken ct = default)
         => Task.FromResult(_items.SingleOrDefault(x => x.Id == id));
+    public Task AddAsync(EmployeeAccount account, CancellationToken ct = default) { _items.Add(account); return Task.CompletedTask; }
 }
 
 public sealed class TestOrganizationRepoForUnifiedLogin : IOrganizationRepository

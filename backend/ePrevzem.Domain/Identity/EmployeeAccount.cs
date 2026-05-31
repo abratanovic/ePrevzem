@@ -142,6 +142,15 @@ public sealed class EmployeeAccount : AggregateRoot<EmployeeAccountId>
         Raise(new EmployeePasswordChanged(Id, now));
     }
 
+    public void SetInitialPassword(string passwordHash, DateTimeOffset now)
+    {
+        if (string.IsNullOrWhiteSpace(passwordHash))
+            throw new ArgumentException("Password hash is required.", nameof(passwordHash));
+        PasswordHash = passwordHash;
+        MustChangePassword = true;
+        Raise(new EmployeePasswordChanged(Id, now));
+    }
+
     public void RecordLogin(DateTimeOffset now)
     {
         LastLoginAt = now;

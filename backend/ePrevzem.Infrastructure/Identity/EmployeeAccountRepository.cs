@@ -25,4 +25,7 @@ public sealed class EmployeeAccountRepository : IEmployeeAccountRepository
             .Include(x => x.Roles)
             .Include(x => x.StationAccess)
             .SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+    public Task AddAsync(EmployeeAccount account, CancellationToken cancellationToken = default)
+        => _dbContext.EmployeeAccounts.AddAsync(account, cancellationToken).AsTask();
 }
