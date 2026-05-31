@@ -21,3 +21,21 @@ export async function addMember(firstName: string, lastName: string, email: stri
   if (!res.ok) throw res;
   return res.json();
 }
+
+export interface Member {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  status: "Active" | "Disabled";
+  roles: string[];
+  lastLoginAt: string | null;
+}
+
+export async function getMembers(): Promise<Member[]> {
+  const res = await fetch(API_BASE, {
+    headers: { Authorization: `Bearer ${localStorage.getItem("access_token") ?? ""}` },
+  });
+  if (!res.ok) throw res;
+  return res.json();
+}

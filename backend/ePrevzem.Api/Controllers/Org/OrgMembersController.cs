@@ -1,6 +1,7 @@
 using ePrevzem.Application.Common.Abstractions;
 using ePrevzem.Application.Organizations;
 using ePrevzem.Application.Organizations.AddMember;
+using ePrevzem.Application.Organizations.ListMembers;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -26,6 +27,17 @@ public sealed class OrgMembersController : ControllerBase
     private const string EmployeeNotFoundType = "urn:eprevzem:members:not-found";
     private const string EmployeeForbiddenType = "urn:eprevzem:members:forbidden";
     private const string EmployeeAlreadyInStateType = "urn:eprevzem:members:already-in-state";
+
+    [HttpGet]
+    [ProducesResponseType<IReadOnlyList<MemberDto>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> List(CancellationToken cancellationToken)
+    {
+        var organizationId = _currentUser.OrganizationId
+            ?? throw new InvalidOperationException("Organization not resolved.");
+
+        var members = await _mediator.Send(new ListOrganisationMembersQuery(organizationId), cancellationToken);
+        return Ok(members);
+    }
 
     [HttpPost]
     [ProducesResponseType<AddEmployeeMemberResponse>(StatusCodes.Status201Created)]
