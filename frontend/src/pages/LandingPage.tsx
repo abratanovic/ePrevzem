@@ -78,7 +78,8 @@ export default function LandingPage() {
   const sipassUrl = import.meta.env.VITE_SIPASS_URL ?? "";
 
   const handleRegister = () => {
-    window.location.href = sipassUrl + "/sipass/login";
+    const redirectUrl = `${window.location.origin}/registracija`;
+    window.location.href = `${sipassUrl}/sipass/login?redirectUrl=${encodeURIComponent(redirectUrl)}`;
   };
 
   const navLinks = [
