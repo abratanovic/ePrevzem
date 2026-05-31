@@ -32,3 +32,11 @@ Runner/GeneratedPluginRegistrant.*
 !default.mode2v3
 !default.pbxuser
 !default.perspectivev3
+
+# Generated config / project files
+Flutter/Debug.xcconfig
+Flutter/Release.xcconfig
+Runner.xcodeproj/project.pbxproj
+Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme
+Runner.xcworkspace/contents.xcworkspacedata
+Runner/Info.plist

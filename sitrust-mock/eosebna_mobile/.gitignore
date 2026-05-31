@@ -45,3 +45,8 @@ app.*.map.json
 /android/app/release
 
 .plans/
+
+# iOS generated
+pubspec.lock
+ios/Podfile
+ios/Podfile.lock
