@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { LocateFixed, Save } from "lucide-react";
 import type { ClaimPickupStationRequest } from "../../types/stations";
 import { SLOVENIAN_POSTAL_CODES } from "../../data/slovenianPostalCodes";
+import { StationServiceError } from "../../services/stations/stationAdapter";
 import StationMapPicker from "./StationMapPicker";
 
 interface StationFormValues {
@@ -36,7 +37,7 @@ type FormErrors = Partial<Record<keyof StationFormValues, string>>;
 
 function validate(values: StationFormValues): FormErrors {
   const errors: FormErrors = {};
-  if (!values.serialNumber.trim()) errors.serialNumber = "Serijska številka je obvezna.";
+  if (!values.serialNumber.trim()) errors.serialNumber = "Identifikacijska številka je obvezna.";
   if (!values.address.trim()) errors.address = "Ulica je obvezna.";
   if (!values.houseNumber.trim()) errors.houseNumber = "Hišna številka je obvezna.";
   if (!values.zipCode.trim()) errors.zipCode = "Poštna številka je obvezna.";
@@ -54,6 +55,7 @@ function Field({
   value,
   error,
   disabled,
+  placeholder,
   type = "text",
   step,
   onChange,
@@ -63,6 +65,7 @@ function Field({
   value: string | number;
   error?: string;
   disabled?: boolean;
+  placeholder?: string;
   type?: "text" | "number";
   step?: string;
   onChange: (value: string) => void;
@@ -76,6 +79,7 @@ function Field({
         step={step}
         value={value}
         disabled={disabled}
+        placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
         className={`w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition disabled:bg-slate-100 disabled:text-slate-500 ${error ? "border-red-400 focus:ring-2 focus:ring-red-100" : "border-slate-200 focus:border-accent focus:ring-2 focus:ring-accent/10"}`}
       />
@@ -162,8 +166,14 @@ export default function StationForm({
         longitude: Number(values.longitude),
         serialNumber: values.serialNumber.trim(),
       });
-    } catch {
-      setSubmitError("Paketomata ni bilo mogoče shraniti. Poskusite znova.");
+    } catch (error) {
+      if (error instanceof StationServiceError && error.code === "unknown_station") {
+        setSubmitError("Paketomat s to identifikacijsko številko ne obstaja.");
+      } else if (error instanceof StationServiceError && error.code === "station_already_claimed") {
+        setSubmitError("Ta paketomat je že povezan z organizacijo.");
+      } else {
+        setSubmitError("Paketomata ni bilo mogoče shraniti. Poskusite znova.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -174,14 +184,15 @@ export default function StationForm({
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-5">
           <h2 className="text-lg font-bold text-slate-900">Osnovni podatki</h2>
-          <p className="text-sm text-slate-500">Serijska številka poveže organizacijo z registriranim fizičnim paketomatom.</p>
+          <p className="text-sm text-slate-500">Paketomat in njegovi predalčki so že registrirani. Vnesite identifikacijsko številko fizičnega paketomata, ki ga želite povezati z organizacijo.</p>
         </div>
         <Field
           id="serialNumber"
-          label="Serijska številka"
+          label="Identifikacijska številka paketomata"
           value={values.serialNumber}
           error={errors.serialNumber}
           disabled={lockSerialNumber}
+          placeholder="Na primer EP-PM-004"
           onChange={(value) => setValue("serialNumber", value)}
         />
       </div>

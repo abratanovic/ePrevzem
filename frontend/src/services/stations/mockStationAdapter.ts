@@ -1,31 +1,72 @@
 import type { StationAdapter } from "./stationAdapter";
+import { StationServiceError } from "./stationAdapter";
 import type {
   ClaimPickupStationRequest,
   OrganizationPickupStation,
   StationLocker,
+  StationLocation,
   UpdatePickupStationLocationRequest,
 } from "../../types/stations";
 
 const MOCK_DELAY_MS = 250;
 const ORGANIZATION_ID = "1c26cbcb-cf13-4487-b035-623bf574cb9f";
 
-function makeLockers(count: number, unavailable: number[] = []): StationLocker[] {
-  return Array.from({ length: count }, (_, index) => ({
-    id: crypto.randomUUID(),
+interface MockStationCatalogEntry {
+  stationId: string;
+  serialNumber: string;
+  createdAt: string;
+  lockers: StationLocker[];
+}
+
+function makeLockers(stationNumber: number): StationLocker[] {
+  return Array.from({ length: 10 }, (_, index) => ({
+    id: `20000000-${stationNumber.toString().padStart(4, "0")}-4000-8000-${(index + 1).toString().padStart(12, "0")}`,
     lockerNumber: index + 1,
-    isServiceable: !unavailable.includes(index + 1),
+    isServiceable: true,
   }));
 }
 
-let stations: OrganizationPickupStation[] = [
-  {
-    claimId: "3481748b-e5ab-4797-b488-32bcb907d893",
-    stationId: "8976fbbf-ff0c-426e-93b7-b53818d38a28",
+const stationCatalog: MockStationCatalogEntry[] = Array.from({ length: 10 }, (_, index) => {
+  const stationNumber = index + 1;
+  return {
+    stationId: `10000000-0000-4000-8000-${stationNumber.toString().padStart(12, "0")}`,
+    serialNumber: `EP-PM-${stationNumber.toString().padStart(3, "0")}`,
+    createdAt: `2026-02-${(stationNumber + 9).toString().padStart(2, "0")}T08:00:00.000Z`,
+    lockers: makeLockers(stationNumber),
+  };
+});
+
+function getCatalogStation(serialNumber: string): MockStationCatalogEntry | undefined {
+  return stationCatalog.find((station) => station.serialNumber === serialNumber);
+}
+
+function makeClaimedStation(
+  serialNumber: string,
+  claimId: string,
+  location: StationLocation,
+  claimedAt: string,
+): OrganizationPickupStation {
+  const station = getCatalogStation(serialNumber);
+  if (!station) throw new Error(`Mock station '${serialNumber}' is not registered.`);
+
+  return {
+    claimId,
+    stationId: station.stationId,
     organizationId: ORGANIZATION_ID,
-    serialNumber: "EP-FERI-001",
-    createdAt: "2026-03-14T09:30:00.000Z",
-    lockers: makeLockers(48, [17]),
-    location: {
+    serialNumber: station.serialNumber,
+    createdAt: station.createdAt,
+    lockers: station.lockers,
+    location,
+    claimedAt,
+    releasedAt: null,
+  };
+}
+
+let stations: OrganizationPickupStation[] = [
+  makeClaimedStation(
+    "EP-PM-001",
+    "3481748b-e5ab-4797-b488-32bcb907d893",
+    {
       latitude: 46.5591,
       longitude: 15.6387,
       address: "Koroška cesta",
@@ -33,17 +74,12 @@ let stations: OrganizationPickupStation[] = [
       zipCode: "2000",
       city: "Maribor",
     },
-    claimedAt: "2026-03-18T10:00:00.000Z",
-    releasedAt: null,
-  },
-  {
-    claimId: "989e6383-4a84-455f-bbf9-7c7493a05c7e",
-    stationId: "22012198-f8cc-437f-bcbd-b667c4a6fedb",
-    organizationId: ORGANIZATION_ID,
-    serialNumber: "EP-UEM-002",
-    createdAt: "2026-02-20T08:15:00.000Z",
-    lockers: makeLockers(36),
-    location: {
+    "2026-03-18T10:00:00.000Z",
+  ),
+  makeClaimedStation(
+    "EP-PM-002",
+    "989e6383-4a84-455f-bbf9-7c7493a05c7e",
+    {
       latitude: 46.5576,
       longitude: 15.6459,
       address: "Ulica heroja Staneta",
@@ -51,17 +87,12 @@ let stations: OrganizationPickupStation[] = [
       zipCode: "2000",
       city: "Maribor",
     },
-    claimedAt: "2026-02-25T11:45:00.000Z",
-    releasedAt: null,
-  },
-  {
-    claimId: "ab79fa50-e491-4717-b1d5-a0548a5d1555",
-    stationId: "71e4b055-476f-45d7-a765-4157b5ef9a29",
-    organizationId: ORGANIZATION_ID,
-    serialNumber: "EP-KNJ-003",
-    createdAt: "2026-04-06T12:00:00.000Z",
-    lockers: makeLockers(44, [3, 29]),
-    location: {
+    "2026-02-25T11:45:00.000Z",
+  ),
+  makeClaimedStation(
+    "EP-PM-003",
+    "ab79fa50-e491-4717-b1d5-a0548a5d1555",
+    {
       latitude: 46.5598,
       longitude: 15.645,
       address: "Gospejna ulica",
@@ -69,9 +100,8 @@ let stations: OrganizationPickupStation[] = [
       zipCode: "2000",
       city: "Maribor",
     },
-    claimedAt: "2026-04-08T07:30:00.000Z",
-    releasedAt: null,
-  },
+    "2026-04-08T07:30:00.000Z",
+  ),
 ];
 
 function wait(): Promise<void> {
@@ -97,14 +127,23 @@ export const mockStationAdapter: StationAdapter = {
 
   async createStation(request: ClaimPickupStationRequest) {
     await wait();
+    const serialNumber = request.serialNumber.trim();
+    const catalogStation = getCatalogStation(serialNumber);
+    if (!catalogStation) throw new StationServiceError("unknown_station");
+
+    const isAlreadyClaimed = stations.some(
+      (station) => station.serialNumber === serialNumber && station.releasedAt === null,
+    );
+    if (isAlreadyClaimed) throw new StationServiceError("station_already_claimed");
+
     const now = new Date().toISOString();
     const station: OrganizationPickupStation = {
       claimId: crypto.randomUUID(),
-      stationId: crypto.randomUUID(),
+      stationId: catalogStation.stationId,
       organizationId: ORGANIZATION_ID,
-      serialNumber: request.serialNumber,
-      createdAt: now,
-      lockers: [],
+      serialNumber: catalogStation.serialNumber,
+      createdAt: catalogStation.createdAt,
+      lockers: catalogStation.lockers,
       location: {
         latitude: request.latitude,
         longitude: request.longitude,
