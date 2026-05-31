@@ -6,6 +6,6 @@ class VirtualId {
 }
 
 const mockVirtualId = VirtualId(
-  name: 'Edvin Bečič',
-  emso: '2222222222222',
+  name: String.fromEnvironment('VIRTUAL_ID_NAME', defaultValue: 'Edvin Bečič'),
+  emso: String.fromEnvironment('VIRTUAL_ID_EMSO', defaultValue: '2222222222222'),
 );
