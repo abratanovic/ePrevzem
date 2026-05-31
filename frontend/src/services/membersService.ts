@@ -73,3 +73,17 @@ export async function grantRole(id: string, role: string): Promise<void> {
   });
   if (!res.ok) throw res;
 }
+
+export interface ReissueProvisioningCodeResponse {
+  provisioningCode: string;
+  expiresAt: string;
+}
+
+export async function reissueProvisioningCode(id: string): Promise<ReissueProvisioningCodeResponse> {
+  const res = await fetch(`${API_BASE}/${id}/provisioning-code`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${localStorage.getItem("access_token") ?? ""}` },
+  });
+  if (!res.ok) throw res;
+  return res.json();
+}

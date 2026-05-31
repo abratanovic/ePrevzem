@@ -5,6 +5,7 @@ using ePrevzem.Application.Organizations.DisableEmployee;
 using ePrevzem.Application.Organizations.GrantEmployeeRole;
 using ePrevzem.Application.Organizations.ListMembers;
 using ePrevzem.Application.Organizations.ReenableEmployee;
+using ePrevzem.Application.Organizations.ReissueProvisioningCode;
 using ePrevzem.Application.Organizations.RevokeEmployeeRole;
 using FluentValidation;
 using MediatR;
@@ -187,6 +188,32 @@ public sealed class OrgMembersController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return Problem(statusCode: StatusCodes.Status409Conflict, type: EmployeeAlreadyInStateType, title: "Role conflict", detail: ex.Message);
+        }
+    }
+
+    [HttpPost("{id:guid}/provisioning-code")]
+    [ProducesResponseType<ReissueProvisioningCodeResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ReissueProvisioningCode([FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        var accountId = _currentUser.UserId
+            ?? throw new InvalidOperationException("User not authenticated.");
+        var organizationId = _currentUser.OrganizationId
+            ?? throw new InvalidOperationException("Organization not resolved.");
+        try
+        {
+            var response = await _mediator.Send(
+                new ReissueProvisioningCodeCommand(accountId, organizationId, id), cancellationToken);
+            return StatusCode(StatusCodes.Status201Created, response);
+        }
+        catch (EmployeeNotFoundException)
+        {
+            return Problem(statusCode: StatusCodes.Status404NotFound, type: EmployeeNotFoundType, title: "Employee not found");
+        }
+        catch (EmployeeForbiddenException)
+        {
+            return Problem(statusCode: StatusCodes.Status403Forbidden, type: EmployeeForbiddenType, title: "Forbidden");
         }
     }
 

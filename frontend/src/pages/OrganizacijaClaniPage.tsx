@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Copy, Check, AlertCircle, Loader2, X, Users } from "lucide-react";
 import {
-  addMember, getMembers, disableEmployee, enableEmployee, revokeRole, grantRole,
+  addMember, getMembers, disableEmployee, enableEmployee, revokeRole, grantRole, reissueProvisioningCode,
   type AddMemberResponse, type Member
 } from "../services/membersService";
 
@@ -39,10 +39,12 @@ function RowDropdown({
   member,
   activeAction,
   onAction,
+  onReissue,
 }: {
   member: Member;
   activeAction: ActionState;
   onAction: (memberId: string, action: string, fn: () => Promise<void>) => void;
+  onReissue: (member: Member) => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -66,7 +68,7 @@ function RowDropdown({
         Akcije
       </button>
       {open && (
-        <div className="absolute right-0 z-20 mt-1 w-52 rounded-xl border border-slate-100 bg-white shadow-xl">
+        <div className="absolute right-0 z-20 mt-1 w-56 rounded-xl border border-slate-100 bg-white shadow-xl">
           <button
             onClick={() => {
               onAction(member.id, "toggle", () =>
@@ -97,6 +99,18 @@ function RowDropdown({
               {member.roles.includes(role) ? `Odvzemi ${role}` : `Dodeli ${role}`}
             </button>
           ))}
+          <div className="border-t border-slate-100" />
+          <button
+            onClick={() => {
+              onReissue(member);
+              setOpen(false);
+            }}
+            disabled={isLoading}
+            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          >
+            {isLoading && activeAction?.action === "reissue" && <Loader2 size={12} className="animate-spin" />}
+            Znova izdaj kodo za provisioning
+          </button>
         </div>
       )}
     </div>
@@ -151,6 +165,28 @@ export default function OrganizacijaClaniPage() {
       loadMembers();
     } catch {
       setActionError("Akcija ni uspela. Poskusite znova.");
+    } finally {
+      setActiveAction(null);
+    }
+  };
+
+  const handleReissue = async (member: Member) => {
+    setActiveAction({ memberId: member.id, action: "reissue" });
+    setActionError(null);
+    try {
+      const result = await reissueProvisioningCode(member.id);
+      setModal({
+        step: "credentials",
+        data: {
+          employeeId: member.id,
+          initialPassword: "",
+          provisioningCode: result.provisioningCode,
+          provisioningCodeExpiresAt: result.expiresAt,
+        },
+        codeOnly: true,
+      });
+    } catch {
+      setActionError("Izdaja kode za provisioning ni uspela. Poskusite znova.");
     } finally {
       setActiveAction(null);
     }
@@ -222,7 +258,12 @@ export default function OrganizacijaClaniPage() {
                         </div>
                       </td>
                       <td className="px-5 py-4 text-right">
-                        <RowDropdown member={m} activeAction={activeAction} onAction={handleAction} />
+                        <RowDropdown
+                          member={m}
+                          activeAction={activeAction}
+                          onAction={handleAction}
+                          onReissue={m => void handleReissue(m)}
+                        />
                       </td>
                     </tr>
                   ))}
