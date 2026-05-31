@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { LocateFixed, Save } from "lucide-react";
 import type { ClaimPickupStationRequest } from "../../types/stations";
+import { SLOVENIAN_POSTAL_CODES } from "../../data/slovenianPostalCodes";
 
 interface StationFormValues {
   latitude: number | "";
@@ -106,6 +107,16 @@ export default function StationForm({
     setErrors((current) => ({ ...current, [field]: undefined }));
   };
 
+  const setZipCode = (zipCode: string) => {
+    const city = SLOVENIAN_POSTAL_CODES[zipCode] ?? "";
+    setValues((current) => ({ ...current, zipCode, city }));
+    setErrors((current) => ({
+      ...current,
+      zipCode: undefined,
+      ...(city ? { city: undefined } : {}),
+    }));
+  };
+
   const useCurrentLocation = () => {
     setLocationMessage(null);
     if (!navigator.geolocation) {
@@ -194,7 +205,7 @@ export default function StationForm({
         <div className="grid grid-cols-2 gap-4">
           <Field id="address" label="Ulica" value={values.address} error={errors.address} onChange={(value) => setValue("address", value)} />
           <Field id="houseNumber" label="Hišna številka" value={values.houseNumber} error={errors.houseNumber} onChange={(value) => setValue("houseNumber", value)} />
-          <Field id="zipCode" label="Poštna številka" value={values.zipCode} error={errors.zipCode} onChange={(value) => setValue("zipCode", value)} />
+          <Field id="zipCode" label="Poštna številka" value={values.zipCode} error={errors.zipCode} onChange={setZipCode} />
           <Field id="city" label="Kraj" value={values.city} error={errors.city} onChange={(value) => setValue("city", value)} />
           <Field id="latitude" type="number" step="any" label="Zemljepisna širina" value={values.latitude} error={errors.latitude} onChange={(value) => setValue("latitude", value)} />
           <Field id="longitude" type="number" step="any" label="Zemljepisna dolžina" value={values.longitude} error={errors.longitude} onChange={(value) => setValue("longitude", value)} />
