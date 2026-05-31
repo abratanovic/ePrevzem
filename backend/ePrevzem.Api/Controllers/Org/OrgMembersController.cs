@@ -1,7 +1,9 @@
 using ePrevzem.Application.Common.Abstractions;
 using ePrevzem.Application.Organizations;
 using ePrevzem.Application.Organizations.AddMember;
+using ePrevzem.Application.Organizations.DisableEmployee;
 using ePrevzem.Application.Organizations.ListMembers;
+using ePrevzem.Application.Organizations.ReenableEmployee;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -71,6 +73,62 @@ public sealed class OrgMembersController : ControllerBase
                 title: "Duplicate email",
                 type: DuplicateEmailType,
                 detail: "Zaposleni s tem e-poštnim naslovom že obstaja.");
+        }
+    }
+
+    [HttpPatch("{id:guid}/disable")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Disable([FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        var organizationId = _currentUser.OrganizationId
+            ?? throw new InvalidOperationException("Organization not resolved.");
+        try
+        {
+            await _mediator.Send(new DisableEmployeeCommand(organizationId, id), cancellationToken);
+            return NoContent();
+        }
+        catch (EmployeeNotFoundException)
+        {
+            return Problem(statusCode: StatusCodes.Status404NotFound, type: EmployeeNotFoundType, title: "Employee not found");
+        }
+        catch (EmployeeForbiddenException)
+        {
+            return Problem(statusCode: StatusCodes.Status403Forbidden, type: EmployeeForbiddenType, title: "Forbidden");
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("already disabled"))
+        {
+            return Problem(statusCode: StatusCodes.Status409Conflict, type: EmployeeAlreadyInStateType, title: "Already disabled");
+        }
+    }
+
+    [HttpPatch("{id:guid}/enable")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Enable([FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        var organizationId = _currentUser.OrganizationId
+            ?? throw new InvalidOperationException("Organization not resolved.");
+        try
+        {
+            await _mediator.Send(new ReenableEmployeeCommand(organizationId, id), cancellationToken);
+            return NoContent();
+        }
+        catch (EmployeeNotFoundException)
+        {
+            return Problem(statusCode: StatusCodes.Status404NotFound, type: EmployeeNotFoundType, title: "Employee not found");
+        }
+        catch (EmployeeForbiddenException)
+        {
+            return Problem(statusCode: StatusCodes.Status403Forbidden, type: EmployeeForbiddenType, title: "Forbidden");
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("already active"))
+        {
+            return Problem(statusCode: StatusCodes.Status409Conflict, type: EmployeeAlreadyInStateType, title: "Already active");
         }
     }
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Copy, Check, AlertCircle, Loader2, X, Users } from "lucide-react";
-import { addMember, getMembers, type AddMemberResponse, type Member } from "../services/membersService";
+import { addMember, getMembers, disableEmployee, enableEmployee, type AddMemberResponse, type Member } from "../services/membersService";
 
 type ModalState =
   | { step: "closed" }
@@ -37,6 +37,8 @@ export default function OrganizacijaClaniPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [members, setMembers] = useState<Member[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const loadMembers = () => {
     setLoadError(null);
@@ -65,6 +67,23 @@ export default function OrganizacijaClaniPage() {
       setFormError("Dodajanje člana ni uspelo. Preverite podatke in poskusite znova.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleToggle = async (member: Member) => {
+    setActionLoading(member.id);
+    setActionError(null);
+    try {
+      if (member.status === "Active") {
+        await disableEmployee(member.id);
+      } else {
+        await enableEmployee(member.id);
+      }
+      loadMembers();
+    } catch {
+      setActionError("Akcija ni uspela. Poskusite znova.");
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -133,12 +152,22 @@ export default function OrganizacijaClaniPage() {
                       </div>
                     </td>
                     <td className="px-5 py-4 text-right">
-                      {/* actions populated in subsequent issues */}
+                      <button
+                        onClick={() => void handleToggle(m)}
+                        disabled={actionLoading === m.id}
+                        className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                      >
+                        {actionLoading === m.id && <Loader2 size={12} className="animate-spin" />}
+                        {m.status === "Active" ? "Onemogoči" : "Omogoči"}
+                      </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            {actionError && (
+              <p className="px-5 py-3 text-sm text-red-600">{actionError}</p>
+            )}
           </div>
         )}
       </div>

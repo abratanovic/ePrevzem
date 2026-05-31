@@ -39,3 +39,19 @@ export async function getMembers(): Promise<Member[]> {
   if (!res.ok) throw res;
   return res.json();
 }
+
+export async function disableEmployee(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/${id}/disable`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${localStorage.getItem("access_token") ?? ""}` },
+  });
+  if (!res.ok) throw res;
+}
+
+export async function enableEmployee(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/${id}/enable`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${localStorage.getItem("access_token") ?? ""}` },
+  });
+  if (!res.ok) throw res;
+}
