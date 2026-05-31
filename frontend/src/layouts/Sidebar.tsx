@@ -74,7 +74,7 @@ export default function Sidebar() {
       </div>
 
       {/* nav */}
-      <nav className="mt-1 flex flex-1 flex-col items-center gap-0.5">
+      <nav className="mt-1 flex flex-1 flex-col items-center gap-2">
         {[...NAV_ITEMS, ...(user?.role === "OrganizationAdmin" ? ADMIN_NAV_ITEMS : [])].map((item) => (
           <NavButton key={item.path} item={item} />
         ))}
@@ -96,7 +96,7 @@ export default function Sidebar() {
                 {user ? `${user.firstName} ${user.lastName}` : ""}
               </p>
               <p className="mt-0.5 text-[10px] text-slate-400 truncate">
-                {user?.organizationName ?? (user?.role === "OrganizationAdmin" ? "Administrator" : "Član organizacije")}
+                {user?.organizationName ?? (user?.role === "OrganizationAdmin" ? "Administrator" : "Zaposleni")}
               </p>
             </div>
             <button

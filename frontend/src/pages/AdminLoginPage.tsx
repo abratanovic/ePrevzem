@@ -45,10 +45,10 @@ export default function AdminLoginPage() {
   return (
     <AuthLayout
       leftHeadline={<>Skrbniška<br />konzola ePrevzem</>}
-      leftSubtitle="Upravljajte paketnike, prevzeme in člane svoje organizacije z enega mesta."
+      leftSubtitle="Upravljajte paketnike, prevzeme in zaposlene svoje organizacije z enega mesta."
       leftBullets={[
         { icon: <LayoutDashboard size={15} />, text: "Pregled paketnikov in zasedenosti" },
-        { icon: <Users size={15} />, text: "Upravljanje članov in dovoljenj" },
+        { icon: <Users size={15} />, text: "Upravljanje zaposlenih in dovoljenj" },
         { icon: <ClipboardList size={15} />, text: "Revizijska sled vseh dejanj" },
       ]}
     >
@@ -142,8 +142,8 @@ export default function AdminLoginPage() {
         </form>
 
         <p className="text-center text-sm text-slate-500">
-          Ste član organizacije?{" "}
-          <Link to="/prijava" className="font-semibold text-[#1a3d2b] hover:underline">Prijava za člane</Link>
+          Ste zaposleni v organizaciji?{" "}
+          <Link to="/prijava" className="font-semibold text-[#1a3d2b] hover:underline">Prijava za zaposlene</Link>
         </p>
       </div>
     </AuthLayout>

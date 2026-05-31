@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Copy, Check, AlertCircle, Loader2, X, Users } from "lucide-react";
+import { Plus, Copy, Check, AlertCircle, Loader2, X, Users, MoreHorizontal, ShieldOff, ShieldCheck, UserMinus, UserPlus, RefreshCw } from "lucide-react";
 import {
   addMember, getMembers, disableEmployee, enableEmployee, revokeRole, grantRole, reissueProvisioningCode,
   type AddMemberResponse, type Member
@@ -46,74 +46,103 @@ function RowDropdown({
   onAction: (memberId: string, action: string, fn: () => Promise<void>) => void;
   onReissue: (member: Member) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!pos) return;
     function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (
+        btnRef.current && !btnRef.current.contains(e.target as Node) &&
+        menuRef.current && !menuRef.current.contains(e.target as Node)
+      ) setPos(null);
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  }, [pos]);
+
+  const toggle = () => {
+    if (pos) { setPos(null); return; }
+    const rect = btnRef.current!.getBoundingClientRect();
+    setPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+  };
 
   const isLoading = activeAction?.memberId === member.id;
 
   return (
-    <div ref={ref} className="relative inline-block">
+    <>
       <button
-        onClick={() => setOpen(v => !v)}
-        className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+        ref={btnRef}
+        onClick={toggle}
+        className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
       >
-        Akcije
+        <MoreHorizontal size={16} />
       </button>
-      {open && (
-        <div className="absolute right-0 z-20 mt-1 w-56 rounded-xl border border-slate-100 bg-white shadow-xl">
+      {pos && (
+        <div
+          ref={menuRef}
+          style={{ position: "fixed", top: pos.top, right: pos.right }}
+          className="z-50 w-60 overflow-hidden rounded-xl border border-slate-100 bg-white shadow-xl"
+        >
           <button
             onClick={() => {
               onAction(member.id, "toggle", () =>
                 member.status === "Active" ? disableEmployee(member.id) : enableEmployee(member.id)
               );
-              setOpen(false);
+              setPos(null);
             }}
             disabled={isLoading}
-            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
           >
-            {isLoading && activeAction?.action === "toggle" && <Loader2 size={12} className="animate-spin" />}
-            {member.status === "Active" ? "Onemogoči" : "Omogoči"}
+            {isLoading && activeAction?.action === "toggle"
+              ? <Loader2 size={14} className="animate-spin text-slate-400" />
+              : member.status === "Active"
+                ? <ShieldOff size={14} className="text-slate-400" />
+                : <ShieldCheck size={14} className="text-slate-400" />}
+            {member.status === "Active" ? "Onemogoči račun" : "Omogoči račun"}
           </button>
           <div className="border-t border-slate-100" />
-          {(["RecordManager", "Operator"] as const).map(role => (
-            <button
-              key={role}
-              onClick={() => {
-                onAction(member.id, role, () =>
-                  member.roles.includes(role) ? revokeRole(member.id, role) : grantRole(member.id, role)
-                );
-                setOpen(false);
-              }}
-              disabled={isLoading}
-              className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-            >
-              {isLoading && activeAction?.action === role && <Loader2 size={12} className="animate-spin" />}
-              {member.roles.includes(role) ? `Odvzemi ${role}` : `Dodeli ${role}`}
-            </button>
-          ))}
+          {(["RecordManager", "Operator"] as const).map(role => {
+            const hasRole = member.roles.includes(role);
+            return (
+              <button
+                key={role}
+                onClick={() => {
+                  onAction(member.id, role, () =>
+                    hasRole ? revokeRole(member.id, role) : grantRole(member.id, role)
+                  );
+                  setPos(null);
+                }}
+                disabled={isLoading}
+                className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                {isLoading && activeAction?.action === role
+                  ? <Loader2 size={14} className="animate-spin text-slate-400" />
+                  : hasRole
+                    ? <UserMinus size={14} className="text-slate-400" />
+                    : <UserPlus size={14} className="text-slate-400" />}
+                {hasRole ? `Odvzemi vlogo ${role}` : `Dodeli vlogo ${role}`}
+              </button>
+            );
+          })}
           <div className="border-t border-slate-100" />
           <button
             onClick={() => {
               onReissue(member);
-              setOpen(false);
+              setPos(null);
             }}
             disabled={isLoading}
-            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
           >
-            {isLoading && activeAction?.action === "reissue" && <Loader2 size={12} className="animate-spin" />}
+            {isLoading && activeAction?.action === "reissue"
+              ? <Loader2 size={14} className="animate-spin text-slate-400" />
+              : <RefreshCw size={14} className="text-slate-400" />}
             Znova izdaj kodo za provisioning
           </button>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
@@ -131,7 +160,7 @@ export default function OrganizacijaClaniPage() {
     setLoadError(null);
     getMembers()
       .then(setMembers)
-      .catch(() => setLoadError("Članov ni bilo mogoče naložiti."));
+      .catch(() => setLoadError("Zaposlenih ni bilo mogoče naložiti."));
   };
 
   useEffect(() => { loadMembers(); }, []);
@@ -151,7 +180,7 @@ export default function OrganizacijaClaniPage() {
       setModal({ step: "credentials", data });
       loadMembers();
     } catch {
-      setFormError("Dodajanje člana ni uspelo. Preverite podatke in poskusite znova.");
+      setFormError("Dodajanje zaposlenega ni uspelo. Preverite podatke in poskusite znova.");
     } finally {
       setSubmitting(false);
     }
@@ -197,22 +226,22 @@ export default function OrganizacijaClaniPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-slate-900">Organizacija</h2>
-          <p className="text-sm text-slate-500">Upravljanje članov organizacije.</p>
+          <p className="text-sm text-slate-500">Upravljanje zaposlenih.</p>
         </div>
         <button onClick={openAdd} className="flex items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-dark">
           <Plus size={16} strokeWidth={2.5} />
-          Dodaj člana
+          Dodaj zaposlenega
         </button>
       </div>
 
       <div className="flex gap-2 border-b border-slate-200 pb-1">
         <Link to="/organizacija" className="px-3 py-2 text-sm font-medium text-slate-500 hover:text-slate-900 border-b-2 border-transparent">Pregled</Link>
-        <Link to="/organizacija/clani" className="px-3 py-2 text-sm font-medium text-accent border-b-2 border-accent">Člani</Link>
+        <Link to="/organizacija/clani" className="px-3 py-2 text-sm font-medium text-accent border-b-2 border-accent">Zaposleni</Link>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 px-5 py-4">
-          <h3 className="text-lg font-bold text-slate-900">Člani organizacije</h3>
+          <h3 className="text-lg font-bold text-slate-900">Zaposleni</h3>
         </div>
 
         {loadError ? (
@@ -222,8 +251,8 @@ export default function OrganizacijaClaniPage() {
         ) : members.length === 0 ? (
           <div className="flex flex-col items-center px-6 py-14 text-center">
             <Users size={32} className="mb-3 text-slate-300" />
-            <h3 className="font-semibold text-slate-800">Organizacija še nima članov</h3>
-            <p className="mt-1 text-sm text-slate-500">Dodajte prvega člana z gumbom zgoraj.</p>
+            <h3 className="font-semibold text-slate-800">Organizacija še nima zaposlenih</h3>
+            <p className="mt-1 text-sm text-slate-500">Dodajte prvega zaposlenega z gumbom zgoraj.</p>
           </div>
         ) : (
           <>
@@ -235,7 +264,7 @@ export default function OrganizacijaClaniPage() {
                     <th className="px-5 py-3">E-POŠTA</th>
                     <th className="px-5 py-3">STATUS</th>
                     <th className="px-5 py-3">VLOGE</th>
-                    <th className="px-5 py-3 text-right">AKCIJE</th>
+                    <th className="px-5 py-3 text-right"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -283,7 +312,7 @@ export default function OrganizacijaClaniPage() {
             {modal.step === "form" && (
               <>
                 <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-                  <h3 className="font-semibold text-slate-900">Dodaj člana</h3>
+                  <h3 className="font-semibold text-slate-900">Dodaj zaposlenega</h3>
                   <button onClick={() => setModal({ step: "closed" })} className="text-slate-400 hover:text-slate-700"><X size={18} /></button>
                 </div>
                 <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 px-6 py-5">
@@ -314,7 +343,7 @@ export default function OrganizacijaClaniPage() {
             {modal.step === "credentials" && (
               <>
                 <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-                  <h3 className="font-semibold text-slate-900">Poverilnice člana</h3>
+                  <h3 className="font-semibold text-slate-900">Poverilnice zaposlenega</h3>
                 </div>
                 <div className="space-y-4 px-6 py-5">
                   <div className="flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-700">

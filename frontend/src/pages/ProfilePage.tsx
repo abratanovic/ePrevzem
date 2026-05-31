@@ -19,7 +19,7 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
 
 const ROLE_LABELS: Record<string, string> = {
   OrganizationAdmin: "Skrbnik organizacije",
-  Employee: "Član organizacije",
+  Employee: "Zaposleni",
 };
 
 export default function ProfilePage() {

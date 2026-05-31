@@ -6,6 +6,8 @@ const ROUTE_TITLES: Record<string, string> = {
   "/dashboard": "Nadzorna plošča",
   "/profil": "Moj profil",
   "/paketniki": "Paketomati",
+  "/organizacija": "Organizacija",
+  "/organizacija/clani": "Organizacija",
 };
 
 const NOTIFICATION_COUNT = 4;
