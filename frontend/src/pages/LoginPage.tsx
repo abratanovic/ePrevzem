@@ -53,7 +53,7 @@ export default function LoginPage() {
     >
       <div className="space-y-8">
         <div className="space-y-1">
-          <h2 className="text-2xl font-bold text-slate-900">Prijava člana</h2>
+          <h2 className="text-2xl font-bold text-slate-900">Prijava zaposlenega</h2>
           <p className="text-sm text-slate-500">Vpišite e-poštni naslov, povezan z vašim računom ePrevzem.</p>
         </div>
 

@@ -3,6 +3,7 @@ using ePrevzem.Domain.Identity;
 using ePrevzem.Domain.Lockers;
 using ePrevzem.Domain.Organizations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ePrevzem.Infrastructure.Identity.Persistence;
@@ -70,14 +71,21 @@ public sealed class EmployeeAccountConfiguration : IEntityTypeConfiguration<Empl
             .HasColumnType("timestamp with time zone")
             .IsRequired();
 
-        // Roles stored as JSON via private backing field
+        // Roles stored as JSON via private backing field.
+        // ValueComparer is required so EF Core detects in-place List mutations (Add/Remove).
+        var rolesComparer = new ValueComparer<List<EmployeeAccountRole>>(
+            (a, b) => a != null && b != null && a.SequenceEqual(b),
+            c => c.Aggregate(0, (h, v) => HashCode.Combine(h, v.GetHashCode())),
+            c => c.ToList());
+
         builder.Property<List<EmployeeAccountRole>>("_roles")
             .HasColumnName("roles")
             .HasColumnType("text")
             .HasConversion(
                 v => JsonSerializer.Serialize(v.Select(r => r.ToString()).ToList(), (JsonSerializerOptions?)null),
                 v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null)!
-                    .Select(Enum.Parse<EmployeeAccountRole>).ToList())
+                    .Select(Enum.Parse<EmployeeAccountRole>).ToList(),
+                rolesComparer)
             .IsRequired();
 
         // Station access stored as JSON via private backing field

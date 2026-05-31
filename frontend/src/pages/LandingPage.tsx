@@ -56,7 +56,7 @@ function LoginDropdown({ variant }: { variant: "navbar" | "hero" }) {
             onClick={() => { navigate("/prijava"); setOpen(false); }}
             className="flex w-full flex-col items-start px-4 py-3.5 text-left transition hover:bg-slate-50"
           >
-            <span className="text-sm font-semibold text-slate-900">Sem član organizacije</span>
+            <span className="text-sm font-semibold text-slate-900">Sem zaposleni v organizaciji</span>
             <span className="mt-0.5 text-xs text-slate-500">Prijava z e-pošto in geslom</span>
           </button>
           <div className="border-t border-slate-100" />
@@ -200,7 +200,7 @@ export default function LandingPage() {
                   <Building2 size={12} /> Delam v organizaciji
                 </div>
                 <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                  Vaša organizacija prek ePrevzem dostavlja dokumente strankam? Prijavite se kot član ali skrbnik.
+                  Vaša organizacija prek ePrevzem dostavlja dokumente strankam? Prijavite se kot zaposleni ali skrbnik.
                 </p>
               </div>
             </div>

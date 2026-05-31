@@ -1,5 +1,6 @@
 using ePrevzem.Application.Common.Abstractions;
 using ePrevzem.Domain.Identity;
+using ePrevzem.Domain.Organizations;
 using ePrevzem.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,13 +17,17 @@ public sealed class EmployeeAccountRepository : IEmployeeAccountRepository
 
     public Task<EmployeeAccount?> GetByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)
         => _dbContext.EmployeeAccounts
-            .Include(x => x.Roles)
-            .Include(x => x.StationAccess)
             .SingleOrDefaultAsync(x => x.Email == normalizedEmail, cancellationToken);
 
     public Task<EmployeeAccount?> GetByIdAsync(EmployeeAccountId id, CancellationToken cancellationToken = default)
         => _dbContext.EmployeeAccounts
-            .Include(x => x.Roles)
-            .Include(x => x.StationAccess)
             .SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+    public Task AddAsync(EmployeeAccount account, CancellationToken cancellationToken = default)
+        => _dbContext.EmployeeAccounts.AddAsync(account, cancellationToken).AsTask();
+
+    public async Task<IReadOnlyList<EmployeeAccount>> GetByOrganisationIdAsync(OrganizationId organisationId, CancellationToken cancellationToken = default)
+        => await _dbContext.EmployeeAccounts
+            .Where(x => x.OrganizationId == organisationId)
+            .ToListAsync(cancellationToken);
 }

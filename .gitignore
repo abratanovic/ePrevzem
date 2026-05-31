@@ -24,3 +24,11 @@ obj/
 # Local secrets / runtime
 appsettings.*.local.json
 *.pfx
+
+# Docs
+docs/issues/
+docs/prds/
+
+# Frontend
+frontend/README.md
+frontend/.env.example

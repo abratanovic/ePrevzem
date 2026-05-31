@@ -134,6 +134,9 @@ public sealed class TestEmployeeRepoForUnifiedChange : IEmployeeAccountRepositor
         => Task.FromResult(_items.SingleOrDefault(x => x.Email == email));
     public Task<EmployeeAccount?> GetByIdAsync(EmployeeAccountId id, CancellationToken ct = default)
         => Task.FromResult(_items.SingleOrDefault(x => x.Id == id));
+    public Task AddAsync(EmployeeAccount account, CancellationToken ct = default) { _items.Add(account); return Task.CompletedTask; }
+    public Task<IReadOnlyList<EmployeeAccount>> GetByOrganisationIdAsync(OrganizationId organisationId, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<EmployeeAccount>>(_items.Where(x => x.OrganizationId == organisationId).ToList());
 }
 
 public sealed class TestPasswordHasherForUnifiedChange : IPasswordHasher
