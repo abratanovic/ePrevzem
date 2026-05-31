@@ -4,6 +4,7 @@ import type {
   OrganizationPickupStation,
   UpdatePickupStationLocationRequest,
 } from "../../types/stations";
+import { StationServiceError } from "./stationAdapter";
 
 const API_BASE = `${import.meta.env.VITE_API_URL ?? ""}/api/org/stations`;
 
@@ -38,13 +39,15 @@ export const httpStationAdapter: StationAdapter = {
   },
 
   async createStation(request: ClaimPickupStationRequest) {
-    const claim = await readJson<{ claimId: string }>(
-      await fetch(API_BASE, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify(request),
-      }),
-    );
+    const response = await fetch(API_BASE, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(request),
+    });
+    if (response.status === 404) throw new StationServiceError("unknown_station");
+    if (response.status === 409) throw new StationServiceError("station_already_claimed");
+
+    const claim = await readJson<{ claimId: string }>(response);
     return getStation(claim.claimId);
   },
 

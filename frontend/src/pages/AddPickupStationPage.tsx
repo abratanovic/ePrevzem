@@ -10,7 +10,7 @@ export default function AddPickupStationPage() {
     <div className="mx-auto max-w-4xl space-y-5 p-6">
       <StationPageHeader
         title="Dodaj paketomat"
-        subtitle="Povežite registrirani fizični paketomat z lokacijo vaše organizacije."
+        subtitle="Prevzemite predhodno registrirani fizični paketomat in določite njegovo lokacijo."
       />
       <StationForm
         submitLabel="Dodaj paketomat"
