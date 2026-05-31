@@ -3,6 +3,7 @@ using ePrevzem.Application.Identity.ChangePasswordUnified;
 using ePrevzem.Application.Identity.Dtos;
 using ePrevzem.Application.Identity.Login;
 using ePrevzem.Application.Identity.LoginUnified;
+using ePrevzem.Application.Identity.RegisterCitizen;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -82,6 +83,36 @@ public sealed class AuthController : ControllerBase
         }
     }
 
+    [AllowAnonymous]
+    [HttpPost("citizen/register")]
+    [ProducesResponseType<RegisterCitizenResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> RegisterCitizen(
+        [FromBody] RegisterCitizenRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await _mediator.Send(
+                new RegisterCitizenCommand(request.SiTrustToken),
+                cancellationToken);
+            return Ok(response);
+        }
+        catch (ValidationException ex)
+        {
+            return ValidationProblem(CreateValidationProblemDetails(ex));
+        }
+        catch (InvalidSiTrustTokenException)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status401Unauthorized,
+                title: "Invalid SI-TRUST token",
+                type: "urn:eprevzem:identity:invalid-sitrust-token",
+                detail: "SI-TRUST žeton je neveljaven ali je potekel.");
+        }
+    }
+
     private static ValidationProblemDetails CreateValidationProblemDetails(ValidationException exception)
     {
         var errors = exception.Errors
@@ -95,3 +126,4 @@ public sealed class AuthController : ControllerBase
 
 public sealed record UnifiedLoginRequest(string Email, string Password);
 public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
+public sealed record RegisterCitizenRequest(string SiTrustToken);

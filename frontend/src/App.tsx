@@ -13,6 +13,7 @@ import PickupStationsPage from "./pages/PickupStationsPage";
 import AddPickupStationPage from "./pages/AddPickupStationPage";
 import PickupStationDetailsPage from "./pages/PickupStationDetailsPage";
 import EditPickupStationPage from "./pages/EditPickupStationPage";
+import ProvisioningCodePage from "./pages/ProvisioningCodePage";
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/registracija" element={<ProvisioningCodePage />} />
           <Route path="/prijava" element={<LoginPage />} />
           <Route path="/prijava/skrbnik" element={<AdminLoginPage />} />
           <Route path="/sprememba-gesla" element={

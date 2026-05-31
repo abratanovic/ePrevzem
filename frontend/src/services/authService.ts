@@ -41,3 +41,20 @@ export function logout(): void {
   localStorage.removeItem("access_token");
   localStorage.removeItem("auth_user");
 }
+
+export interface RegisterCitizenResponse {
+  firstName: string;
+  lastName: string;
+  code: string;
+  expiresAt: string;
+}
+
+export async function registerCitizen(siTrustToken: string): Promise<RegisterCitizenResponse> {
+  const res = await fetch(`${API_BASE}/citizen/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ siTrustToken }),
+  });
+  if (!res.ok) throw res;
+  return res.json();
+}
