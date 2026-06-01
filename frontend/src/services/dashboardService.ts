@@ -1,4 +1,5 @@
 import type { DashboardStats, Pickup, PickupPage, LockerStation, PickupDisplayStatus } from "../types/dashboard";
+import { getRecentPickups as getCreatedPickups } from "./pickupsService";
 
 const EXPIRING_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
@@ -80,10 +81,11 @@ const RAW_PICKUPS: RawPickup[] = [
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   await new Promise((r) => setTimeout(r, 400));
+  const createdPickups = await getCreatedPickups(1, Number.MAX_SAFE_INTEGER);
   return {
     activePickups: 248,
     activePickupsTrend: 12,
-    pendingPickups: 36,
+    pendingPickups: 36 + createdPickups.total,
     pendingExpiresToday: 6,
     occupiedLockers: 72,
     totalLockers: 120,
@@ -93,10 +95,15 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
 export async function getRecentPickups(page = 1, pageSize = 10): Promise<PickupPage> {
   await new Promise((r) => setTimeout(r, 500));
-  const items: Pickup[] = RAW_PICKUPS.slice((page - 1) * pageSize, page * pageSize).map(
+  const createdPickups = await getCreatedPickups(1, Number.MAX_SAFE_INTEGER);
+  const initialPickups: Pickup[] = RAW_PICKUPS.map(
     ({ rawStatus, ...rest }) => ({ ...rest, status: toDisplayStatus({ rawStatus, ...rest }) }),
   );
-  return { items, total: RAW_PICKUPS.length };
+  const pickups = [...createdPickups.items, ...initialPickups];
+  return {
+    items: pickups.slice((page - 1) * pageSize, page * pageSize),
+    total: pickups.length,
+  };
 }
 
 export async function getLockerOccupancy(): Promise<LockerStation[]> {

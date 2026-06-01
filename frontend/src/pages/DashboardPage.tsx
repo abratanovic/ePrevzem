@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Calendar, FileText, Hourglass, Package } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import type { DashboardStats } from "../types/dashboard";
 import { getDashboardStats } from "../services/dashboardService";
 import StatCard from "../components/dashboard/StatCard";
@@ -18,6 +19,7 @@ function StatCardSkeleton() {
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const location = useLocation();
 
   useEffect(() => {
     getDashboardStats().then(setStats);
@@ -25,6 +27,11 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6 space-y-4">
+      {location.state?.pickupCreated && (
+        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+          Prevzem je bil uspešno dodan in čaka na vložitev v paketomat.
+        </p>
+      )}
       <div className="grid grid-cols-4 gap-4">
         {stats === null ? (
           Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)

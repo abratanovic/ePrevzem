@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { CheckCircle, Clock, Package, XCircle } from "lucide-react";
+import { CheckCircle, Clock, Package, PackagePlus, XCircle } from "lucide-react";
 import type { Pickup, PickupDisplayStatus, PickupPage } from "../../types/dashboard";
 import { getRecentPickups } from "../../services/dashboardService";
 
 const SL_MONTHS = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "avg", "sep", "okt", "nov", "dec"];
 
-function formatDeadline(iso: string): string {
+function formatDeadline(iso: string | null): string {
+  if (!iso) return "—";
   const d = new Date(iso);
   return `${d.getDate()}. ${SL_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 const STATUS_CONFIG: Record<PickupDisplayStatus, { label: string; icon: typeof CheckCircle; className: string }> = {
+  awaitingPlacement: { label: "Čaka na vložitev", icon: PackagePlus, className: "bg-slate-100 text-slate-600" },
   ready:    { label: "Prijavljen",   icon: CheckCircle, className: "bg-green-100 text-green-700" },
   expiring: { label: "Poteče kmalu", icon: Clock,        className: "bg-orange-100 text-orange-600" },
   picked:   { label: "Prevzeto",     icon: Package,      className: "bg-blue-100 text-blue-600" },

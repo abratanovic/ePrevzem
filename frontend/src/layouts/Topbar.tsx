@@ -1,9 +1,10 @@
 import { Bell, Plus, Search } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/useAuth";
 
 const ROUTE_TITLES: Record<string, string> = {
   "/dashboard": "Nadzorna plošča",
+  "/prevzemi/dodaj": "Dodaj prevzem",
   "/profil": "Moj profil",
   "/paketniki": "Paketomati",
   "/organizacija": "Organizacija",
@@ -47,13 +48,13 @@ export default function Topbar() {
         </div>
 
         {/* primary action */}
-        <button
-          type="button"
+        <Link
+          to="/prevzemi/dodaj"
           className="flex items-center gap-2 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark"
         >
           <Plus size={16} strokeWidth={2.5} />
           Dodaj prevzem
-        </button>
+        </Link>
 
         {/* notification bell */}
         <button

@@ -16,6 +16,7 @@ import EditPickupStationPage from "./pages/EditPickupStationPage";
 import ProvisioningCodePage from "./pages/ProvisioningCodePage";
 import OrganizacijaPage from "./pages/OrganizacijaPage";
 import OrganizacijaClaniPage from "./pages/OrganizacijaClaniPage";
+import AddPickupPage from "./pages/AddPickupPage";
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
             </ProtectedRoute>
           }>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/prevzemi/dodaj" element={<AddPickupPage />} />
             <Route path="/profil" element={<ProfilePage />} />
             <Route path="/paketniki" element={<OrganizationAdminRoute><PickupStationsPage /></OrganizationAdminRoute>} />
             <Route path="/paketniki/dodaj" element={<OrganizationAdminRoute><AddPickupStationPage /></OrganizationAdminRoute>} />
