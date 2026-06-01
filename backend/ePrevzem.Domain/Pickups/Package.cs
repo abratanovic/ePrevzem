@@ -12,8 +12,10 @@ public sealed class Package : AggregateRoot<PackageId>
 
     public OrganizationId OrganizationId { get; private set; }
     public CitizenUserId RecipientCitizenUserId { get; private set; }
-    public EmployeeAccountId CreatedByEmployeeAccountId { get; private set; }
+    public EmployeeAccountId? CreatedByEmployeeAccountId { get; private set; }
+    public OrganizationAdminAccountId? CreatedByOrganizationAdminAccountId { get; private set; }
     public PickupStationId TargetPickupStationId { get; private set; }
+    public string Reference { get; private set; } = default!;
     public string Description { get; private set; } = default!;
     public PackageStatus Status { get; private set; }
     public DateTimeOffset? DeadlineAt { get; private set; }
@@ -33,7 +35,69 @@ public sealed class Package : AggregateRoot<PackageId>
         PickupStationId targetPickupStationId,
         string description,
         DateTimeOffset now)
+        => CreateByEmployee(
+            id,
+            organizationId,
+            recipientCitizenUserId,
+            createdBy,
+            targetPickupStationId,
+            $"EP-{now.Year}-{id.Value.ToString("N")[..6].ToUpperInvariant()}",
+            description,
+            now);
+
+    public static Package CreateByEmployee(
+        PackageId id,
+        OrganizationId organizationId,
+        CitizenUserId recipientCitizenUserId,
+        EmployeeAccountId createdBy,
+        PickupStationId targetPickupStationId,
+        string reference,
+        string description,
+        DateTimeOffset now)
+        => CreateInternal(
+            id,
+            organizationId,
+            recipientCitizenUserId,
+            createdBy,
+            null,
+            targetPickupStationId,
+            reference,
+            description,
+            now);
+
+    public static Package CreateByOrganizationAdmin(
+        PackageId id,
+        OrganizationId organizationId,
+        CitizenUserId recipientCitizenUserId,
+        OrganizationAdminAccountId createdBy,
+        PickupStationId targetPickupStationId,
+        string reference,
+        string description,
+        DateTimeOffset now)
+        => CreateInternal(
+            id,
+            organizationId,
+            recipientCitizenUserId,
+            null,
+            createdBy,
+            targetPickupStationId,
+            reference,
+            description,
+            now);
+
+    private static Package CreateInternal(
+        PackageId id,
+        OrganizationId organizationId,
+        CitizenUserId recipientCitizenUserId,
+        EmployeeAccountId? createdByEmployee,
+        OrganizationAdminAccountId? createdByOrganizationAdmin,
+        PickupStationId targetPickupStationId,
+        string reference,
+        string description,
+        DateTimeOffset now)
     {
+        if (string.IsNullOrWhiteSpace(reference))
+            throw new ArgumentException("Reference is required.", nameof(reference));
         if (string.IsNullOrWhiteSpace(description))
             throw new ArgumentException("Description is required.", nameof(description));
 
@@ -42,8 +106,10 @@ public sealed class Package : AggregateRoot<PackageId>
             Id = id,
             OrganizationId = organizationId,
             RecipientCitizenUserId = recipientCitizenUserId,
-            CreatedByEmployeeAccountId = createdBy,
+            CreatedByEmployeeAccountId = createdByEmployee,
+            CreatedByOrganizationAdminAccountId = createdByOrganizationAdmin,
             TargetPickupStationId = targetPickupStationId,
+            Reference = reference.Trim(),
             Description = description,
             Status = PackageStatus.AwaitingPlacement,
             CreatedAt = now

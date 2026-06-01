@@ -142,6 +142,22 @@ public sealed class TestStationClaimRepository : IStationClaimRepository
         CancellationToken cancellationToken = default)
         => Task.FromResult(_activeClaim?.PickupStationId == stationId ? _activeClaim : null);
 
+    public Task<StationClaim?> GetActiveClaimByIdForOrganizationAsync(
+        StationClaimId id,
+        OrganizationId organizationId,
+        CancellationToken cancellationToken = default)
+        => Task.FromResult(Items.SingleOrDefault(x =>
+            x.Id == id
+            && x.OrganizationId == organizationId
+            && x.ReleasedAt == null));
+
+    public Task<IReadOnlyList<StationClaim>> GetActiveClaimsForOrganizationAsync(
+        OrganizationId organizationId,
+        CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyList<StationClaim>>(Items
+            .Where(x => x.OrganizationId == organizationId && x.ReleasedAt == null)
+            .ToList());
+
     public Task AddAsync(StationClaim claim, CancellationToken cancellationToken = default)
     {
         Items.Add(claim);

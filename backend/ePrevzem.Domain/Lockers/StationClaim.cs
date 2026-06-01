@@ -46,4 +46,13 @@ public sealed class StationClaim : AggregateRoot<StationClaimId>
         ReleasedAt = releasedAt;
         Raise(new StationReleased(Id, PickupStationId, OrganizationId, releasedAt));
     }
+
+    public void UpdateLocation(Location location)
+    {
+        ArgumentNullException.ThrowIfNull(location);
+        if (!IsActive)
+            throw new InvalidOperationException("Cannot update the location of a released station claim.");
+
+        Location = location;
+    }
 }

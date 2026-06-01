@@ -3,6 +3,7 @@ using ePrevzem.Infrastructure.Identity;
 using ePrevzem.Infrastructure.Lockers;
 using ePrevzem.Infrastructure.Organizations;
 using ePrevzem.Infrastructure.Persistence;
+using ePrevzem.Infrastructure.Pickups;
 using ePrevzem.Infrastructure.Time;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -36,6 +37,8 @@ public static class DependencyInjection
         services.AddScoped<ICitizenActivationCodeRepository, CitizenActivationCodeRepository>();
         services.AddScoped<IPickupStationRepository, PickupStationRepository>();
         services.AddScoped<IStationClaimRepository, StationClaimRepository>();
+        services.AddScoped<IPackageRepository, PackageRepository>();
+        services.AddScoped<IPickupReadRepository, PickupReadRepository>();
 
         var siTrustSecret = configuration["SiTrust:Secret"]
             ?? throw new InvalidOperationException("SiTrust:Secret is not configured");
@@ -45,6 +48,7 @@ public static class DependencyInjection
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IPasswordHasher, PasswordHasherAdapter>();
         services.AddSingleton<ITokenService, JwtTokenService>();
+        services.AddSingleton<IPackageReferenceGenerator, PackageReferenceGenerator>();
         services.AddHostedService<IdentitySeeder>();
 
         // Outbound ports — adapters wired here when implemented.

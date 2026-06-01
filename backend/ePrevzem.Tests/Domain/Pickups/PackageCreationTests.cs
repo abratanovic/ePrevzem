@@ -47,4 +47,24 @@ public class PackageCreationTests
             PickupStationId.New(), description, Now);
         act.Should().Throw<ArgumentException>().WithParameterName("description");
     }
+
+    [Fact]
+    public void CreateByOrganizationAdmin_records_admin_creator_and_reference()
+    {
+        var adminId = OrganizationAdminAccountId.New();
+
+        var pkg = Package.CreateByOrganizationAdmin(
+            PackageId.New(),
+            OrganizationId.New(),
+            CitizenUserId.New(),
+            adminId,
+            PickupStationId.New(),
+            "EP-2026-000123",
+            "Potni list",
+            Now);
+
+        pkg.Reference.Should().Be("EP-2026-000123");
+        pkg.CreatedByOrganizationAdminAccountId.Should().Be(adminId);
+        pkg.CreatedByEmployeeAccountId.Should().BeNull();
+    }
 }
