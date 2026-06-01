@@ -6,93 +6,115 @@ import type {
   PickupStationOption,
 } from "../types/dashboard";
 
-const STORAGE_KEY = "eprevzem_mock_pickups";
-const MOCK_DELAY_MS = 300;
+const API_BASE = `${import.meta.env.VITE_API_URL ?? ""}/api/org/pickups`;
+const EXPIRING_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
-interface StoredPickup extends Pickup {
+type BackendPickupStatus =
+  | "AwaitingPlacement"
+  | "InLocker"
+  | "PickedUp"
+  | "NotPickedUp"
+  | "AwaitingPersonalPickup"
+  | "Cancelled";
+
+interface BackendPickup {
+  id: string;
+  reference: string;
+  description: string;
+  recipientName: string;
+  locationName: string;
+  status: BackendPickupStatus;
+  deadlineAt: string | null;
   createdAt: string;
 }
 
-interface MockRecipient extends PickupRecipient {
-  emso: string;
-}
+export class PickupServiceError extends Error {
+  code: "recipient_not_found" | "station_forbidden" | "creation_forbidden" | "unknown";
 
-const RECIPIENTS: MockRecipient[] = [
-  { id: "citizen-1", emso: "0101006500006", firstName: "Ana", lastName: "Kovač" },
-  { id: "citizen-2", emso: "0202006500004", firstName: "Marko", lastName: "Zupan" },
-  { id: "citizen-3", emso: "0303006500002", firstName: "Eva", lastName: "Horvat" },
-];
-
-const STATIONS: PickupStationOption[] = [
-  { id: "station-feri", name: "FERI - glavni vhod", address: "Koroška cesta 46, 2000 Maribor" },
-  { id: "station-uemb", name: "UE Maribor - avla", address: "Ulica heroja Staneta 1, 2000 Maribor" },
-  { id: "station-knj", name: "Knjižnica UM", address: "Gospejna ulica 10, 2000 Maribor" },
-];
-
-function wait(ms = MOCK_DELAY_MS) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function readStoredPickups(): StoredPickup[] {
-  try {
-    const value = sessionStorage.getItem(STORAGE_KEY);
-    return value ? JSON.parse(value) : [];
-  } catch {
-    return [];
+  constructor(code: "recipient_not_found" | "station_forbidden" | "creation_forbidden" | "unknown") {
+    super(code);
+    this.code = code;
   }
 }
 
-function writeStoredPickups(pickups: StoredPickup[]) {
-  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(pickups));
+function authHeaders(): HeadersInit {
+  const token = localStorage.getItem("access_token");
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
 }
 
-function generateReference(): string {
-  const sequence = Math.floor(Math.random() * 1_000_000);
-  return `EP-${new Date().getFullYear()}-${sequence.toString().padStart(6, "0")}`;
+async function readJson<T>(response: Response): Promise<T> {
+  if (!response.ok) throw response;
+  return response.json();
+}
+
+function toPickup(pickup: BackendPickup): Pickup {
+  let status: Pickup["status"];
+  switch (pickup.status) {
+    case "AwaitingPlacement": status = "awaitingPlacement"; break;
+    case "InLocker":
+      status = pickup.deadlineAt
+        && new Date(pickup.deadlineAt).getTime() - Date.now() <= EXPIRING_THRESHOLD_MS
+        ? "expiring"
+        : "ready";
+      break;
+    case "PickedUp": status = "picked"; break;
+    case "NotPickedUp": status = "expired"; break;
+    case "AwaitingPersonalPickup": status = "awaitingPersonalPickup"; break;
+    case "Cancelled": status = "cancelled"; break;
+  }
+
+  return {
+    id: pickup.id,
+    reference: pickup.reference,
+    documentType: pickup.description,
+    recipientName: pickup.recipientName,
+    locationName: pickup.locationName,
+    status,
+    deadlineAt: pickup.deadlineAt,
+    createdAt: pickup.createdAt,
+  };
 }
 
 export async function findRecipientByEmso(emso: string): Promise<PickupRecipient | null> {
-  await wait();
-  const recipient = RECIPIENTS.find((candidate) => candidate.emso === emso);
-  if (!recipient) return null;
-  const { id, firstName, lastName } = recipient;
-  return { id, firstName, lastName };
+  const response = await fetch(`${API_BASE}/recipient-lookup`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ emso }),
+  });
+  if (response.status === 404) return null;
+  return readJson<PickupRecipient>(response);
 }
 
 export async function getAvailablePickupStations(): Promise<PickupStationOption[]> {
-  await wait(200);
-  return STATIONS;
+  return readJson<PickupStationOption[]>(
+    await fetch(`${API_BASE}/stations`, { headers: authHeaders() }),
+  );
 }
 
 export async function createPickup(request: CreatePickupRequest): Promise<Pickup> {
-  await wait();
-  const recipient = RECIPIENTS.find((candidate) => candidate.emso === request.recipientEmso);
-  const station = STATIONS.find((candidate) => candidate.id === request.targetPickupStationId);
-
-  if (!recipient || !station) {
-    throw new Error("Invalid mock pickup request.");
+  const response = await fetch(API_BASE, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(request),
+  });
+  if (response.status === 404) throw new PickupServiceError("recipient_not_found");
+  if (response.status === 403) {
+    const problem = await response.json().catch(() => null);
+    throw new PickupServiceError(
+      problem?.type === "urn:eprevzem:pickups:station-forbidden"
+        ? "station_forbidden"
+        : "creation_forbidden",
+    );
   }
-
-  const pickup: StoredPickup = {
-    id: crypto.randomUUID(),
-    reference: generateReference(),
-    documentType: request.description.trim(),
-    recipientName: `${recipient.firstName} ${recipient.lastName}`,
-    locationName: station.name,
-    status: "awaitingPlacement",
-    deadlineAt: null,
-    createdAt: new Date().toISOString(),
-  };
-
-  writeStoredPickups([pickup, ...readStoredPickups()]);
-  return pickup;
+  return toPickup(await readJson<BackendPickup>(response));
 }
 
-export async function getRecentPickups(page = 1, pageSize = 10): Promise<PickupPage> {
-  await wait(150);
-  const pickups = readStoredPickups();
-  return {
-    items: pickups.slice((page - 1) * pageSize, page * pageSize),
-    total: pickups.length,
-  };
+export async function getRecentPickups(limit = 10): Promise<PickupPage> {
+  const pickups = await readJson<BackendPickup[]>(
+    await fetch(`${API_BASE}?limit=${limit}`, { headers: authHeaders() }),
+  );
+  return { items: pickups.map(toPickup), total: pickups.length };
 }

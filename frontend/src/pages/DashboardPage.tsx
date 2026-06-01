@@ -19,10 +19,11 @@ function StatCardSkeleton() {
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [statsError, setStatsError] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
-    getDashboardStats().then(setStats);
+    getDashboardStats().then(setStats).catch(() => setStatsError(true));
   }, []);
 
   return (
@@ -33,7 +34,11 @@ export default function DashboardPage() {
         </p>
       )}
       <div className="grid grid-cols-4 gap-4">
-        {stats === null ? (
+        {statsError ? (
+          <p className="col-span-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+            Statistike nadzorne plošče ni bilo mogoče naložiti.
+          </p>
+        ) : stats === null ? (
           Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
         ) : (
           <>
@@ -56,7 +61,7 @@ export default function DashboardPage() {
               iconBg="bg-blue-50"
               value={`${stats.occupiedLockers}/${stats.totalLockers}`}
               label="Zasedeni predalčki"
-              indicator={`→ ${Math.round((stats.occupiedLockers / stats.totalLockers) * 100)} %`}
+              indicator={`→ ${stats.totalLockers === 0 ? 0 : Math.round((stats.occupiedLockers / stats.totalLockers) * 100)} %`}
             />
             <StatCard
               icon={<Calendar size={22} className="text-indigo-500" />}

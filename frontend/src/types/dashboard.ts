@@ -1,4 +1,11 @@
-export type PickupDisplayStatus = "awaitingPlacement" | "ready" | "expiring" | "picked" | "expired";
+export type PickupDisplayStatus =
+  | "awaitingPlacement"
+  | "ready"
+  | "expiring"
+  | "picked"
+  | "expired"
+  | "awaitingPersonalPickup"
+  | "cancelled";
 
 export interface DashboardStats {
   activePickups: number;

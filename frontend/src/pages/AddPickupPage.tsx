@@ -5,6 +5,7 @@ import {
   createPickup,
   findRecipientByEmso,
   getAvailablePickupStations,
+  PickupServiceError,
 } from "../services/pickupsService";
 import type { PickupRecipient, PickupStationOption } from "../types/dashboard";
 
@@ -75,8 +76,16 @@ export default function AddPickupPage() {
       navigate("/dashboard", {
         state: { pickupCreated: true },
       });
-    } catch {
-      setErrors({ submit: "Prevzema ni bilo mogoče shraniti. Poskusite znova." });
+    } catch (error) {
+      if (error instanceof PickupServiceError && error.code === "recipient_not_found") {
+        setErrors({ recipient: "Prejemnik ni registriran. Pred izdelavo prevzema mora opraviti registracijo prek SI-TRUST." });
+      } else if (error instanceof PickupServiceError && error.code === "station_forbidden") {
+        setErrors({ stationId: "Izbrani paketomat ni več na voljo vaši organizaciji." });
+      } else if (error instanceof PickupServiceError && error.code === "creation_forbidden") {
+        setErrors({ submit: "Nimate pravic za izdelavo prevzema." });
+      } else {
+        setErrors({ submit: "Prevzema ni bilo mogoče shraniti. Poskusite znova." });
+      }
     } finally {
       setIsSubmitting(false);
     }

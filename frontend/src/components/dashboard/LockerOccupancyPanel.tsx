@@ -41,9 +41,10 @@ function PanelSkeleton() {
 export default function LockerOccupancyPanel() {
   const { user } = useAuth();
   const [stations, setStations] = useState<LockerStation[] | null>(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    getLockerOccupancy().then(setStations);
+    getLockerOccupancy().then(setStations).catch(() => setError(true));
   }, []);
 
   return (
@@ -55,8 +56,12 @@ export default function LockerOccupancyPanel() {
         </p>
       </div>
 
-      {stations === null ? (
+      {error ? (
+        <p className="px-5 pb-5 text-sm text-red-600">Zasedenosti paketnikov ni bilo mogoče naložiti.</p>
+      ) : stations === null ? (
         <PanelSkeleton />
+      ) : stations.length === 0 ? (
+        <p className="px-5 pb-5 text-sm text-slate-500">Organizacija še nima aktivnih paketnikov.</p>
       ) : (
         <div className="px-5 pb-5 space-y-4">
           {stations.map((station) => {

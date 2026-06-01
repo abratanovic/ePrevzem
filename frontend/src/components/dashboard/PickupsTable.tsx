@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { CheckCircle, Clock, Package, PackagePlus, XCircle } from "lucide-react";
+import { CheckCircle, Clock, Package, PackagePlus, UserRoundCheck, XCircle } from "lucide-react";
 import type { Pickup, PickupDisplayStatus, PickupPage } from "../../types/dashboard";
 import { getRecentPickups } from "../../services/dashboardService";
 
@@ -18,6 +18,8 @@ const STATUS_CONFIG: Record<PickupDisplayStatus, { label: string; icon: typeof C
   expiring: { label: "Poteče kmalu", icon: Clock,        className: "bg-orange-100 text-orange-600" },
   picked:   { label: "Prevzeto",     icon: Package,      className: "bg-blue-100 text-blue-600" },
   expired:  { label: "Poteklo",      icon: XCircle,      className: "bg-red-100 text-red-600" },
+  awaitingPersonalPickup: { label: "Čaka osebni prevzem", icon: UserRoundCheck, className: "bg-indigo-100 text-indigo-600" },
+  cancelled: { label: "Preklicano", icon: XCircle, className: "bg-slate-100 text-slate-500" },
 };
 
 function StatusBadge({ status }: { status: PickupDisplayStatus }) {
@@ -49,9 +51,10 @@ function TableSkeleton() {
 
 export default function PickupsTable() {
   const [data, setData] = useState<PickupPage | null>(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    getRecentPickups().then(setData);
+    getRecentPickups().then(setData).catch(() => setError(true));
   }, []);
 
   return (
@@ -66,8 +69,12 @@ export default function PickupsTable() {
         </Link>
       </div>
 
-      {data === null ? (
+      {error ? (
+        <p className="px-5 py-8 text-center text-sm text-red-600">Prevzemov ni bilo mogoče naložiti.</p>
+      ) : data === null ? (
         <TableSkeleton />
+      ) : data.items.length === 0 ? (
+        <p className="px-5 py-10 text-center text-sm text-slate-500">Organizacija še nima prevzemov.</p>
       ) : (
         <table className="w-full text-sm">
           <thead>
