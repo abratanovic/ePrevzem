@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Building2, Users } from "lucide-react";
 import { getOrgInfo, type OrgInfo } from "../services/orgService";
 
-export default function OrganizacijaPage() {
+export default function OrganizationPage() {
   const [info, setInfo] = useState<OrgInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
 

@@ -1,6 +1,7 @@
 using ePrevzem.Application.Common.Abstractions;
 using ePrevzem.Application.Lockers.ClaimPickupStation;
 using ePrevzem.Application.Lockers.Dtos;
+using ePrevzem.Application.Lockers.OrganizationPickupStations;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -10,7 +11,7 @@ namespace ePrevzem.Api.Controllers.Org;
 
 [ApiController]
 [Route("api/org/stations")]
-[Authorize]
+[Authorize(Roles = "OrganizationAdmin")]
 public sealed class OrgPickupStationsController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -25,6 +26,36 @@ public sealed class OrgPickupStationsController : ControllerBase
     private const string StationNotFoundType = "urn:eprevzem:stations:not-found";
     private const string StationAlreadyClaimedType = "urn:eprevzem:stations:already-claimed";
 
+    [HttpGet]
+    [ProducesResponseType<IReadOnlyList<OrganizationPickupStationResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+    {
+        var organizationId = GetOrganizationId();
+        var response = await _mediator.Send(
+            new GetOrganizationPickupStationsQuery(organizationId),
+            cancellationToken);
+
+        return Ok(response);
+    }
+
+    [HttpGet("{claimId:guid}")]
+    [ProducesResponseType<OrganizationPickupStationResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetById([FromRoute] Guid claimId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await _mediator.Send(
+                new GetOrganizationPickupStationQuery(GetOrganizationId(), claimId),
+                cancellationToken);
+            return Ok(response);
+        }
+        catch (OrganizationPickupStationNotFoundException)
+        {
+            return StationNotFound();
+        }
+    }
+
     [HttpPost]
     [ProducesResponseType<StationClaimResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -34,14 +65,11 @@ public sealed class OrgPickupStationsController : ControllerBase
         [FromBody] ClaimPickupStationRequest request,
         CancellationToken cancellationToken)
     {
-        var organizationId = _currentUser.OrganizationId
-            ?? throw new InvalidOperationException("Organization not resolved.");
-
         try
         {
             var response = await _mediator.Send(
                 new ClaimPickupStationCommand(
-                    organizationId,
+                    GetOrganizationId(),
                     request.SerialNumber,
                     request.Latitude,
                     request.Longitude,
@@ -51,7 +79,7 @@ public sealed class OrgPickupStationsController : ControllerBase
                     request.City),
                 cancellationToken);
 
-            return CreatedAtAction(nameof(Claim), new { id = response.ClaimId }, response);
+            return CreatedAtAction(nameof(GetById), new { claimId = response.ClaimId }, response);
         }
         catch (ValidationException ex)
         {
@@ -75,6 +103,103 @@ public sealed class OrgPickupStationsController : ControllerBase
         }
     }
 
+    [HttpPut("{claimId:guid}")]
+    [ProducesResponseType<OrganizationPickupStationResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateLocation(
+        [FromRoute] Guid claimId,
+        [FromBody] UpdatePickupStationLocationRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await _mediator.Send(
+                new UpdateOrganizationPickupStationLocationCommand(
+                    GetOrganizationId(),
+                    claimId,
+                    request.Latitude,
+                    request.Longitude,
+                    request.Address,
+                    request.HouseNumber,
+                    request.ZipCode,
+                    request.City),
+                cancellationToken);
+            return Ok(response);
+        }
+        catch (ValidationException ex)
+        {
+            return ValidationProblem(CreateValidationProblemDetails(ex));
+        }
+        catch (OrganizationPickupStationNotFoundException)
+        {
+            return StationNotFound();
+        }
+    }
+
+    [HttpPut("{claimId:guid}/lockers/{lockerId:guid}/serviceability")]
+    [ProducesResponseType<OrganizationPickupStationResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateLockerServiceability(
+        [FromRoute] Guid claimId,
+        [FromRoute] Guid lockerId,
+        [FromBody] UpdateLockerServiceabilityRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await _mediator.Send(
+                new UpdateOrganizationLockerServiceabilityCommand(
+                    GetOrganizationId(),
+                    claimId,
+                    lockerId,
+                    request.IsServiceable),
+                cancellationToken);
+            return Ok(response);
+        }
+        catch (OrganizationPickupStationNotFoundException)
+        {
+            return StationNotFound();
+        }
+        catch (OrganizationLockerNotFoundException)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                title: "Locker not found",
+                type: "urn:eprevzem:stations:locker-not-found",
+                detail: "Predalček ni bil najden.");
+        }
+    }
+
+    [HttpDelete("{claimId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Release([FromRoute] Guid claimId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _mediator.Send(
+                new ReleaseOrganizationPickupStationCommand(GetOrganizationId(), claimId),
+                cancellationToken);
+            return NoContent();
+        }
+        catch (OrganizationPickupStationNotFoundException)
+        {
+            return StationNotFound();
+        }
+    }
+
+    private Guid GetOrganizationId()
+        => _currentUser.OrganizationId
+            ?? throw new InvalidOperationException("Organization not resolved.");
+
+    private IActionResult StationNotFound()
+        => Problem(
+            statusCode: StatusCodes.Status404NotFound,
+            title: "Station not found",
+            type: StationNotFoundType,
+            detail: "Paketomat ni bil najden.");
+
     private static ValidationProblemDetails CreateValidationProblemDetails(ValidationException exception)
     {
         var errors = exception.Errors
@@ -95,3 +220,13 @@ public sealed record ClaimPickupStationRequest(
     string HouseNumber,
     string ZipCode,
     string City);
+
+public sealed record UpdatePickupStationLocationRequest(
+    decimal Latitude,
+    decimal Longitude,
+    string Address,
+    string HouseNumber,
+    string ZipCode,
+    string City);
+
+public sealed record UpdateLockerServiceabilityRequest(bool IsServiceable);

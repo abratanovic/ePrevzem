@@ -58,4 +58,26 @@ public class StationClaimTests
         var act = () => claim.Release(Now.AddSeconds(-1));
         act.Should().Throw<ArgumentException>().WithParameterName("releasedAt");
     }
+
+    [Fact]
+    public void UpdateLocation_replaces_location_for_active_claim()
+    {
+        var claim = StationClaim.Claim(StationClaimId.New(), PickupStationId.New(), OrganizationId.New(), ValidLocation(), Now);
+        var newLocation = Location.Create(46.05m, 14.50m, "Dunajska cesta", "1", "1000", "Ljubljana");
+
+        claim.UpdateLocation(newLocation);
+
+        claim.Location.Should().Be(newLocation);
+    }
+
+    [Fact]
+    public void UpdateLocation_when_released_throws()
+    {
+        var claim = StationClaim.Claim(StationClaimId.New(), PickupStationId.New(), OrganizationId.New(), ValidLocation(), Now);
+        claim.Release(Now);
+
+        var act = () => claim.UpdateLocation(ValidLocation());
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*released*");
+    }
 }

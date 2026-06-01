@@ -1,4 +1,11 @@
-export type PickupDisplayStatus = "ready" | "expiring" | "picked" | "expired";
+export type PickupDisplayStatus =
+  | "awaitingPlacement"
+  | "ready"
+  | "expiring"
+  | "picked"
+  | "expired"
+  | "awaitingPersonalPickup"
+  | "cancelled";
 
 export interface DashboardStats {
   activePickups: number;
@@ -17,7 +24,8 @@ export interface Pickup {
   recipientName: string;
   locationName: string;
   status: PickupDisplayStatus;
-  deadlineAt: string;
+  deadlineAt: string | null;
+  createdAt?: string;
 }
 
 export interface PickupPage {
@@ -31,4 +39,22 @@ export interface LockerStation {
   name: string;
   used: number;
   total: number;
+}
+
+export interface PickupRecipient {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
+export interface PickupStationOption {
+  id: string;
+  name: string;
+  address: string;
+}
+
+export interface CreatePickupRequest {
+  recipientEmso: string;
+  targetPickupStationId: string;
+  description: string;
 }

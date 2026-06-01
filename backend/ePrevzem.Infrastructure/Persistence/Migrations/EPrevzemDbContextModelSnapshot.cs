@@ -475,6 +475,135 @@ namespace ePrevzem.Infrastructure.Persistence.Migrations
                     b.ToTable("organizations", (string)null);
                 });
 
+            modelBuilder.Entity("ePrevzem.Domain.Pickups.Package", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByEmployeeAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_employee_account_id");
+
+                    b.Property<Guid?>("CreatedByOrganizationAdminAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_organization_admin_account_id");
+
+                    b.Property<DateTimeOffset?>("DeadlineAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deadline_at");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<DateTimeOffset?>("FinalizedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("finalized_at");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<Guid>("RecipientCitizenUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recipient_citizen_user_id");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("reference");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TargetPickupStationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_pickup_station_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByEmployeeAccountId");
+
+                    b.HasIndex("CreatedByOrganizationAdminAccountId");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("RecipientCitizenUserId");
+
+                    b.HasIndex("Reference")
+                        .IsUnique();
+
+                    b.HasIndex("TargetPickupStationId");
+
+                    b.ToTable("packages", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_packages_exactly_one_creator", "(created_by_employee_account_id IS NOT NULL) <> (created_by_organization_admin_account_id IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("ePrevzem.Domain.Pickups.Placement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EndReason")
+                        .HasColumnType("text")
+                        .HasColumnName("end_reason");
+
+                    b.Property<DateTimeOffset?>("EndedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ended_at");
+
+                    b.Property<Guid?>("EndedByCitizenUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ended_by_citizen_user_id");
+
+                    b.Property<Guid?>("EndedByEmployeeAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ended_by_employee_account_id");
+
+                    b.Property<Guid>("LockerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("locker_id");
+
+                    b.Property<DateTimeOffset>("OpenedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("opened_at");
+
+                    b.Property<Guid>("OpenedByEmployeeAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("opened_by_employee_account_id");
+
+                    b.Property<Guid>("PackageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("package_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EndedByCitizenUserId");
+
+                    b.HasIndex("EndedByEmployeeAccountId");
+
+                    b.HasIndex("LockerId")
+                        .IsUnique()
+                        .HasFilter("ended_at IS NULL");
+
+                    b.HasIndex("OpenedByEmployeeAccountId");
+
+                    b.HasIndex("PackageId")
+                        .IsUnique()
+                        .HasFilter("ended_at IS NULL");
+
+                    b.ToTable("placements", (string)null);
+                });
+
             modelBuilder.Entity("ePrevzem.Domain.Identity.CitizenActivationCode", b =>
                 {
                     b.HasOne("ePrevzem.Domain.Identity.CitizenUser", null)
@@ -703,9 +832,76 @@ namespace ePrevzem.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ePrevzem.Domain.Pickups.Package", b =>
+                {
+                    b.HasOne("ePrevzem.Domain.Identity.EmployeeAccount", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByEmployeeAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ePrevzem.Domain.Identity.OrganizationAdminAccount", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByOrganizationAdminAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ePrevzem.Domain.Organizations.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ePrevzem.Domain.Identity.CitizenUser", null)
+                        .WithMany()
+                        .HasForeignKey("RecipientCitizenUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ePrevzem.Domain.Lockers.PickupStation", null)
+                        .WithMany()
+                        .HasForeignKey("TargetPickupStationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ePrevzem.Domain.Pickups.Placement", b =>
+                {
+                    b.HasOne("ePrevzem.Domain.Identity.CitizenUser", null)
+                        .WithMany()
+                        .HasForeignKey("EndedByCitizenUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ePrevzem.Domain.Identity.EmployeeAccount", null)
+                        .WithMany()
+                        .HasForeignKey("EndedByEmployeeAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ePrevzem.Domain.Lockers.Locker", null)
+                        .WithMany()
+                        .HasForeignKey("LockerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ePrevzem.Domain.Identity.EmployeeAccount", null)
+                        .WithMany()
+                        .HasForeignKey("OpenedByEmployeeAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ePrevzem.Domain.Pickups.Package", null)
+                        .WithMany("Placements")
+                        .HasForeignKey("PackageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("ePrevzem.Domain.Lockers.PickupStation", b =>
                 {
                     b.Navigation("Lockers");
+                });
+
+            modelBuilder.Entity("ePrevzem.Domain.Pickups.Package", b =>
+                {
+                    b.Navigation("Placements");
                 });
 #pragma warning restore 612, 618
         }

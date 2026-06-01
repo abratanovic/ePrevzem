@@ -33,4 +33,15 @@ public sealed class PickupStation : AggregateRoot<PickupStationId>
         _lockers.Add(locker);
         return locker;
     }
+
+    public void SetLockerServiceability(LockerId lockerId, bool isServiceable)
+    {
+        var locker = _lockers.SingleOrDefault(x => x.Id == lockerId)
+            ?? throw new InvalidOperationException($"Locker '{lockerId.Value}' does not belong to this station.");
+
+        if (isServiceable)
+            locker.MarkServiceable();
+        else
+            locker.MarkOutOfService();
+    }
 }

@@ -24,5 +24,10 @@ export interface StationAdapter {
     claimId: string,
     request: UpdatePickupStationLocationRequest,
   ): Promise<OrganizationPickupStation>;
+  updateLockerServiceability(
+    claimId: string,
+    lockerId: string,
+    isServiceable: boolean,
+  ): Promise<OrganizationPickupStation>;
   deleteStation(claimId: string): Promise<void>;
 }
