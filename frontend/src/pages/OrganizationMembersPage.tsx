@@ -146,7 +146,7 @@ function RowDropdown({
   );
 }
 
-export default function OrganizacijaClaniPage() {
+export default function OrganizationMembersPage() {
   const [modal, setModal] = useState<ModalState>({ step: "closed" });
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "" });
   const [submitting, setSubmitting] = useState(false);
@@ -163,7 +163,11 @@ export default function OrganizacijaClaniPage() {
       .catch(() => setLoadError("Zaposlenih ni bilo mogoče naložiti."));
   };
 
-  useEffect(() => { loadMembers(); }, []);
+  useEffect(() => {
+    getMembers()
+      .then(setMembers)
+      .catch(() => setLoadError("Zaposlenih ni bilo mogoče naložiti."));
+  }, []);
 
   const openAdd = () => {
     setForm({ firstName: "", lastName: "", email: "" });
