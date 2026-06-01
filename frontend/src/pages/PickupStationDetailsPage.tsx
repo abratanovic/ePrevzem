@@ -21,6 +21,8 @@ export default function PickupStationDetailsPage() {
   const [station, setStation] = useState<OrganizationPickupStation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [updatingLockerId, setUpdatingLockerId] = useState<string | null>(null);
+  const [lockerMessage, setLockerMessage] = useState<string | null>(null);
 
   useEffect(() => {
     stationService.getStation(claimId)
@@ -47,6 +49,27 @@ export default function PickupStationDetailsPage() {
     } catch {
       setError("Paketomata ni bilo mogoče odstraniti. Poskusite znova.");
       setIsDeleting(false);
+    }
+  };
+
+  const toggleLockerServiceability = async (lockerId: string, isServiceable: boolean) => {
+    setUpdatingLockerId(lockerId);
+    setLockerMessage(null);
+    setError(null);
+    try {
+      const updatedStation = await stationService.updateLockerServiceability(
+        station.claimId,
+        lockerId,
+        !isServiceable,
+      );
+      setStation(updatedStation);
+      setLockerMessage(isServiceable
+        ? "Predalček je označen kot nedelujoč."
+        : "Predalček je ponovno označen kot delujoč.");
+    } catch {
+      setError("Stanja predalčka ni bilo mogoče shraniti. Poskusite znova.");
+    } finally {
+      setUpdatingLockerId(null);
     }
   };
 
@@ -102,17 +125,25 @@ export default function PickupStationDetailsPage() {
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 px-5 py-4">
           <h3 className="font-bold text-slate-900">Predalčki</h3>
-          <p className="text-xs text-slate-400">Stanje predalčkov registriranega fizičnega paketomata</p>
+          <p className="text-xs text-slate-400">Kliknite predalček, da označite, ali deluje.</p>
+          {lockerMessage && <p className="mt-2 text-xs font-medium text-emerald-700">{lockerMessage}</p>}
         </div>
         {station.lockers.length === 0 ? (
           <p className="px-5 py-8 text-center text-sm text-slate-500">Podatki o predalčkih še niso na voljo.</p>
         ) : (
           <div className="grid grid-cols-8 gap-3 p-5">
             {station.lockers.map((locker) => (
-              <div key={locker.id} className={`rounded-xl border px-3 py-2 text-center ${locker.isServiceable ? "border-emerald-100 bg-emerald-50 text-emerald-700" : "border-red-100 bg-red-50 text-red-600"}`}>
+              <button
+                key={locker.id}
+                type="button"
+                disabled={updatingLockerId !== null}
+                onClick={() => toggleLockerServiceability(locker.id, locker.isServiceable)}
+                className={`rounded-xl border px-3 py-2 text-center transition-colors disabled:cursor-wait disabled:opacity-60 ${locker.isServiceable ? "border-emerald-100 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100" : "border-red-100 bg-red-50 text-red-600 hover:border-red-300 hover:bg-red-100"}`}
+                aria-label={`Predalček ${locker.lockerNumber}: ${locker.isServiceable ? "delujoč" : "nedelujoč"}`}
+              >
                 <p className="text-xs font-semibold">{locker.lockerNumber}</p>
-                <p className="mt-0.5 text-[10px]">{locker.isServiceable ? "Delujoč" : "Nedelujoč"}</p>
-              </div>
+                <p className="mt-0.5 text-[10px]">{updatingLockerId === locker.id ? "Shranjujem ..." : locker.isServiceable ? "Delujoč" : "Nedelujoč"}</p>
+              </button>
             ))}
           </div>
         )}

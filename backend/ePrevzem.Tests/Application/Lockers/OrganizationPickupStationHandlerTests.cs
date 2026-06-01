@@ -97,6 +97,34 @@ public class OrganizationPickupStationHandlerTests
         unitOfWork.SaveChangesCalled.Should().BeTrue();
     }
 
+    [Fact]
+    public async Task UpdateLockerServiceability_marks_locker_out_of_service_and_saves()
+    {
+        var organizationId = OrganizationId.New();
+        var stationRepo = new TestPickupStationRepository();
+        var claimRepo = new TestStationClaimRepository();
+        var unitOfWork = new TestUnitOfWorkForStation();
+        var station = SeedStation(stationRepo, "EP-PM-001");
+        var claim = SeedClaim(claimRepo, station.Id, organizationId);
+        var locker = station.Lockers.Single();
+        var handler = new UpdateOrganizationLockerServiceabilityCommandHandler(
+            claimRepo,
+            stationRepo,
+            unitOfWork);
+
+        var result = await handler.Handle(
+            new UpdateOrganizationLockerServiceabilityCommand(
+                organizationId.Value,
+                claim.Id.Value,
+                locker.Id.Value,
+                false),
+            CancellationToken.None);
+
+        locker.IsServiceable.Should().BeFalse();
+        result.Lockers.Should().ContainSingle().Which.IsServiceable.Should().BeFalse();
+        unitOfWork.SaveChangesCalled.Should().BeTrue();
+    }
+
     private static PickupStation SeedStation(TestPickupStationRepository repository, string serialNumber)
     {
         var station = PickupStation.Create(PickupStationId.New(), serialNumber, Now);

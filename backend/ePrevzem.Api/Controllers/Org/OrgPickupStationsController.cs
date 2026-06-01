@@ -137,6 +137,40 @@ public sealed class OrgPickupStationsController : ControllerBase
         }
     }
 
+    [HttpPut("{claimId:guid}/lockers/{lockerId:guid}/serviceability")]
+    [ProducesResponseType<OrganizationPickupStationResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateLockerServiceability(
+        [FromRoute] Guid claimId,
+        [FromRoute] Guid lockerId,
+        [FromBody] UpdateLockerServiceabilityRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await _mediator.Send(
+                new UpdateOrganizationLockerServiceabilityCommand(
+                    GetOrganizationId(),
+                    claimId,
+                    lockerId,
+                    request.IsServiceable),
+                cancellationToken);
+            return Ok(response);
+        }
+        catch (OrganizationPickupStationNotFoundException)
+        {
+            return StationNotFound();
+        }
+        catch (OrganizationLockerNotFoundException)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                title: "Locker not found",
+                type: "urn:eprevzem:stations:locker-not-found",
+                detail: "Predalček ni bil najden.");
+        }
+    }
+
     [HttpDelete("{claimId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -194,3 +228,5 @@ public sealed record UpdatePickupStationLocationRequest(
     string HouseNumber,
     string ZipCode,
     string City);
+
+public sealed record UpdateLockerServiceabilityRequest(bool IsServiceable);

@@ -61,6 +61,16 @@ export const httpStationAdapter: StationAdapter = {
     );
   },
 
+  async updateLockerServiceability(claimId, lockerId, isServiceable) {
+    return readJson<OrganizationPickupStation>(
+      await fetch(`${API_BASE}/${claimId}/lockers/${lockerId}/serviceability`, {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify({ isServiceable }),
+      }),
+    );
+  },
+
   async deleteStation(claimId) {
     const response = await fetch(`${API_BASE}/${claimId}`, {
       method: "DELETE",
