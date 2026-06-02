@@ -1,0 +1,53 @@
+services:
+  postgres-db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: edvbec/eprevzem-backend:latest
+    ports:
+      - 8080:8080
+    environment:
+      ConnectionStrings__ePrevzem: "Host=postgres-db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+      Jwt__Secret: ${JWT_SECRET}
+      SiTrust__BaseUrl: ${SITRUST_BASE_URL}
+      SiTrust__Secret: ${SITRUST_JWT_SECRET}
+      Identity__BootstrapAdmin__Username: ${BOOTSTRAP_ADMIN_USERNAME}
+      Identity__BootstrapAdmin__InitialPassword: ${BOOTSTRAP_ADMIN_PASSWORD}
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+  sitrust-backend:
+    image: edvbec/eprevzem-sitrust-backend:latest
+    ports:
+      - 5070:8080
+    environment:
+      JwtSettings__Secret: ${SITRUST_JWT_SECRET}
+
+  sitrust-frontend:
+    image: edvbec/eprevzem-sitrust-frontend:latest
+    ports:
+      - 5174:80
+
+  frontend:
+    image: edvbec/eprevzem-frontend:latest
+    ports:
+      - 3000:80
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
