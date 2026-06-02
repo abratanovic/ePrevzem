@@ -1,0 +1,17 @@
+name: sitrust-backend-build
+"on":
+  pull_request:
+    paths:
+      - "sitrust-mock/backend/**"
+      - "sitrust-mock/sitrust-mock.sln"
+      - ".github/workflows/sitrust-backend.yml"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+      - run: dotnet build sitrust-mock/sitrust-mock.sln
+      - run: dotnet test sitrust-mock/backend/SiTrustMock.Tests
