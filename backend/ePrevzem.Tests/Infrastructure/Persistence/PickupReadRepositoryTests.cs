@@ -60,6 +60,8 @@ public class PickupReadRepositoryTests
         recent[0].Reference.Should().Be("EP-2026-000123");
         recent[0].RecipientName.Should().Be("Ana Kovač");
         recent[0].LocationName.Should().Contain("EP-PM-001");
+        recent[0].CanDelete.Should().BeFalse();
+        recent[0].CanCancel.Should().BeFalse();
 
         var occupancy = await repository.GetLockerOccupancyAsync(orgId);
         occupancy.Should().ContainSingle();

@@ -45,7 +45,8 @@ public sealed class PickupReadRepository : IPickupReadRepository
                 claim.Location.City,
                 package.Status,
                 package.DeadlineAt,
-                package.CreatedAt
+                package.CreatedAt,
+                HasPlacementHistory = package.Placements.Any()
             })
             .Take(limit)
             .ToListAsync(cancellationToken);
@@ -58,7 +59,10 @@ public sealed class PickupReadRepository : IPickupReadRepository
             FormatLocation(x.SerialNumber, x.Address, x.HouseNumber, x.ZipCode, x.City),
             x.Status.ToString(),
             x.DeadlineAt,
-            x.CreatedAt)).ToList();
+            x.CreatedAt,
+            x.Status == PackageStatus.AwaitingPlacement && !x.HasPlacementHistory,
+            x.Status == PackageStatus.AwaitingPlacement
+                || x.Status == PackageStatus.AwaitingPersonalPickup)).ToList();
     }
 
     public async Task<IReadOnlyList<PickupStationOptionResponse>> GetStationOptionsAsync(

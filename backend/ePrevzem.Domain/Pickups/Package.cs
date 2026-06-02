@@ -202,6 +202,15 @@ public sealed class Package : AggregateRoot<PackageId>
     }
 
     public void Cancel(EmployeeAccountId cancelledBy, DateTimeOffset now)
+        => CancelInternal(cancelledBy, null, now);
+
+    public void Cancel(OrganizationAdminAccountId cancelledBy, DateTimeOffset now)
+        => CancelInternal(null, cancelledBy, now);
+
+    private void CancelInternal(
+        EmployeeAccountId? cancelledByEmployee,
+        OrganizationAdminAccountId? cancelledByOrganizationAdmin,
+        DateTimeOffset now)
     {
         switch (Status)
         {
@@ -220,6 +229,6 @@ public sealed class Package : AggregateRoot<PackageId>
 
         Status = PackageStatus.Cancelled;
         FinalizedAt = now;
-        Raise(new PackageCancelled(Id, cancelledBy, now));
+        Raise(new PackageCancelled(Id, cancelledByEmployee, cancelledByOrganizationAdmin, now));
     }
 }

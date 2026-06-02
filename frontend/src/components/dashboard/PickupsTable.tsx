@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { CheckCircle, Clock, Package, PackagePlus, Trash2, UserRoundCheck, XCircle } from "lucide-react";
 import type { Pickup, PickupDisplayStatus, PickupPage } from "../../types/dashboard";
 import { getRecentPickups } from "../../services/dashboardService";
-import { deletePickup, PickupServiceError } from "../../services/pickupsService";
+import { cancelPickup, deletePickup, PickupServiceError } from "../../services/pickupsService";
 
 const SL_MONTHS = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "avg", "sep", "okt", "nov", "dec"];
 
@@ -50,11 +50,11 @@ function TableSkeleton() {
   );
 }
 
-export default function PickupsTable({ onPickupDeleted }: { onPickupDeleted?: () => void }) {
+export default function PickupsTable({ onPickupChanged }: { onPickupChanged?: () => void }) {
   const [data, setData] = useState<PickupPage | null>(null);
   const [error, setError] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   useEffect(() => {
     getRecentPickups().then(setData).catch(() => setError(true));
@@ -64,7 +64,7 @@ export default function PickupsTable({ onPickupDeleted }: { onPickupDeleted?: ()
     if (!window.confirm(`Ali želite izbrisati prevzem ${row.reference}?`)) return;
 
     setDeleteError(null);
-    setDeletingId(row.id);
+    setUpdatingId(row.id);
     try {
       await deletePickup(row.id);
       setData((current) => current === null
@@ -73,7 +73,7 @@ export default function PickupsTable({ onPickupDeleted }: { onPickupDeleted?: ()
             items: current.items.filter((pickup) => pickup.id !== row.id),
             total: current.total - 1,
           });
-      onPickupDeleted?.();
+      onPickupChanged?.();
     } catch (deleteFailure) {
       setDeleteError(
         deleteFailure instanceof PickupServiceError && deleteFailure.code === "deletion_forbidden"
@@ -81,7 +81,34 @@ export default function PickupsTable({ onPickupDeleted }: { onPickupDeleted?: ()
           : "Prevzema ni bilo mogoče izbrisati.",
       );
     } finally {
-      setDeletingId(null);
+      setUpdatingId(null);
+    }
+  }
+
+  async function handleCancel(row: Pickup) {
+    if (!window.confirm(`Ali želite preklicati prevzem ${row.reference}? Zapis bo ostal v zgodovini.`)) return;
+
+    setDeleteError(null);
+    setUpdatingId(row.id);
+    try {
+      await cancelPickup(row.id);
+      setData((current) => current === null
+        ? current
+        : {
+            ...current,
+            items: current.items.map((pickup) => pickup.id === row.id
+              ? { ...pickup, status: "cancelled", canDelete: false, canCancel: false }
+              : pickup),
+          });
+      onPickupChanged?.();
+    } catch (cancelFailure) {
+      setDeleteError(
+        cancelFailure instanceof PickupServiceError && cancelFailure.code === "cancellation_forbidden"
+          ? "Prevzema v trenutnem stanju ni mogoče preklicati."
+          : "Prevzema ni bilo mogoče preklicati.",
+      );
+    } finally {
+      setUpdatingId(null);
     }
   }
 
@@ -132,16 +159,27 @@ export default function PickupsTable({ onPickupDeleted }: { onPickupDeleted?: ()
                   {formatDeadline(row.deadlineAt)}
                 </td>
                 <td className="px-5 py-3.5">
-                  {row.status === "awaitingPlacement" ? (
+                  {row.canDelete ? (
                     <button
                       type="button"
                       onClick={() => void handleDelete(row)}
-                      disabled={deletingId === row.id}
+                      disabled={updatingId === row.id}
                       className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:cursor-wait disabled:opacity-50"
                       title="Izbriši prevzem"
                     >
                       <Trash2 size={14} />
-                      {deletingId === row.id ? "Brisanje ..." : "Izbriši"}
+                      {updatingId === row.id ? "Brisanje ..." : "Izbriši"}
+                    </button>
+                  ) : row.canCancel ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleCancel(row)}
+                      disabled={updatingId === row.id}
+                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-orange-600 hover:bg-orange-50 disabled:cursor-wait disabled:opacity-50"
+                      title="Prekliči prevzem"
+                    >
+                      <XCircle size={14} />
+                      {updatingId === row.id ? "Preklic ..." : "Prekliči"}
                     </button>
                   ) : "—"}
                 </td>

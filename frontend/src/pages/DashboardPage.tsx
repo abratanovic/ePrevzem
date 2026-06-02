@@ -84,7 +84,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-[1fr_360px] gap-4">
-        <PickupsTable onPickupDeleted={loadStats} />
+        <PickupsTable onPickupChanged={loadStats} />
         <LockerOccupancyPanel />
       </div>
     </div>

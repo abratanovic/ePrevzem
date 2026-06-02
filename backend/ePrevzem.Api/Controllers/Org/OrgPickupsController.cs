@@ -1,4 +1,5 @@
 using ePrevzem.Application.Common.Abstractions;
+using ePrevzem.Application.Pickups.Cancel;
 using ePrevzem.Application.Pickups.Create;
 using ePrevzem.Application.Pickups.Delete;
 using ePrevzem.Application.Pickups.Dtos;
@@ -21,6 +22,8 @@ public sealed class OrgPickupsController : ControllerBase
     private const string CreationForbiddenType = "urn:eprevzem:pickups:creation-forbidden";
     private const string PickupNotFoundType = "urn:eprevzem:pickups:not-found";
     private const string DeletionForbiddenType = "urn:eprevzem:pickups:deletion-forbidden";
+    private const string CancellationForbiddenType = "urn:eprevzem:pickups:cancellation-forbidden";
+    private const string ManagementForbiddenType = "urn:eprevzem:pickups:management-forbidden";
 
     private readonly IMediator _mediator;
     private readonly ICurrentUser _currentUser;
@@ -127,7 +130,9 @@ public sealed class OrgPickupsController : ControllerBase
     {
         try
         {
-            await _mediator.Send(new DeletePickupCommand(GetOrganizationId(), pickupId), cancellationToken);
+            await _mediator.Send(
+                new DeletePickupCommand(GetOrganizationId(), GetActorId(), GetActorRole(), pickupId),
+                cancellationToken);
             return NoContent();
         }
         catch (PickupNotFoundException)
@@ -144,7 +149,47 @@ public sealed class OrgPickupsController : ControllerBase
                 statusCode: StatusCodes.Status409Conflict,
                 type: DeletionForbiddenType,
                 title: "Pickup cannot be deleted",
-                detail: "Izbrisati je mogoče samo prevzeme, ki še čakajo na vložitev v paketomat.");
+                detail: "Izbrisati je mogoče samo sveže prevzeme, ki še nikoli niso bili vloženi v paketomat.");
+        }
+        catch (PickupManagementForbiddenException)
+        {
+            return ManagementForbidden();
+        }
+    }
+
+    [HttpPost("{pickupId:guid}/cancel")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Cancel([FromRoute] Guid pickupId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _mediator.Send(
+                new CancelPickupCommand(GetOrganizationId(), GetActorId(), GetActorRole(), pickupId),
+                cancellationToken);
+            return NoContent();
+        }
+        catch (PickupNotFoundException)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                type: PickupNotFoundType,
+                title: "Pickup not found",
+                detail: "Prevzem ni bil najden.");
+        }
+        catch (PickupCancellationForbiddenException)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                type: CancellationForbiddenType,
+                title: "Pickup cannot be cancelled",
+                detail: "Prevzema v trenutnem stanju ni mogoče preklicati.");
+        }
+        catch (PickupManagementForbiddenException)
+        {
+            return ManagementForbidden();
         }
     }
 
@@ -156,6 +201,13 @@ public sealed class OrgPickupsController : ControllerBase
 
     private string GetActorRole()
         => _currentUser.IsInRole("OrganizationAdmin") ? "OrganizationAdmin" : "Employee";
+
+    private IActionResult ManagementForbidden()
+        => Problem(
+            statusCode: StatusCodes.Status403Forbidden,
+            type: ManagementForbiddenType,
+            title: "Pickup management forbidden",
+            detail: "Nimate pravic za upravljanje prevzemov.");
 
     private static ValidationProblemDetails CreateValidationProblemDetails(ValidationException exception)
     {

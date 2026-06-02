@@ -12,7 +12,9 @@ public sealed record PickupResponse(
     string LocationName,
     string Status,
     DateTimeOffset? DeadlineAt,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    bool CanDelete,
+    bool CanCancel);
 
 public sealed record DashboardStatsResponse(
     int ActivePickups,

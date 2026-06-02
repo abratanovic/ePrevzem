@@ -22,7 +22,9 @@ public sealed class PackageRepository : IPackageRepository
         PackageId id,
         OrganizationId organizationId,
         CancellationToken cancellationToken = default)
-        => _dbContext.Packages.SingleOrDefaultAsync(
+        => _dbContext.Packages
+            .Include(x => x.Placements)
+            .SingleOrDefaultAsync(
             x => x.Id == id && x.OrganizationId == organizationId,
             cancellationToken);
 

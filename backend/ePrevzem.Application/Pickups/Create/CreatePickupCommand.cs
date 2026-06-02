@@ -109,7 +109,9 @@ public sealed class CreatePickupCommandHandler : IRequestHandler<CreatePickupCom
             FormatLocation(claim),
             package.Status.ToString(),
             package.DeadlineAt,
-            package.CreatedAt);
+            package.CreatedAt,
+            true,
+            true);
     }
 
     private async Task<string> GenerateUniqueReference(DateTimeOffset now, CancellationToken cancellationToken)
