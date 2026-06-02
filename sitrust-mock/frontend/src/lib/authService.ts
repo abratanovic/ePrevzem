@@ -22,7 +22,7 @@ function buildUrl(path: string) {
 export async function initiateAuth(
   redirectUrl: string,
 ): Promise<InitiateAuthResponse> {
-  const url = new URL(buildUrl("/api/auth/initiate"));
+  const url = new URL(buildUrl("/api/auth/initiate"), window.location.origin);
   url.searchParams.set("redirectUrl", redirectUrl);
 
   const response = await fetch(url.toString(), {
