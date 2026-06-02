@@ -26,6 +26,8 @@ export interface Pickup {
   status: PickupDisplayStatus;
   deadlineAt: string | null;
   createdAt?: string;
+  canDelete: boolean;
+  canCancel: boolean;
 }
 
 export interface PickupPage {

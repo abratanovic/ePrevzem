@@ -6,6 +6,7 @@ using MediatR;
 namespace ePrevzem.Application.Pickups.Queries;
 
 public sealed record GetRecentPickupsQuery(Guid OrganizationId, int Limit) : IRequest<IReadOnlyList<PickupResponse>>;
+public sealed record GetAllPickupsQuery(Guid OrganizationId) : IRequest<IReadOnlyList<PickupResponse>>;
 public sealed record GetPickupStationOptionsQuery(Guid OrganizationId) : IRequest<IReadOnlyList<PickupStationOptionResponse>>;
 public sealed record GetDashboardStatsQuery(Guid OrganizationId) : IRequest<DashboardStatsResponse>;
 public sealed record GetLockerOccupancyQuery(Guid OrganizationId) : IRequest<IReadOnlyList<LockerOccupancyResponse>>;
@@ -18,6 +19,16 @@ public sealed class GetRecentPickupsQueryHandler
 
     public Task<IReadOnlyList<PickupResponse>> Handle(GetRecentPickupsQuery query, CancellationToken cancellationToken)
         => _repository.GetRecentAsync(new OrganizationId(query.OrganizationId), Math.Clamp(query.Limit, 1, 100), cancellationToken);
+}
+
+public sealed class GetAllPickupsQueryHandler
+    : IRequestHandler<GetAllPickupsQuery, IReadOnlyList<PickupResponse>>
+{
+    private readonly IPickupReadRepository _repository;
+    public GetAllPickupsQueryHandler(IPickupReadRepository repository) => _repository = repository;
+
+    public Task<IReadOnlyList<PickupResponse>> Handle(GetAllPickupsQuery query, CancellationToken cancellationToken)
+        => _repository.GetAllAsync(new OrganizationId(query.OrganizationId), cancellationToken);
 }
 
 public sealed class GetPickupStationOptionsQueryHandler

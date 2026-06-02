@@ -20,17 +20,30 @@ public sealed class PickupReadRepository : IPickupReadRepository
         OrganizationId organizationId,
         int limit,
         CancellationToken cancellationToken = default)
+        => await GetAsync(organizationId, limit, cancellationToken);
+
+    public async Task<IReadOnlyList<PickupResponse>> GetAllAsync(
+        OrganizationId organizationId,
+        CancellationToken cancellationToken = default)
+        => await GetAsync(organizationId, null, cancellationToken);
+
+    private async Task<IReadOnlyList<PickupResponse>> GetAsync(
+        OrganizationId organizationId,
+        int? limit,
+        CancellationToken cancellationToken)
     {
-        var rows = await (
+        var query =
             from package in _dbContext.Packages.AsNoTracking()
             join citizen in _dbContext.CitizenUsers.AsNoTracking()
                 on package.RecipientCitizenUserId equals citizen.Id
-            join claim in _dbContext.StationClaims.AsNoTracking().Where(x => x.ReleasedAt == null)
+            join claim in _dbContext.StationClaims.AsNoTracking()
                 on package.TargetPickupStationId equals claim.PickupStationId
             join station in _dbContext.PickupStations.AsNoTracking()
                 on package.TargetPickupStationId equals station.Id
             where package.OrganizationId == organizationId
                 && claim.OrganizationId == organizationId
+                && claim.ClaimedAt <= package.CreatedAt
+                && (claim.ReleasedAt == null || claim.ReleasedAt >= package.CreatedAt)
             orderby package.CreatedAt descending
             select new
             {
@@ -45,9 +58,11 @@ public sealed class PickupReadRepository : IPickupReadRepository
                 claim.Location.City,
                 package.Status,
                 package.DeadlineAt,
-                package.CreatedAt
-            })
-            .Take(limit)
+                package.CreatedAt,
+                HasPlacementHistory = package.Placements.Any()
+            };
+
+        var rows = await (limit is null ? query : query.Take(limit.Value))
             .ToListAsync(cancellationToken);
 
         return rows.Select(x => new PickupResponse(
@@ -58,7 +73,10 @@ public sealed class PickupReadRepository : IPickupReadRepository
             FormatLocation(x.SerialNumber, x.Address, x.HouseNumber, x.ZipCode, x.City),
             x.Status.ToString(),
             x.DeadlineAt,
-            x.CreatedAt)).ToList();
+            x.CreatedAt,
+            x.Status == PackageStatus.AwaitingPlacement && !x.HasPlacementHistory,
+            x.Status == PackageStatus.AwaitingPlacement
+                || x.Status == PackageStatus.AwaitingPersonalPickup)).ToList();
     }
 
     public async Task<IReadOnlyList<PickupStationOptionResponse>> GetStationOptionsAsync(

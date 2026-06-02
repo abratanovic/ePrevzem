@@ -182,11 +182,17 @@ public sealed class TestPackageRepository(IEnumerable<string>? existingReference
 
     public Task<bool> ExistsByReferenceAsync(string reference, CancellationToken cancellationToken = default)
         => Task.FromResult(_references.Contains(reference));
+    public Task<Package?> GetByIdForOrganizationAsync(
+        PackageId id,
+        OrganizationId organizationId,
+        CancellationToken cancellationToken = default)
+        => Task.FromResult(Items.SingleOrDefault(x => x.Id == id && x.OrganizationId == organizationId));
     public Task AddAsync(Package package, CancellationToken cancellationToken = default)
     {
         Items.Add(package);
         return Task.CompletedTask;
     }
+    public void Remove(Package package) => Items.Remove(package);
 }
 
 public sealed class TestPackageReferenceGenerator(params string[] references) : IPackageReferenceGenerator

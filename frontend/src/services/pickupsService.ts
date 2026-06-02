@@ -26,12 +26,14 @@ interface BackendPickup {
   status: BackendPickupStatus;
   deadlineAt: string | null;
   createdAt: string;
+  canDelete: boolean;
+  canCancel: boolean;
 }
 
 export class PickupServiceError extends Error {
-  code: "recipient_not_found" | "station_forbidden" | "creation_forbidden" | "unknown";
+  code: "recipient_not_found" | "station_forbidden" | "creation_forbidden" | "deletion_forbidden" | "cancellation_forbidden" | "unknown";
 
-  constructor(code: "recipient_not_found" | "station_forbidden" | "creation_forbidden" | "unknown") {
+  constructor(code: "recipient_not_found" | "station_forbidden" | "creation_forbidden" | "deletion_forbidden" | "cancellation_forbidden" | "unknown") {
     super(code);
     this.code = code;
   }
@@ -75,6 +77,8 @@ function toPickup(pickup: BackendPickup): Pickup {
     status,
     deadlineAt: pickup.deadlineAt,
     createdAt: pickup.createdAt,
+    canDelete: pickup.canDelete,
+    canCancel: pickup.canCancel,
   };
 }
 
@@ -117,4 +121,29 @@ export async function getRecentPickups(limit = 10): Promise<PickupPage> {
     await fetch(`${API_BASE}?limit=${limit}`, { headers: authHeaders() }),
   );
   return { items: pickups.map(toPickup), total: pickups.length };
+}
+
+export async function getAllPickups(): Promise<PickupPage> {
+  const pickups = await readJson<BackendPickup[]>(
+    await fetch(`${API_BASE}/all`, { headers: authHeaders() }),
+  );
+  return { items: pickups.map(toPickup), total: pickups.length };
+}
+
+export async function deletePickup(pickupId: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/${pickupId}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (response.status === 409) throw new PickupServiceError("deletion_forbidden");
+  if (!response.ok) throw new PickupServiceError("unknown");
+}
+
+export async function cancelPickup(pickupId: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/${pickupId}/cancel`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  if (response.status === 409) throw new PickupServiceError("cancellation_forbidden");
+  if (!response.ok) throw new PickupServiceError("unknown");
 }

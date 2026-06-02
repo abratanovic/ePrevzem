@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Calendar, FileText, Hourglass, Package } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import type { DashboardStats } from "../types/dashboard";
@@ -22,9 +22,18 @@ export default function DashboardPage() {
   const [statsError, setStatsError] = useState(false);
   const location = useLocation();
 
-  useEffect(() => {
-    getDashboardStats().then(setStats).catch(() => setStatsError(true));
+  const loadStats = useCallback(() => {
+    getDashboardStats()
+      .then((dashboardStats) => {
+        setStats(dashboardStats);
+        setStatsError(false);
+      })
+      .catch(() => setStatsError(true));
   }, []);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
 
   return (
     <div className="p-6 space-y-4">
@@ -75,7 +84,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-[1fr_360px] gap-4">
-        <PickupsTable />
+        <PickupsTable onPickupChanged={loadStats} />
         <LockerOccupancyPanel />
       </div>
     </div>

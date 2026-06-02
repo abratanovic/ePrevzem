@@ -10,6 +10,10 @@ public interface IPickupReadRepository
         int limit,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<PickupResponse>> GetAllAsync(
+        OrganizationId organizationId,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<PickupStationOptionResponse>> GetStationOptionsAsync(
         OrganizationId organizationId,
         CancellationToken cancellationToken = default);
