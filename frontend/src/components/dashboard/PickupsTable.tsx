@@ -50,15 +50,29 @@ function TableSkeleton() {
   );
 }
 
-export default function PickupsTable({ onPickupChanged }: { onPickupChanged?: () => void }) {
+interface PickupsTableProps {
+  loadPickups?: () => Promise<PickupPage>;
+  title?: string;
+  subtitle?: string;
+  showAllLink?: boolean;
+  onPickupChanged?: () => void;
+}
+
+export default function PickupsTable({
+  loadPickups = getRecentPickups,
+  title = "Nedavni prevzemi",
+  subtitle = "Zadnjih 10 ustvarjenih prevzemov",
+  showAllLink = true,
+  onPickupChanged,
+}: PickupsTableProps) {
   const [data, setData] = useState<PickupPage | null>(null);
   const [error, setError] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   useEffect(() => {
-    getRecentPickups().then(setData).catch(() => setError(true));
-  }, []);
+    loadPickups().then(setData).catch(() => setError(true));
+  }, [loadPickups]);
 
   async function handleDelete(row: Pickup) {
     if (!window.confirm(`Ali želite izbrisati prevzem ${row.reference}?`)) return;
@@ -116,12 +130,14 @@ export default function PickupsTable({ onPickupChanged }: { onPickupChanged?: ()
     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-baseline justify-between px-5 pt-5 pb-3">
         <div>
-          <h2 className="text-lg font-bold text-slate-900">Nedavni prevzemi</h2>
-          <p className="text-xs text-slate-400">Zadnjih 30 dni</p>
+          <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+          <p className="text-xs text-slate-400">{subtitle}</p>
         </div>
-        <Link to="/prevzemi" className="text-sm font-medium text-accent hover:underline">
-          Vsi prevzemi
-        </Link>
+        {showAllLink && (
+          <Link to="/prevzemi" className="text-sm font-medium text-accent hover:underline">
+            Vsi prevzemi
+          </Link>
+        )}
       </div>
 
       {deleteError && (

@@ -123,6 +123,13 @@ export async function getRecentPickups(limit = 10): Promise<PickupPage> {
   return { items: pickups.map(toPickup), total: pickups.length };
 }
 
+export async function getAllPickups(): Promise<PickupPage> {
+  const pickups = await readJson<BackendPickup[]>(
+    await fetch(`${API_BASE}/all`, { headers: authHeaders() }),
+  );
+  return { items: pickups.map(toPickup), total: pickups.length };
+}
+
 export async function deletePickup(pickupId: string): Promise<void> {
   const response = await fetch(`${API_BASE}/${pickupId}`, {
     method: "DELETE",

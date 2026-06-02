@@ -69,6 +69,94 @@ public class PickupReadRepositoryTests
         occupancy[0].Total.Should().Be(2);
     }
 
+    [Fact]
+    public async Task All_pickups_returns_complete_history_without_recent_limit()
+    {
+        await using var db = CreateContext();
+        var orgId = OrganizationId.New();
+        var station = PickupStation.Create(PickupStationId.New(), "EP-PM-001", Now);
+        var claim = StationClaim.Claim(
+            StationClaimId.New(),
+            station.Id,
+            orgId,
+            Location.Create(46m, 15m, "Koroška cesta", "46", "2000", "Maribor"),
+            Now);
+        var citizen = CitizenUser.Onboard(
+            CitizenUserId.New(), "Ana", "Kovač", "0101006500006", null, null, Now);
+        var firstPackage = Package.CreateByEmployee(
+            PackageId.New(),
+            orgId,
+            citizen.Id,
+            EmployeeAccountId.New(),
+            station.Id,
+            "EP-2026-000123",
+            "Osebna izkaznica",
+            Now);
+        var secondPackage = Package.CreateByEmployee(
+            PackageId.New(),
+            orgId,
+            citizen.Id,
+            EmployeeAccountId.New(),
+            station.Id,
+            "EP-2026-000124",
+            "Potrdilo",
+            Now.AddMinutes(1));
+
+        db.PickupStations.Add(station);
+        db.StationClaims.Add(claim);
+        db.CitizenUsers.Add(citizen);
+        db.Packages.AddRange(firstPackage, secondPackage);
+        await db.SaveChangesAsync();
+
+        var repository = new PickupReadRepository(db);
+
+        var recent = await repository.GetRecentAsync(orgId, 1);
+        var all = await repository.GetAllAsync(orgId);
+
+        recent.Should().ContainSingle();
+        recent[0].Reference.Should().Be("EP-2026-000124");
+        all.Select(x => x.Reference).Should().Equal("EP-2026-000124", "EP-2026-000123");
+    }
+
+    [Fact]
+    public async Task All_pickups_includes_pickup_created_before_station_was_released()
+    {
+        await using var db = CreateContext();
+        var orgId = OrganizationId.New();
+        var station = PickupStation.Create(PickupStationId.New(), "EP-PM-001", Now);
+        var claim = StationClaim.Claim(
+            StationClaimId.New(),
+            station.Id,
+            orgId,
+            Location.Create(46m, 15m, "Koroška cesta", "46", "2000", "Maribor"),
+            Now);
+        var citizen = CitizenUser.Onboard(
+            CitizenUserId.New(), "Ana", "Kovač", "0101006500006", null, null, Now);
+        var package = Package.CreateByEmployee(
+            PackageId.New(),
+            orgId,
+            citizen.Id,
+            EmployeeAccountId.New(),
+            station.Id,
+            "EP-2026-000123",
+            "Osebna izkaznica",
+            Now);
+        claim.Release(Now.AddDays(1));
+
+        db.PickupStations.Add(station);
+        db.StationClaims.Add(claim);
+        db.CitizenUsers.Add(citizen);
+        db.Packages.Add(package);
+        await db.SaveChangesAsync();
+
+        var repository = new PickupReadRepository(db);
+
+        var all = await repository.GetAllAsync(orgId);
+
+        all.Should().ContainSingle();
+        all[0].Reference.Should().Be("EP-2026-000123");
+    }
+
     private static EPrevzemDbContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<EPrevzemDbContext>()

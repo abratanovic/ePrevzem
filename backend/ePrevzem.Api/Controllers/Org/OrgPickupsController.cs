@@ -70,6 +70,11 @@ public sealed class OrgPickupsController : ControllerBase
     public async Task<IActionResult> GetRecent([FromQuery] int limit = 10, CancellationToken cancellationToken = default)
         => Ok(await _mediator.Send(new GetRecentPickupsQuery(GetOrganizationId(), limit), cancellationToken));
 
+    [HttpGet("all")]
+    [ProducesResponseType<IReadOnlyList<PickupResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+        => Ok(await _mediator.Send(new GetAllPickupsQuery(GetOrganizationId()), cancellationToken));
+
     [HttpPost]
     [ProducesResponseType<PickupResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
