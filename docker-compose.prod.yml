@@ -36,6 +36,7 @@ services:
       - 5070:8080
     environment:
       JwtSettings__Secret: ${SITRUST_JWT_SECRET}
+      PUBLIC_BASE_URL: ${SITRUST_PUBLIC_BASE_URL}
 
   sitrust-frontend:
     image: edvbec/eprevzem-sitrust-frontend:latest
