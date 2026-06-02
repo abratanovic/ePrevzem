@@ -36,7 +36,10 @@ export default function AddPickupPage() {
 
   const checkRecipient = async () => {
     if (!EMSO_PATTERN.test(emso)) {
-      setErrors((current) => ({ ...current, emso: "EMŠO mora vsebovati natanko 13 številk." }));
+      setErrors((current) => ({
+        ...current,
+        emso: "EMŠO mora vsebovati natanko 13 številk.",
+      }));
       return;
     }
 
@@ -48,7 +51,8 @@ export default function AddPickupPage() {
       if (!match) {
         setErrors((current) => ({
           ...current,
-          recipient: "Prejemnik ni registriran. Pred izdelavo prevzema mora opraviti registracijo prek SI-TRUST.",
+          recipient:
+            "Prejemnik ni registriran. Pred izdelavo prevzema mora opraviti registracijo prek SI-TRUST.",
         }));
       }
     } finally {
@@ -59,9 +63,11 @@ export default function AddPickupPage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const nextErrors: Record<string, string> = {};
-    if (!EMSO_PATTERN.test(emso)) nextErrors.emso = "EMŠO mora vsebovati natanko 13 številk.";
+    if (!EMSO_PATTERN.test(emso))
+      nextErrors.emso = "EMŠO mora vsebovati natanko 13 številk.";
     else if (!recipient) nextErrors.recipient = "Najprej preverite prejemnika.";
-    if (!description.trim()) nextErrors.description = "Opis vsebine je obvezen.";
+    if (!description.trim())
+      nextErrors.description = "Opis vsebine je obvezen.";
     if (!stationId) nextErrors.stationId = "Izberite ciljni paketomat.";
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
@@ -77,14 +83,30 @@ export default function AddPickupPage() {
         state: { pickupCreated: true },
       });
     } catch (error) {
-      if (error instanceof PickupServiceError && error.code === "recipient_not_found") {
-        setErrors({ recipient: "Prejemnik ni registriran. Pred izdelavo prevzema mora opraviti registracijo prek SI-TRUST." });
-      } else if (error instanceof PickupServiceError && error.code === "station_forbidden") {
-        setErrors({ stationId: "Izbrani paketomat ni več na voljo vaši organizaciji." });
-      } else if (error instanceof PickupServiceError && error.code === "creation_forbidden") {
+      if (
+        error instanceof PickupServiceError &&
+        error.code === "recipient_not_found"
+      ) {
+        setErrors({
+          recipient:
+            "Prejemnik ni registriran. Pred izdelavo prevzema mora opraviti registracijo prek SI-TRUST.",
+        });
+      } else if (
+        error instanceof PickupServiceError &&
+        error.code === "station_forbidden"
+      ) {
+        setErrors({
+          stationId: "Izbrani paketomat ni več na voljo vaši organizaciji.",
+        });
+      } else if (
+        error instanceof PickupServiceError &&
+        error.code === "creation_forbidden"
+      ) {
         setErrors({ submit: "Nimate pravic za izdelavo prevzema." });
       } else {
-        setErrors({ submit: "Prevzema ni bilo mogoče shraniti. Poskusite znova." });
+        setErrors({
+          submit: "Prevzema ni bilo mogoče shraniti. Poskusite znova.",
+        });
       }
     } finally {
       setIsSubmitting(false);
@@ -94,12 +116,17 @@ export default function AddPickupPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-5 p-6">
       <div className="flex items-center gap-4">
-        <Link to="/dashboard" className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50">
+        <Link
+          to="/dashboard"
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+        >
           <ArrowLeft size={18} />
         </Link>
         <div>
           <h2 className="text-xl font-bold text-slate-900">Dodaj prevzem</h2>
-          <p className="text-sm text-slate-500">Vnesite podatke o prejemniku in vsebini za nov prevzem.</p>
+          <p className="text-sm text-slate-500">
+            Vnesite podatke o prejemniku in vsebini za nov prevzem.
+          </p>
         </div>
       </div>
 
@@ -107,11 +134,15 @@ export default function AddPickupPage() {
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-5">
             <h3 className="text-lg font-bold text-slate-900">Prejemnik</h3>
-            <p className="text-sm text-slate-500">Prejemnik mora biti predhodno registriran prek SI-TRUST.</p>
+            <p className="text-sm text-slate-500">
+              Prejemnik mora biti predhodno registriran prek SI-TRUST.
+            </p>
           </div>
           <div className="flex items-start gap-3">
             <label className="flex-1 space-y-1.5">
-              <span className="block text-sm font-medium text-slate-700">EMŠO prejemnika</span>
+              <span className="block text-sm font-medium text-slate-700">
+                EMŠO prejemnika
+              </span>
               <input
                 value={emso}
                 inputMode="numeric"
@@ -119,7 +150,11 @@ export default function AddPickupPage() {
                 onChange={(event) => updateEmso(event.target.value)}
                 className={`w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition ${errors.emso ? "border-red-400 focus:ring-2 focus:ring-red-100" : "border-slate-200 focus:border-accent focus:ring-2 focus:ring-accent/10"}`}
               />
-              {errors.emso && <span className="block text-xs text-red-500">{errors.emso}</span>}
+              {errors.emso && (
+                <span className="block text-xs text-red-500">
+                  {errors.emso}
+                </span>
+              )}
             </label>
             <button
               type="button"
@@ -135,21 +170,36 @@ export default function AddPickupPage() {
             <div className="mt-4 flex items-center gap-3 rounded-xl bg-emerald-50 px-4 py-3 text-emerald-800">
               <CheckCircle2 size={19} />
               <div>
-                <p className="text-sm font-semibold">{recipient.firstName} {recipient.lastName}</p>
-                <p className="text-xs text-emerald-700">Prejemnik je registriran.</p>
+                <p className="text-sm font-semibold">
+                  {recipient.firstName} {recipient.lastName}
+                </p>
+                <p className="text-xs text-emerald-700">
+                  Prejemnik je registriran.
+                </p>
               </div>
             </div>
           )}
-          {errors.recipient && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">{errors.recipient}</p>}
+          {errors.recipient && (
+            <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+              {errors.recipient}
+            </p>
+          )}
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-5">
-            <h3 className="text-lg font-bold text-slate-900">Podatki o prevzemu</h3>
-            <p className="text-sm text-slate-500">Referenca bo ustvarjena samodejno. Rok začne teči ob vložitvi v predalček.</p>
+            <h3 className="text-lg font-bold text-slate-900">
+              Podatki o prevzemu
+            </h3>
+            <p className="text-sm text-slate-500">
+              Referenca bo ustvarjena samodejno. Rok začne teči ob vložitvi v
+              predalček.
+            </p>
           </div>
           <label className="space-y-1.5">
-            <span className="block text-sm font-medium text-slate-700">Opis vsebine</span>
+            <span className="block text-sm font-medium text-slate-700">
+              Opis vsebine
+            </span>
             <textarea
               rows={4}
               value={description}
@@ -160,23 +210,36 @@ export default function AddPickupPage() {
               }}
               className={`w-full resize-y rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition ${errors.description ? "border-red-400 focus:ring-2 focus:ring-red-100" : "border-slate-200 focus:border-accent focus:ring-2 focus:ring-accent/10"}`}
             />
-            {errors.description && <span className="block text-xs text-red-500">{errors.description}</span>}
+            {errors.description && (
+              <span className="block text-xs text-red-500">
+                {errors.description}
+              </span>
+            )}
           </label>
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-5">
-            <h3 className="text-lg font-bold text-slate-900">Ciljni paketomat</h3>
-            <p className="text-sm text-slate-500">Predalček bo določen pozneje ob fizični vložitvi prevzema.</p>
+            <h3 className="text-lg font-bold text-slate-900">
+              Ciljni paketomat
+            </h3>
+            <p className="text-sm text-slate-500">
+              Predalček bo določen pozneje ob fizični vložitvi prevzema.
+            </p>
           </div>
           {stations === null ? (
             <div className="h-11 animate-pulse rounded-xl bg-slate-100" />
           ) : stations.length === 0 ? (
-            <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">Paketomatov ni bilo mogoče naložiti.</p>
+            <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+              Paketomatov ni bilo mogoče naložiti.
+            </p>
           ) : (
             <div className="grid gap-3">
               {stations.map((station) => (
-                <label key={station.id} className={`flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 transition ${stationId === station.id ? "border-accent bg-accent/5" : "border-slate-200 hover:bg-slate-50"}`}>
+                <label
+                  key={station.id}
+                  className={`flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 transition ${stationId === station.id ? "border-accent bg-accent/5" : "border-slate-200 hover:bg-slate-50"}`}
+                >
                   <input
                     type="radio"
                     name="station"
@@ -189,23 +252,42 @@ export default function AddPickupPage() {
                     className="mt-1 accent-[var(--color-accent)]"
                   />
                   <span>
-                    <span className="block text-sm font-semibold text-slate-900">{station.name}</span>
-                    <span className="block text-xs text-slate-500">{station.address}</span>
+                    <span className="block text-sm font-semibold text-slate-900">
+                      {station.name}
+                    </span>
+                    <span className="block text-xs text-slate-500">
+                      {station.address}
+                    </span>
                   </span>
                 </label>
               ))}
             </div>
           )}
-          {errors.stationId && <span className="mt-2 block text-xs text-red-500">{errors.stationId}</span>}
+          {errors.stationId && (
+            <span className="mt-2 block text-xs text-red-500">
+              {errors.stationId}
+            </span>
+          )}
         </section>
 
-        {errors.submit && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">{errors.submit}</p>}
+        {errors.submit && (
+          <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+            {errors.submit}
+          </p>
+        )}
 
         <div className="flex justify-end gap-3">
-          <Link to="/dashboard" className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+          <Link
+            to="/dashboard"
+            className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
             Prekliči
           </Link>
-          <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-dark disabled:opacity-60">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-dark disabled:opacity-60"
+          >
             <Save size={16} />
             {isSubmitting ? "Shranjujem ..." : "Dodaj prevzem"}
           </button>
