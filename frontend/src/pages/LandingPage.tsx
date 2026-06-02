@@ -24,7 +24,8 @@ function LoginDropdown({ variant }: { variant: "navbar" | "hero" }) {
 
   useEffect(() => {
     function handleOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
     }
     document.addEventListener("mousedown", handleOutside);
     return () => document.removeEventListener("mousedown", handleOutside);
@@ -53,19 +54,33 @@ function LoginDropdown({ variant }: { variant: "navbar" | "hero" }) {
       {open && (
         <div className="absolute right-0 top-full z-50 mt-2 w-60 overflow-hidden rounded-xl border border-slate-100 bg-white shadow-xl">
           <button
-            onClick={() => { navigate("/prijava"); setOpen(false); }}
+            onClick={() => {
+              navigate("/prijava");
+              setOpen(false);
+            }}
             className="flex w-full flex-col items-start px-4 py-3.5 text-left transition hover:bg-slate-50"
           >
-            <span className="text-sm font-semibold text-slate-900">Sem zaposleni v organizaciji</span>
-            <span className="mt-0.5 text-xs text-slate-500">Prijava z e-pošto in geslom</span>
+            <span className="text-sm font-semibold text-slate-900">
+              Sem zaposleni v organizaciji
+            </span>
+            <span className="mt-0.5 text-xs text-slate-500">
+              Prijava z e-pošto in geslom
+            </span>
           </button>
           <div className="border-t border-slate-100" />
           <button
-            onClick={() => { navigate("/prijava/skrbnik"); setOpen(false); }}
+            onClick={() => {
+              navigate("/prijava/skrbnik");
+              setOpen(false);
+            }}
             className="flex w-full flex-col items-start px-4 py-3.5 text-left transition hover:bg-slate-50"
           >
-            <span className="text-sm font-semibold text-slate-900">Sem skrbnik</span>
-            <span className="mt-0.5 text-xs text-slate-500">Upravljanje organizacije in paketnikov</span>
+            <span className="text-sm font-semibold text-slate-900">
+              Sem skrbnik
+            </span>
+            <span className="mt-0.5 text-xs text-slate-500">
+              Upravljanje organizacije in paketnikov
+            </span>
           </button>
         </div>
       )}
@@ -95,7 +110,11 @@ export default function LandingPage() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <img src={sloveniaLogo} alt="Republika Slovenija" className="h-8 w-8 sm:h-9 sm:w-9" />
+            <img
+              src={sloveniaLogo}
+              alt="Republika Slovenija"
+              className="h-8 w-8 sm:h-9 sm:w-9"
+            />
             <div className="leading-tight">
               <p className="hidden text-[9px] font-semibold uppercase tracking-widest text-slate-400 sm:block">
                 Republika Slovenija
@@ -107,7 +126,11 @@ export default function LandingPage() {
           {/* Desktop nav links */}
           <div className="hidden items-center gap-8 md:flex">
             {navLinks.map((l) => (
-              <a key={l.href} href={l.href} className="text-sm font-medium text-slate-600 transition hover:text-[#1a3d2b]">
+              <a
+                key={l.href}
+                href={l.href}
+                className="text-sm font-medium text-slate-600 transition hover:text-[#1a3d2b]"
+              >
                 {l.label}
               </a>
             ))}
@@ -119,7 +142,11 @@ export default function LandingPage() {
               onClick={handleRegister}
               className="hidden items-center gap-2 rounded-xl bg-[#1a3d2b] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#153122] sm:flex"
             >
-              <img src={sitrustLogo} alt="SI-PASS" className="h-4 w-4 object-contain" />
+              <img
+                src={sitrustLogo}
+                alt="SI-PASS"
+                className="h-4 w-4 object-contain"
+              />
               Registriraj se s SI-PASS
             </button>
             <div className="hidden sm:block">
@@ -158,7 +185,10 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section id="storitev" className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-20">
+      <section
+        id="storitev"
+        className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-20"
+      >
         <div className="grid gap-10 lg:grid-cols-2 lg:items-center lg:gap-12">
           {/* Left */}
           <div>
@@ -171,7 +201,8 @@ export default function LandingPage() {
             </h1>
 
             <p className="mt-5 text-base leading-8 text-slate-600 sm:text-lg">
-              Organizacija odloži vaš dokument v zaklenjeni predalček. Ko pridete, se identificirate s telefonom — predalček se odpre sam.
+              Organizacija odloži vaš dokument v zaklenjeni predalček. Ko
+              pridete, se identificirate s telefonom — predalček se odpre sam.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3">
@@ -179,7 +210,11 @@ export default function LandingPage() {
                 onClick={handleRegister}
                 className="flex items-center gap-2 rounded-xl bg-[#1a3d2b] px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-[#153122]"
               >
-                <img src={sitrustLogo} alt="SI-PASS" className="h-5 w-5 object-contain" />
+                <img
+                  src={sitrustLogo}
+                  alt="SI-PASS"
+                  className="h-5 w-5 object-contain"
+                />
                 Registriraj se s SI-PASS
               </button>
               <LoginDropdown variant="hero" />
@@ -192,7 +227,8 @@ export default function LandingPage() {
                   <Package size={12} /> Jaz prevzemam dokument
                 </div>
                 <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                  Čakate pogodbo, osebni dokument ali uradni dopis? Enkrat se registrirate z SI-PASS, potem je vse samodejno.
+                  Čakate pogodbo, osebni dokument ali uradni dopis? Enkrat se
+                  registrirate z SI-PASS, potem je vse samodejno.
                 </p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white/70 px-4 py-3">
@@ -200,7 +236,8 @@ export default function LandingPage() {
                   <Building2 size={12} /> Delam v organizaciji
                 </div>
                 <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                  Vaša organizacija prek ePrevzem dostavlja dokumente strankam? Prijavite se kot zaposleni ali skrbnik.
+                  Vaša organizacija prek ePrevzem dostavlja dokumente strankam?
+                  Prijavite se kot zaposleni ali skrbnik.
                 </p>
               </div>
             </div>
@@ -210,10 +247,12 @@ export default function LandingPage() {
                 <Lock size={14} className="text-[#1a3d2b]" /> Zanesljiva dostava
               </div>
               <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
-                <Shield size={14} className="text-[#1a3d2b]" /> Preverjena identiteta
+                <Shield size={14} className="text-[#1a3d2b]" /> Preverjena
+                identiteta
               </div>
               <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
-                <Building2 size={14} className="text-[#1a3d2b]" /> Za vse organizacije
+                <Building2 size={14} className="text-[#1a3d2b]" /> Za vse
+                organizacije
               </div>
             </div>
           </div>
@@ -247,17 +286,26 @@ export default function LandingPage() {
           <div className="rounded-2xl bg-[#f5f0e8] px-6 py-8 sm:px-8 sm:py-10 md:px-12">
             <div className="grid gap-6 md:grid-cols-2 md:items-center md:gap-8">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-[#1a3d2b]">Zakaj ePrevzem?</p>
+                <p className="text-xs font-semibold uppercase tracking-widest text-[#1a3d2b]">
+                  Zakaj ePrevzem?
+                </p>
                 <h2 className="mt-3 text-xl font-bold leading-snug text-slate-900 sm:text-2xl">
-                  Nekateri dokumenti morajo biti izročeni osebno. Zdaj to ne pomeni več čakanja v vrsti.
+                  Nekateri dokumenti morajo biti izročeni osebno. Zdaj to ne
+                  pomeni več čakanja v vrsti.
                 </h2>
               </div>
               <div className="space-y-4 text-sm leading-relaxed text-slate-600">
                 <p>
-                  V Evropi — in pri nas — zakon za določene uradne dokumente zahteva osebno izročitev. Osebne izkaznice, sodna pisma, overjena potrdila in podobni dokumenti ne smejo biti poslani po navadni pošti: izročeni morajo biti točno določeni osebi.
+                  V Evropi — in pri nas — zakon za določene uradne dokumente
+                  zahteva osebno izročitev. Osebne izkaznice, sodna pisma,
+                  overjena potrdila in podobni dokumenti ne smejo biti poslani
+                  po navadni pošti: izročeni morajo biti točno določeni osebi.
                 </p>
                 <p>
-                  ePrevzem to reši. Organizacija dokument odloži v pametni paketnik, sistem pa zagotovi, da ga lahko odpre samo prava oseba — z digitalno potrjeno identiteto. Brez okenc, brez vrst, brez omejenega delovnega časa.
+                  ePrevzem to reši. Organizacija dokument odloži v pametni
+                  paketnik, sistem pa zagotovi, da ga lahko odpre samo prava
+                  oseba — z digitalno potrjeno identiteto. Brez okenc, brez
+                  vrst, brez omejenega delovnega časa.
                 </p>
               </div>
             </div>
@@ -265,8 +313,12 @@ export default function LandingPage() {
 
           {/* How we guarantee the right person */}
           <div className="mt-10">
-            <p className="text-xs font-semibold uppercase tracking-widest text-[#1a3d2b]">Kako zagotovimo, da dokument dobi prava oseba?</p>
-            <p className="mt-2 text-sm text-slate-500">Vsak prevzem je zaščiten s štirimi plastmi preverjanja.</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-[#1a3d2b]">
+              Kako zagotovimo, da dokument dobi prava oseba?
+            </p>
+            <p className="mt-2 text-sm text-slate-500">
+              Vsak prevzem je zaščiten s štirimi plastmi preverjanja.
+            </p>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[
@@ -291,14 +343,21 @@ export default function LandingPage() {
                   desc: "Ko pridete po dokument, aplikacija zahteva potrditev z prstnim odtisom, Face ID ali PIN-om. Šele nato se predalček odpre.",
                 },
               ].map(({ num, title, desc }) => (
-                <div key={num} className="relative rounded-xl border border-[#1a3d2b]/10 bg-white px-5 py-5">
+                <div
+                  key={num}
+                  className="relative rounded-xl border border-[#1a3d2b]/10 bg-white px-5 py-5"
+                >
                   <div className="mb-3 flex h-7 w-7 items-center justify-center rounded-full bg-[#1a3d2b] text-xs font-bold text-white">
                     {num}
                   </div>
                   <h3 className="text-sm font-bold text-slate-900">{title}</h3>
-                  <p className="mt-1.5 text-xs leading-relaxed text-slate-500">{desc}</p>
+                  <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
+                    {desc}
+                  </p>
                   {num !== "4" && (
-                    <div className="absolute -right-2 top-1/2 hidden -translate-y-1/2 text-slate-300 lg:block">→</div>
+                    <div className="absolute -right-2 top-1/2 hidden -translate-y-1/2 text-slate-300 lg:block">
+                      →
+                    </div>
                   )}
                 </div>
               ))}
@@ -310,8 +369,12 @@ export default function LandingPage() {
       {/* Kako deluje */}
       <section id="kako-deluje" className="bg-white pb-14 pt-10">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">Kako deluje</h2>
-          <p className="mt-2 text-slate-500">Od obvestila do dokumenta v treh preprostih korakih.</p>
+          <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+            Kako deluje
+          </h2>
+          <p className="mt-2 text-slate-500">
+            Od obvestila do dokumenta v treh preprostih korakih.
+          </p>
 
           <div className="mt-8 grid gap-4 sm:gap-6 md:grid-cols-3">
             {[
@@ -334,15 +397,24 @@ export default function LandingPage() {
                 desc: "Pridete do paketnika, na telefonu potrdite svojo identiteto in predalček se odpre. Vzamete dokument — in to je to.",
               },
             ].map(({ icon, num, title, desc }) => (
-              <div key={num} className="rounded-2xl border border-slate-100 p-5 shadow-sm sm:p-6">
+              <div
+                key={num}
+                className="rounded-2xl border border-slate-100 p-5 shadow-sm sm:p-6"
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f5f0e8]">
                     {icon}
                   </div>
-                  <span className="text-2xl font-bold text-slate-200">{num}</span>
+                  <span className="text-2xl font-bold text-slate-200">
+                    {num}
+                  </span>
                 </div>
-                <h3 className="mt-4 text-base font-bold text-slate-900">{title}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-slate-500">{desc}</p>
+                <h3 className="mt-4 text-base font-bold text-slate-900">
+                  {title}
+                </h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-slate-500">
+                  {desc}
+                </p>
               </div>
             ))}
           </div>
@@ -355,7 +427,11 @@ export default function LandingPage() {
           <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4 md:gap-10">
             <div className="sm:col-span-2 md:col-span-1">
               <div className="flex items-center gap-3">
-                <img src={sloveniaLogoWhite} alt="Republika Slovenija" className="h-9 w-9" />
+                <img
+                  src={sloveniaLogoWhite}
+                  alt="Republika Slovenija"
+                  className="h-9 w-9"
+                />
                 <div className="leading-tight">
                   <p className="text-[9px] font-semibold uppercase tracking-widest text-white/50">
                     Republika Slovenija
@@ -364,47 +440,72 @@ export default function LandingPage() {
                 </div>
               </div>
               <p className="mt-4 text-sm leading-relaxed text-white/60">
-                Uradna storitev za zanesljiv prevzem dokumentov prek pametnih paketnikov.
+                Uradna storitev za zanesljiv prevzem dokumentov prek pametnih
+                paketnikov.
               </p>
             </div>
 
             <div>
-              <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-white/40">Storitev</p>
+              <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-white/40">
+                Storitev
+              </p>
               <ul className="space-y-2.5">
-                {["O ePrevzem", "Kako deluje", "Pogosta vprašanja"].map((item) => (
-                  <li key={item}>
-                    <a href="#" className="text-sm text-white/70 transition hover:text-white">{item}</a>
-                  </li>
-                ))}
+                {["O ePrevzem", "Kako deluje", "Pogosta vprašanja"].map(
+                  (item) => (
+                    <li key={item}>
+                      <a
+                        href="#"
+                        className="text-sm text-white/70 transition hover:text-white"
+                      >
+                        {item}
+                      </a>
+                    </li>
+                  ),
+                )}
               </ul>
             </div>
 
             <div>
-              <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-white/40">Organizacije</p>
+              <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-white/40">
+                Organizacije
+              </p>
               <ul className="space-y-2.5">
                 {["Postani partner", "Cenik", "Dokumentacija"].map((item) => (
                   <li key={item}>
-                    <a href="#" className="text-sm text-white/70 transition hover:text-white">{item}</a>
+                    <a
+                      href="#"
+                      className="text-sm text-white/70 transition hover:text-white"
+                    >
+                      {item}
+                    </a>
                   </li>
                 ))}
               </ul>
             </div>
 
             <div>
-              <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-white/40">Podpora</p>
+              <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-white/40">
+                Podpora
+              </p>
               <ul className="space-y-2.5">
-                {["Center za pomoč", "Kontakt", "Stanje sistema"].map((item) => (
-                  <li key={item}>
-                    <a href="#" className="text-sm text-white/70 transition hover:text-white">{item}</a>
-                  </li>
-                ))}
+                {["Center za pomoč", "Kontakt", "Stanje sistema"].map(
+                  (item) => (
+                    <li key={item}>
+                      <a
+                        href="#"
+                        className="text-sm text-white/70 transition hover:text-white"
+                      >
+                        {item}
+                      </a>
+                    </li>
+                  ),
+                )}
               </ul>
             </div>
           </div>
 
           <div className="mt-10 flex flex-col gap-2 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-white/40">© 2026 Republika Slovenija</p>
-            <p className="text-xs text-white/40">Ministrstvo za digitalno preobrazbo</p>
           </div>
         </div>
       </footer>
