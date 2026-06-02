@@ -1,0 +1,11 @@
+.git
+.gitignore
+**/bin
+**/obj
+**/.vs
+**/node_modules
+**/.env.local
+**/.env.*.local
+ePrevzemMobile
+sitrust-mock/eosebna_mobile
+docs

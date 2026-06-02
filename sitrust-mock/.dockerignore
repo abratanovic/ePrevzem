@@ -1,0 +1,8 @@
+.git
+**/bin
+**/obj
+**/.vs
+**/node_modules
+**/.env.local
+**/.env.*.local
+eosebna_mobile
