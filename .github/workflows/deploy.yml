@@ -48,7 +48,7 @@ jobs:
           context: .
           file: backend/Dockerfile
           push: true
-          platforms: linux/amd64
+          platforms: linux/arm64
           tags: edvbec/eprevzem-backend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -80,7 +80,7 @@ jobs:
           context: frontend
           file: frontend/Dockerfile
           push: true
-          platforms: linux/amd64
+          platforms: linux/arm64
           tags: edvbec/eprevzem-frontend:latest
           build-args: |
             VITE_API_URL=
@@ -109,7 +109,7 @@ jobs:
           context: sitrust-mock
           file: sitrust-mock/backend/Dockerfile
           push: true
-          platforms: linux/amd64
+          platforms: linux/arm64
           tags: edvbec/eprevzem-sitrust-backend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -141,7 +141,7 @@ jobs:
           context: sitrust-mock/frontend
           file: sitrust-mock/frontend/Dockerfile
           push: true
-          platforms: linux/amd64
+          platforms: linux/arm64
           tags: edvbec/eprevzem-sitrust-frontend:latest
           build-args: |
             VITE_API_BASE_URL=
