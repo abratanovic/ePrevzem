@@ -1,5 +1,6 @@
 using ePrevzem.Application.Common.Abstractions;
 using ePrevzem.Application.Pickups.Create;
+using ePrevzem.Application.Pickups.Delete;
 using ePrevzem.Application.Pickups.Dtos;
 using ePrevzem.Application.Pickups.LookupRecipient;
 using ePrevzem.Application.Pickups.Queries;
@@ -18,6 +19,8 @@ public sealed class OrgPickupsController : ControllerBase
     private const string RecipientNotFoundType = "urn:eprevzem:pickups:recipient-not-found";
     private const string StationForbiddenType = "urn:eprevzem:pickups:station-forbidden";
     private const string CreationForbiddenType = "urn:eprevzem:pickups:creation-forbidden";
+    private const string PickupNotFoundType = "urn:eprevzem:pickups:not-found";
+    private const string DeletionForbiddenType = "urn:eprevzem:pickups:deletion-forbidden";
 
     private readonly IMediator _mediator;
     private readonly ICurrentUser _currentUser;
@@ -113,6 +116,35 @@ public sealed class OrgPickupsController : ControllerBase
                 type: CreationForbiddenType,
                 title: "Pickup creation forbidden",
                 detail: "Nimate pravic za izdelavo prevzema.");
+        }
+    }
+
+    [HttpDelete("{pickupId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Delete([FromRoute] Guid pickupId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _mediator.Send(new DeletePickupCommand(GetOrganizationId(), pickupId), cancellationToken);
+            return NoContent();
+        }
+        catch (PickupNotFoundException)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                type: PickupNotFoundType,
+                title: "Pickup not found",
+                detail: "Prevzem ni bil najden.");
+        }
+        catch (PickupDeletionForbiddenException)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                type: DeletionForbiddenType,
+                title: "Pickup cannot be deleted",
+                detail: "Izbrisati je mogoče samo prevzeme, ki še čakajo na vložitev v paketomat.");
         }
     }
 

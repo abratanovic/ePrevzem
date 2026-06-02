@@ -29,9 +29,9 @@ interface BackendPickup {
 }
 
 export class PickupServiceError extends Error {
-  code: "recipient_not_found" | "station_forbidden" | "creation_forbidden" | "unknown";
+  code: "recipient_not_found" | "station_forbidden" | "creation_forbidden" | "deletion_forbidden" | "unknown";
 
-  constructor(code: "recipient_not_found" | "station_forbidden" | "creation_forbidden" | "unknown") {
+  constructor(code: "recipient_not_found" | "station_forbidden" | "creation_forbidden" | "deletion_forbidden" | "unknown") {
     super(code);
     this.code = code;
   }
@@ -117,4 +117,13 @@ export async function getRecentPickups(limit = 10): Promise<PickupPage> {
     await fetch(`${API_BASE}?limit=${limit}`, { headers: authHeaders() }),
   );
   return { items: pickups.map(toPickup), total: pickups.length };
+}
+
+export async function deletePickup(pickupId: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/${pickupId}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (response.status === 409) throw new PickupServiceError("deletion_forbidden");
+  if (!response.ok) throw new PickupServiceError("unknown");
 }

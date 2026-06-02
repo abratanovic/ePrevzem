@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { CheckCircle, Clock, Package, PackagePlus, UserRoundCheck, XCircle } from "lucide-react";
+import { CheckCircle, Clock, Package, PackagePlus, Trash2, UserRoundCheck, XCircle } from "lucide-react";
 import type { Pickup, PickupDisplayStatus, PickupPage } from "../../types/dashboard";
 import { getRecentPickups } from "../../services/dashboardService";
+import { deletePickup, PickupServiceError } from "../../services/pickupsService";
 
 const SL_MONTHS = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "avg", "sep", "okt", "nov", "dec"];
 
@@ -49,13 +50,40 @@ function TableSkeleton() {
   );
 }
 
-export default function PickupsTable() {
+export default function PickupsTable({ onPickupDeleted }: { onPickupDeleted?: () => void }) {
   const [data, setData] = useState<PickupPage | null>(null);
   const [error, setError] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     getRecentPickups().then(setData).catch(() => setError(true));
   }, []);
+
+  async function handleDelete(row: Pickup) {
+    if (!window.confirm(`Ali želite izbrisati prevzem ${row.reference}?`)) return;
+
+    setDeleteError(null);
+    setDeletingId(row.id);
+    try {
+      await deletePickup(row.id);
+      setData((current) => current === null
+        ? current
+        : {
+            items: current.items.filter((pickup) => pickup.id !== row.id),
+            total: current.total - 1,
+          });
+      onPickupDeleted?.();
+    } catch (deleteFailure) {
+      setDeleteError(
+        deleteFailure instanceof PickupServiceError && deleteFailure.code === "deletion_forbidden"
+          ? "Izbrisati je mogoče samo prevzeme, ki še čakajo na vložitev v paketomat."
+          : "Prevzema ni bilo mogoče izbrisati.",
+      );
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -69,6 +97,10 @@ export default function PickupsTable() {
         </Link>
       </div>
 
+      {deleteError && (
+        <p className="mx-5 mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{deleteError}</p>
+      )}
+
       {error ? (
         <p className="px-5 py-8 text-center text-sm text-red-600">Prevzemov ni bilo mogoče naložiti.</p>
       ) : data === null ? (
@@ -79,7 +111,7 @@ export default function PickupsTable() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-t border-slate-100">
-              {["REFERENCA", "DOKUMENT", "PREJEMNIK", "LOKACIJA", "STATUS", "ROK"].map((h) => (
+              {["REFERENCA", "DOKUMENT", "PREJEMNIK", "LOKACIJA", "STATUS", "ROK", "AKCIJE"].map((h) => (
                 <th key={h} className="px-5 py-2.5 text-left text-[11px] font-semibold tracking-wide text-slate-400">
                   {h}
                 </th>
@@ -98,6 +130,20 @@ export default function PickupsTable() {
                 </td>
                 <td className={`px-5 py-3.5 ${row.status === "expiring" ? "font-medium text-orange-600" : "text-slate-500"}`}>
                   {formatDeadline(row.deadlineAt)}
+                </td>
+                <td className="px-5 py-3.5">
+                  {row.status === "awaitingPlacement" ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleDelete(row)}
+                      disabled={deletingId === row.id}
+                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:cursor-wait disabled:opacity-50"
+                      title="Izbriši prevzem"
+                    >
+                      <Trash2 size={14} />
+                      {deletingId === row.id ? "Brisanje ..." : "Izbriši"}
+                    </button>
+                  ) : "—"}
                 </td>
               </tr>
             ))}
