@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+# Raw images are large and may contain team likenesses — keep them out of git.
+dataset/raw/
+dataset/processed/
+dataset/splits/
+!dataset/.gitkeep
