@@ -120,20 +120,37 @@ verified      = liveness_ok AND face_match AND document_valid
 
 ## 6. Data & training — `cv-identity/dataset/`, `cv-identity/training/`
 
-**Collected data**
-- Team-member faces from multiple angles (the "live / real" class).
+**Hybrid data strategy.** Team-only data (3–4 people, a few hundred images) is too small to train a liveness CNN from scratch — it would overfit to the team's faces instead of learning general live-vs-spoof cues. So the team's own captured data is **required** (it is Član 1's core deliverable and the visible contribution) but is combined with public datasets for training robustness. This is compliant with the course rules, which explicitly permit pretrained models and transfer learning as long as the team's own contribution (capture, augmentation, fine-tuning, evaluation) is clearly visible.
+
+**Collected data (own — required)**
+- Team-member faces from multiple angles (the "live / real" class), ~30–50 images per person.
 - Spoof samples: printed photos and phone-screen replays of the same faces (the "spoof" class).
 - Mock ID cards for the team members (no real PII).
 
+**Public datasets (supplementary)**
+- **Liveness CNN training:** a public face anti-spoofing dataset — **CelebA-Spoof** (large, openly available on GitHub, easiest to start) is the primary candidate; NUAA, CASIA-FASD, Replay-Attack, or Rose-Youtu are alternatives (most require an academic-use request). Confirm license for academic use before using.
+- **Face-match threshold calibration:** **LFW (Labeled Faces in the Wild)** — thousands of labeled same/different pairs for a robust ROC without needing many team photos.
+
+**Data-source roles**
+
+| Purpose | Data source |
+|---|---|
+| Train liveness CNN | public anti-spoof dataset (CelebA-Spoof) |
+| Fine-tune + test liveness | **team-captured live + spoof images** |
+| Calibrate/evaluate face-match threshold τ | LFW (public pairs) |
+| End-to-end demo (ID ↔ selfie) | **team mock ID cards + selfies** |
+
+Public and own data go through the **same** preprocessing and augmentation pipeline so they are consistent.
+
 **Augmentation (own scripts):** rotation, brightness/contrast shift, Gaussian noise, horizontal flip, scaling.
 
-**Splits:** train / validation / test, organized in a clear folder structure.
+**Splits:** train / validation / test, organized in a clear folder structure. **Split by identity, not by image** — the same person's images must never appear in both train and test, or liveness/face metrics will be falsely inflated by leakage.
 
 **Training & tuning**
-- Liveness CNN: trained from the collected real-vs-spoof dataset; hyperparameters (learning rate, batch size, epochs, architecture depth/width, augmentation strength) tuned and documented.
-- Face-match threshold τ: optimized on a verification eval set (positive = same person, negative = different people) by sweeping τ over the ROC.
+- Liveness CNN: trained on the public anti-spoof dataset with **transfer learning** (e.g. a MobileNet/ResNet backbone), then **fine-tuned** on the team-captured real-vs-spoof data. Hyperparameters (learning rate, batch size, epochs, backbone choice, frozen-layer count, augmentation strength) tuned and documented.
+- Face-match threshold τ: optimized on LFW pairs (positive = same person, negative = different people) by sweeping τ over the ROC; validated on the team's ID↔selfie pairs.
 
-**Evaluation metrics:** accuracy, FAR/FRR, ROC-AUC, confusion matrix, reported on the held-out test set.
+**Evaluation metrics:** accuracy, FAR/FRR, ROC-AUC, confusion matrix, reported on the held-out test set. Cross-domain note: the real ID-photo↔live-selfie scenario differs from public datasets, so final liveness/match evaluation uses the team's own held-out data.
 
 ## 7. Mobile integration — `ePrevzemMobile` `feature/identity/`
 
