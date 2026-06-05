@@ -57,4 +57,25 @@ public class PickupStationTests
         var act = () => station.AddLocker(LockerId.New(), 0);
         act.Should().Throw<ArgumentOutOfRangeException>().WithParameterName("lockerNumber");
     }
+
+    [Fact]
+    public void SetLockerServiceability_marks_requested_locker_out_of_service()
+    {
+        var station = PickupStation.Create(PickupStationId.New(), Serial, Now);
+        var locker = station.AddLocker(LockerId.New(), 1);
+
+        station.SetLockerServiceability(locker.Id, false);
+
+        locker.IsServiceable.Should().BeFalse();
+    }
+
+    [Fact]
+    public void SetLockerServiceability_with_locker_from_another_station_throws()
+    {
+        var station = PickupStation.Create(PickupStationId.New(), Serial, Now);
+
+        var act = () => station.SetLockerServiceability(LockerId.New(), false);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*does not belong*");
+    }
 }

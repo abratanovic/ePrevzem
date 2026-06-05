@@ -225,6 +225,54 @@ public class EmployeeAccountTests
         registerDevice.Should().Throw<InvalidOperationException>();
     }
 
+    // ── Password auth ────────────────────────────────────────────────────────
+
+    [Fact]
+    public void SetPassword_sets_hash_clears_must_change_and_raises_event()
+    {
+        var acc = Account(new[] { EmployeeAccountRole.Operator });
+        acc.SetPassword("hashed_pw", Now.AddHours(1));
+
+        acc.PasswordHash.Should().Be("hashed_pw");
+        acc.MustChangePassword.Should().BeFalse();
+        acc.DomainEvents.OfType<EmployeePasswordChanged>()
+            .Should().ContainSingle()
+            .Which.Should().Match<EmployeePasswordChanged>(e =>
+                e.EmployeeAccountId == acc.Id &&
+                e.OccurredOn == Now.AddHours(1));
+    }
+
+    [Fact]
+    public void SetPassword_with_blank_hash_throws()
+    {
+        var acc = Account(new[] { EmployeeAccountRole.Operator });
+        var act = () => acc.SetPassword("", Now);
+        act.Should().Throw<ArgumentException>().WithParameterName("passwordHash");
+    }
+
+    [Fact]
+    public void SetPassword_on_disabled_account_throws()
+    {
+        var acc = Account(new[] { EmployeeAccountRole.Operator });
+        acc.Disable(Now.AddHours(1));
+        var act = () => acc.SetPassword("hashed_pw", Now.AddHours(2));
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void RecordLogin_sets_LastLoginAt_and_raises_event()
+    {
+        var acc = Account(new[] { EmployeeAccountRole.Operator });
+        acc.RecordLogin(Now.AddHours(1));
+
+        acc.LastLoginAt.Should().Be(Now.AddHours(1));
+        acc.DomainEvents.OfType<EmployeeAccountLoggedIn>()
+            .Should().ContainSingle()
+            .Which.Should().Match<EmployeeAccountLoggedIn>(e =>
+                e.EmployeeAccountId == acc.Id &&
+                e.OccurredOn == Now.AddHours(1));
+    }
+
     private static EmployeeAccount Account(IReadOnlyCollection<EmployeeAccountRole> roles)
         => EmployeeAccount.Create(
             EmployeeAccountId.New(), OrganizationId.New(), "Ana", "Kovač", null,

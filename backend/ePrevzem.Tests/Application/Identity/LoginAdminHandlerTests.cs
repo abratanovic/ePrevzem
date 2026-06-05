@@ -244,6 +244,9 @@ public sealed class TestTokenService : ITokenService
             new DateTimeOffset(2026, 5, 18, 11, 0, 0, TimeSpan.Zero));
     }
 
+    public AccessTokenResult IssueAccessToken(EmployeeAccount employee)
+        => new("emp_token", DateTimeOffset.UtcNow.AddMinutes(15));
+
     public RefreshTokenResult IssueRefreshToken(DateTimeOffset now)
     {
         _refreshTokenCounter++;

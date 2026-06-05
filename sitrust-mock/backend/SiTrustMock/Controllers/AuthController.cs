@@ -10,7 +10,10 @@ public class AuthController(IAuthService auth) : ControllerBase
     [HttpPost("initiate")]
     public IActionResult Initiate([FromQuery] string? redirectUrl)
     {
-        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        var publicBaseUrl = Environment.GetEnvironmentVariable("PUBLIC_BASE_URL");
+        var baseUrl = string.IsNullOrWhiteSpace(publicBaseUrl)
+            ? $"{Request.Scheme}://{Request.Host}"
+            : publicBaseUrl;
         return auth.Initiate(redirectUrl, baseUrl) switch
         {
             InitiateResult.InvalidRequest e => BadRequest(new { error = e.Error }),

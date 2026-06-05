@@ -5,5 +5,6 @@ namespace ePrevzem.Domain.Pickups.Events;
 
 public sealed record PackageCancelled(
     PackageId PackageId,
-    EmployeeAccountId CancelledByEmployeeAccountId,
+    EmployeeAccountId? CancelledByEmployeeAccountId,
+    OrganizationAdminAccountId? CancelledByOrganizationAdminAccountId,
     DateTimeOffset OccurredOn) : IDomainEvent;

@@ -15,6 +15,9 @@ public sealed class EmployeeAccount : AggregateRoot<EmployeeAccountId>
     public string FirstName { get; private set; } = default!;
     public string LastName { get; private set; } = default!;
     public string? Email { get; private set; }
+    public string? PasswordHash { get; private set; }
+    public bool MustChangePassword { get; private set; }
+    public DateTimeOffset? LastLoginAt { get; private set; }
     public EmployeeAccountStatus Status { get; private set; }
     public ProvisioningCodeId CreatedFromProvisioningCodeId { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
@@ -126,6 +129,32 @@ public sealed class EmployeeAccount : AggregateRoot<EmployeeAccountId>
             ?? throw new InvalidOperationException("Employee device not found on this account.");
         device.Revoke(now);
         Raise(new EmployeeDeviceRevoked(Id, deviceId, now));
+    }
+
+    public void SetPassword(string passwordHash, DateTimeOffset now)
+    {
+        EnsureActive();
+        if (string.IsNullOrWhiteSpace(passwordHash))
+            throw new ArgumentException("Password hash is required.", nameof(passwordHash));
+
+        PasswordHash = passwordHash;
+        MustChangePassword = false;
+        Raise(new EmployeePasswordChanged(Id, now));
+    }
+
+    public void SetInitialPassword(string passwordHash, DateTimeOffset now)
+    {
+        if (string.IsNullOrWhiteSpace(passwordHash))
+            throw new ArgumentException("Password hash is required.", nameof(passwordHash));
+        PasswordHash = passwordHash;
+        MustChangePassword = true;
+        Raise(new EmployeePasswordChanged(Id, now));
+    }
+
+    public void RecordLogin(DateTimeOffset now)
+    {
+        LastLoginAt = now;
+        Raise(new EmployeeAccountLoggedIn(Id, now));
     }
 
     public void Disable(DateTimeOffset now)

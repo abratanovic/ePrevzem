@@ -33,8 +33,9 @@ export default function SiPassLoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const eprevzemUrl = import.meta.env.VITE_EPREVZEM_URL ?? window.location.origin;
   const redirectUrl =
-    searchParams.get("redirectUrl") ?? `${window.location.origin}/home`;
+    searchParams.get("redirectUrl") ?? `${eprevzemUrl}/registracija`;
 
   const handleOptionClick = async (option: string) => {
     if (option !== "Mobilna aplikacija eOsebna" || isSubmitting) {

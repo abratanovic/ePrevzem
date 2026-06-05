@@ -169,6 +169,7 @@ fun App() {
                         ActivePickupsRoute(
                             user = user,
                             onPickupClicked = { id -> destination = AppDestination.PickupDetails(id) },
+                            onUserUpdated = { updatedUser -> currentUser = updatedUser },
                         )
                     }
                 }

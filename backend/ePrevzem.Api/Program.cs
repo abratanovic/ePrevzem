@@ -4,8 +4,9 @@ using ePrevzem.Api.Authentication;
 using ePrevzem.Application.Common.Abstractions;
 using ePrevzem.Api.Configuration;
 using ePrevzem.Application;
-using ePrevzem.Application.Common.Abstractions;
 using ePrevzem.Infrastructure;
+using ePrevzem.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
@@ -70,6 +71,12 @@ try
     builder.Services.AddInfrastructure(builder.Configuration);
 
     var app = builder.Build();
+
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<EPrevzemDbContext>();
+        db.Database.Migrate();
+    }
 
     app.UseSerilogRequestLogging();
 
