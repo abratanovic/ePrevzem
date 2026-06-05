@@ -6,7 +6,7 @@
 
 **Architecture:** A standalone Python subproject `cv-identity/`. Član 1 owns three pure, unit-tested modules (`preprocessing`, `augmentation`, `split`) plus a webcam capture script and a dataset datasheet. Pure image functions operate on `numpy` arrays so they are deterministic and testable with synthetic data; face detection is isolated behind a thin wrapper so the crop logic stays unit-testable. The same preprocessing + augmentation pipeline is applied to both team-captured and public datasets for consistency.
 
-**Tech Stack:** Python 3.11, `numpy`, `opencv-python` (cv2), `mediapipe` (face detection + landmarks), `pytest`. No `albumentations` — augmentation is implemented by hand (course requirement: own augmentation procedures).
+**Tech Stack:** Python 3.12 (required — `mediapipe==0.10.18` has no wheels for 3.13/3.14), `numpy`, `opencv-python` (cv2), `mediapipe` (face detection + landmarks), `pytest`. No `albumentations` — augmentation is implemented by hand (course requirement: own augmentation procedures). All venvs must be created with `py -3.12 -m venv .venv`.
 
 **Spec:** `docs/superpowers/specs/2026-06-06-cv-identity-verification-design.md` (§6 Data & training).
 
@@ -167,7 +167,7 @@ preprocessing, augmentation, and dataset splitting.
 
 ```bash
 cd cv-identity
-python -m venv .venv
+py -3.12 -m venv .venv      # Python 3.12 required for mediapipe
 . .venv/Scripts/activate    # Windows PowerShell: .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
@@ -192,7 +192,7 @@ See `dataset/README.md` for the capture protocol and folder layout.
 
 Run:
 ```bash
-cd cv-identity && python -m venv .venv && .venv/Scripts/python -m pip install -r requirements.txt
+cd cv-identity && py -3.12 -m venv .venv && .venv/Scripts/python -m pip install -r requirements.txt
 ```
 Expected: pip installs numpy, opencv-python, pytest with no errors.
 
