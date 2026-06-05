@@ -1,6 +1,6 @@
 # CV Identity — Data Pipeline (Član 1) Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILLS: `superpowers:subagent-driven-development` + `superpowers:dispatching-parallel-agents`. This plan is **optimized for parallel execution** — see the "Execution Strategy" section below for the dependency graph, the 5 parallel workstreams, worktree isolation, and the **escalation rules (agents must not make significant decisions on their own)**. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build the data layer of the `cv-identity/` Python service — capture, preprocessing, augmentation, and leakage-free train/val/test splitting — so Član 2 has a clean, consistent dataset to train the liveness CNN and calibrate the face-match threshold.
 
@@ -25,6 +25,59 @@
 | — public datasets (no code) | `PRVZM-70` | Integracija javnih datasetov (CelebA-Spoof, LFW) |
 
 `PRVZM-69` and `PRVZM-70` are data-collection tasks with no source commits; track them in Jira and tick the CHECKLIST.md boxes instead.
+
+---
+
+## Execution Strategy — parallel, subagent-driven
+
+The work is grouped into **independent workstreams** that touch disjoint files, so most of it runs **in parallel**. Use `superpowers:subagent-driven-development` together with `superpowers:dispatching-parallel-agents`. Dispatch each parallel stream as its own subagent in an **isolated git worktree** (`isolation: "worktree"`) so concurrent commits never collide; merge each stream branch back when its tests are green (no file overlap ⇒ trivial merges).
+
+### Dependency graph
+
+```
+Phase 0 (SEQUENTIAL BARRIER) — one subagent, must finish before anything else
+  Task 0  skeleton + deps   (PRVZM-63)
+  Task 1  test fixtures     (PRVZM-63)
+        │
+        ▼
+Phase 1 (PARALLEL — 5 independent streams, one subagent each)
+  Stream A: Task 2→3→4→5  preprocessing      (PRVZM-66)  owns app/preprocessing.py, tests/test_preprocessing.py
+  Stream B: Task 6→7→8→8b augmentation       (PRVZM-67)  owns training/augmentation.py, tests/test_augmentation.py
+  Stream C: Task 9        split              (PRVZM-68)  owns training/split.py, tests/test_split.py
+  Stream D: Task 10       capture script     (PRVZM-65)  owns scripts/capture.py
+  Stream E: Task 11       datasheet          (PRVZM-64)  owns dataset/README.md
+        │
+        ▼  (Stream A must be merged first)
+Phase 2 (SEQUENTIAL)
+  Task 11b golden-image integration test     (PRVZM-71)  needs app/preprocessing.detect_and_crop_face
+        │
+        ▼
+Phase 3 (SEQUENTIAL BARRIER — final verification)
+  Task 12  full suite green                  (verification only)
+```
+
+**File ownership is exclusive per stream** (see the table above) — no two parallel subagents write the same file. The only shared, read-only files are `tests/conftest.py` and `cv-identity/requirements.txt`, both produced in Phase 0. **Steps inside a stream stay sequential** (each modifies the same module and follows TDD red→green→commit).
+
+### Orchestration rules
+
+1. Do **not** start Phase 1 until Phase 0 is merged and `pytest` runs (even with zero tests collected). All streams import from the Phase-0 skeleton.
+2. Dispatch Streams A–E **concurrently**, each in its own worktree branched from the Phase-0 commit.
+3. After each stream reports green, merge it back to `PRVZM-62-cv-identity-podatkovni-del`. Merge order does not matter for A–E (disjoint files); only Phase 2 requires A first.
+4. Each subagent commits with the **Jira ID for its stream** (table above) and runs its module's tests before reporting done.
+5. The orchestrator runs the Phase-3 full suite once on the integrated branch.
+
+### Agents must NOT make significant decisions — escalate instead
+
+A subagent's autonomy is limited to writing the code exactly as specified in its task. For anything **not** spelled out in this plan, the subagent MUST **stop and report back to the orchestrator with a specific question** rather than guessing. Treat the following as hard stops:
+
+- **Dependency/version conflicts** — e.g. `pip install` fails or `mediapipe`/`numpy`/`opencv` versions are incompatible. Do **not** bump or unpin versions on your own — report the exact error and ask.
+- **A test fails for an unanticipated reason** — do **not** "fix" it by weakening an assertion, deleting the test, or adding `xfail`. Report the failure and the suspected cause.
+- **Any change to a public name or signature** that other streams depend on (function names, parameters, return types in `preprocessing` / `augmentation` / `split`). These are contracts — changing them is an orchestrator decision.
+- **Unspecified numeric choices** — thresholds, split ratios, kernel sizes, augmentation ranges beyond what the plan states. Use the plan's exact values; if the plan is silent, ask.
+- **Missing or ambiguous inputs** — e.g. a golden image does not contain a detectable face, a public dataset's license is unclear, or a real asset the plan assumes is absent. Do **not** substitute, fabricate, or download something different — report and ask.
+- **Environment/platform surprises** — missing camera, OS-specific path issues, GPU requirements. Report; do not silently change scope.
+
+When escalating, the subagent reports: what it was doing, the exact error/ambiguity, what it would need to proceed, and (optionally) options it sees — but it does **not** pick one. The orchestrator resolves it (asking the user when the decision is the user's per the normal escalation rules).
 
 ---
 
