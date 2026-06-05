@@ -10,6 +10,22 @@
 
 **Spec:** `docs/superpowers/specs/2026-06-06-cv-identity-verification-design.md` (§6 Data & training).
 
+**Jira:** Epic `PRVZM-72` → data-part subtask `PRVZM-62` → implementation subtasks below. **Every commit message MUST start with the Jira ID of the subtask it belongs to** (e.g. `PRVZM-66 feat(cv-identity): ...`), so Jira links the work automatically. Branch: `PRVZM-62-cv-identity-podatkovni-del`.
+
+| Plan task | Jira ID | Subtask |
+|---|---|---|
+| Task 0, 1 (skeleton, fixtures) | `PRVZM-63` | Postavitev cv-identity projekta in razvojnega okolja |
+| Task 11 (datasheet, dataset structure) | `PRVZM-64` | Definicija strukture dataseta in protokola zajema |
+| Task 10 (capture script) | `PRVZM-65` | Skripta za zajem slik iz kamere |
+| Task 2, 3, 4, 5 (preprocessing) | `PRVZM-66` | Modul za predobdelavo slik |
+| Task 6, 7, 8, 8b (augmentation) | `PRVZM-67` | Modul za augmentacijo podatkov |
+| Task 9 (split) | `PRVZM-68` | Leakage-free delitev na train/val/test |
+| Task 11b (golden integration test) | `PRVZM-71` | Golden-image integracijski test |
+| — manual data collection (no code) | `PRVZM-69` | Dejanski zajem dataseta (live + spoof + izkaznice) |
+| — public datasets (no code) | `PRVZM-70` | Integracija javnih datasetov (CelebA-Spoof, LFW) |
+
+`PRVZM-69` and `PRVZM-70` are data-collection tasks with no source commits; track them in Jira and tick the CHECKLIST.md boxes instead.
+
 ---
 
 ## File Structure
@@ -131,7 +147,7 @@ Expected: pip installs numpy, opencv-python, pytest with no errors.
 
 ```bash
 git add cv-identity/
-git commit -m "chore(cv-identity): scaffold data-pipeline project skeleton"
+git commit -m "PRVZM-63 chore(cv-identity): scaffold data-pipeline project skeleton"
 ```
 
 ---
@@ -165,7 +181,7 @@ def rng():
 
 ```bash
 git add cv-identity/tests/conftest.py
-git commit -m "test(cv-identity): add synthetic-image fixtures"
+git commit -m "PRVZM-63 test(cv-identity): add synthetic-image fixtures"
 ```
 
 ---
@@ -216,7 +232,7 @@ Expected: PASS.
 
 ```bash
 git add cv-identity/app/preprocessing.py cv-identity/tests/test_preprocessing.py
-git commit -m "feat(cv-identity): add image resize"
+git commit -m "PRVZM-66 feat(cv-identity): add image resize"
 ```
 
 ---
@@ -271,7 +287,7 @@ Expected: PASS (2 passed).
 
 ```bash
 git add cv-identity/app/preprocessing.py cv-identity/tests/test_preprocessing.py
-git commit -m "feat(cv-identity): add grayscale and pixel normalization"
+git commit -m "PRVZM-66 feat(cv-identity): add grayscale and pixel normalization"
 ```
 
 ---
@@ -334,7 +350,7 @@ Expected: PASS (2 passed).
 
 ```bash
 git add cv-identity/app/preprocessing.py cv-identity/tests/test_preprocessing.py
-git commit -m "feat(cv-identity): add denoise and color-space conversion"
+git commit -m "PRVZM-66 feat(cv-identity): add denoise and color-space conversion"
 ```
 
 ---
@@ -486,7 +502,7 @@ Expected: PASS (all preprocessing tests).
 
 ```bash
 git add cv-identity/app/preprocessing.py cv-identity/tests/test_preprocessing.py
-git commit -m "feat(cv-identity): add bbox crop, eye alignment, MediaPipe face crop (Haar fallback)"
+git commit -m "PRVZM-66 feat(cv-identity): add bbox crop, eye alignment, MediaPipe face crop (Haar fallback)"
 ```
 
 ---
@@ -569,7 +585,7 @@ Expected: PASS (3 passed).
 
 ```bash
 git add cv-identity/training/augmentation.py cv-identity/tests/test_augmentation.py
-git commit -m "feat(cv-identity): add geometric augmentations"
+git commit -m "PRVZM-67 feat(cv-identity): add geometric augmentations"
 ```
 
 ---
@@ -631,7 +647,7 @@ Expected: PASS (2 passed).
 
 ```bash
 git add cv-identity/training/augmentation.py cv-identity/tests/test_augmentation.py
-git commit -m "feat(cv-identity): add brightness and gaussian-noise augmentations"
+git commit -m "PRVZM-67 feat(cv-identity): add brightness and gaussian-noise augmentations"
 ```
 
 ---
@@ -697,7 +713,7 @@ Expected: PASS (all augmentation tests).
 
 ```bash
 git add cv-identity/training/augmentation.py cv-identity/tests/test_augmentation.py
-git commit -m "feat(cv-identity): add augmentation pipeline"
+git commit -m "PRVZM-67 feat(cv-identity): add augmentation pipeline"
 ```
 
 ---
@@ -789,7 +805,7 @@ Expected: PASS (all augmentation tests, including the deterministic-with-seed te
 
 ```bash
 git add cv-identity/training/augmentation.py cv-identity/tests/test_augmentation.py
-git commit -m "feat(cv-identity): add ID-like blur and JPEG-artifact augmentations"
+git commit -m "PRVZM-67 feat(cv-identity): add ID-like blur and JPEG-artifact augmentations"
 ```
 
 ---
@@ -891,7 +907,7 @@ Expected: PASS (3 passed).
 
 ```bash
 git add cv-identity/training/split.py cv-identity/tests/test_split.py
-git commit -m "feat(cv-identity): add leakage-free split by identity"
+git commit -m "PRVZM-68 feat(cv-identity): add leakage-free split by identity"
 ```
 
 ---
@@ -972,7 +988,7 @@ Expected: a webcam window opens; pressing SPACE saves `dataset/raw/live/test/tes
 
 ```bash
 git add cv-identity/scripts/capture.py
-git commit -m "feat(cv-identity): add webcam capture script"
+git commit -m "PRVZM-65 feat(cv-identity): add webcam capture script"
 ```
 
 ---
@@ -1032,7 +1048,7 @@ metrics). Default ratio train/val/test = 0.6 / 0.2 / 0.2.
 
 ```bash
 git add cv-identity/dataset/README.md
-git commit -m "docs(cv-identity): add dataset datasheet"
+git commit -m "PRVZM-64 docs(cv-identity): add dataset datasheet"
 ```
 
 ---
@@ -1098,7 +1114,7 @@ Expected: PASS (2 passed). If `test_full_preprocess_on_real_face` fails to find 
 
 ```bash
 git add cv-identity/tests/golden/ cv-identity/tests/test_integration.py
-git commit -m "test(cv-identity): add golden-image integration test"
+git commit -m "PRVZM-71 test(cv-identity): add golden-image integration test"
 ```
 
 ---
