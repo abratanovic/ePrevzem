@@ -6,7 +6,7 @@
 
 **Architecture:** A standalone Python subproject `cv-identity/`. Član 1 owns three pure, unit-tested modules (`preprocessing`, `augmentation`, `split`) plus a webcam capture script and a dataset datasheet. Pure image functions operate on `numpy` arrays so they are deterministic and testable with synthetic data; face detection is isolated behind a thin wrapper so the crop logic stays unit-testable. The same preprocessing + augmentation pipeline is applied to both team-captured and public datasets for consistency.
 
-**Tech Stack:** Python 3.11, `numpy`, `opencv-python` (cv2), `pytest`. No `albumentations` — augmentation is implemented by hand (course requirement: own augmentation procedures).
+**Tech Stack:** Python 3.11, `numpy`, `opencv-python` (cv2), `mediapipe` (face detection + landmarks), `pytest`. No `albumentations` — augmentation is implemented by hand (course requirement: own augmentation procedures).
 
 **Spec:** `docs/superpowers/specs/2026-06-06-cv-identity-verification-design.md` (§6 Data & training).
 
@@ -18,10 +18,10 @@
 cv-identity/
 ├── app/
 │   ├── __init__.py
-│   └── preprocessing.py        # resize, grayscale, normalize, denoise, colorspace, crop_to_bbox, detect_and_crop_face
+│   └── preprocessing.py        # resize, grayscale, normalize, denoise, colorspace, crop_to_bbox, align_by_eyes, detect_and_crop_face (MediaPipe + Haar fallback)
 ├── training/
 │   ├── __init__.py
-│   ├── augmentation.py         # rotate, adjust_brightness, add_gaussian_noise, flip_horizontal, scale, augment_image
+│   ├── augmentation.py         # rotate, adjust_brightness, add_gaussian_noise, flip_horizontal, scale, gaussian_blur, add_jpeg_artifacts, augment_image
 │   └── split.py                # split_by_identity
 ├── scripts/
 │   └── capture.py              # webcam capture into dataset/raw/<class>/<person>/
@@ -33,7 +33,9 @@ cv-identity/
 │   ├── conftest.py             # synthetic-image fixtures
 │   ├── test_preprocessing.py
 │   ├── test_augmentation.py
-│   └── test_split.py
+│   ├── test_split.py
+│   ├── test_integration.py     # golden-image end-to-end preprocessing test
+│   └── golden/                 # a few real sample images (committed)
 ├── requirements.txt
 ├── .gitignore
 └── README.md                   # how to set up + run the data pipeline
@@ -62,10 +64,13 @@ touch cv-identity/app/__init__.py cv-identity/training/__init__.py cv-identity/t
 - [ ] **Step 2: Write `cv-identity/requirements.txt`**
 
 ```
-numpy==2.1.3
+numpy==1.26.4
 opencv-python==4.10.0.84
+mediapipe==0.10.18
 pytest==8.3.4
 ```
+
+> `numpy` is pinned to 1.26.x because `mediapipe==0.10.18` is not yet compatible with NumPy 2.x. `opencv-python` 4.10 works with both.
 
 - [ ] **Step 3: Write `cv-identity/.gitignore`**
 
@@ -334,18 +339,19 @@ git commit -m "feat(cv-identity): add denoise and color-space conversion"
 
 ---
 
-## Task 5: Preprocessing — crop to bbox & face crop wrapper
+## Task 5: Preprocessing — crop, eye alignment & face-crop wrapper
 
 **Files:**
 - Modify: `cv-identity/app/preprocessing.py`
 - Test: `cv-identity/tests/test_preprocessing.py`
 
-**Note:** `crop_to_bbox` is pure and unit-tested. `detect_and_crop_face` wraps OpenCV's bundled Haar cascade face detector and returns `None` when no face is found — detection itself is not unit-tested (it needs real faces), only the crop math is.
+**Note (per Perplexity review):** detection uses **MediaPipe** (robust to head pose, returns eye keypoints), with the OpenCV **Haar cascade as a fallback**. `crop_to_bbox` and `align_by_eyes` are pure and unit-tested; `detect_and_crop_face` wraps the detectors and returns `None` when no face is found (not unit-tested — it needs real faces). Aligning the eyes horizontally reduces embedding variance (Član 2 benefits directly).
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Write the failing tests**
 
 ```python
-from app.preprocessing import crop_to_bbox
+import numpy as np
+from app.preprocessing import crop_to_bbox, align_by_eyes
 
 
 def test_crop_to_bbox_returns_region(rgb_image):
@@ -358,16 +364,33 @@ def test_crop_to_bbox_clamps_to_image_bounds(rgb_image):
     # Width 100 exceeds the image width (60); result must clamp, not overflow.
     out = crop_to_bbox(rgb_image, (50, 0, 100, 10))
     assert out.shape[1] == 10  # 60 - 50
+
+
+def test_align_by_eyes_preserves_shape(rgb_image):
+    # Eyes tilted ~18°; alignment rotates them level and keeps frame size.
+    left_eye = (15.0, 10.0)
+    right_eye = (45.0, 20.0)
+    out = align_by_eyes(rgb_image, left_eye, right_eye)
+    assert out.shape == rgb_image.shape
+
+
+def test_align_by_eyes_level_eyes_is_noop(rgb_image):
+    # Already-level eyes → zero rotation → image unchanged.
+    out = align_by_eyes(rgb_image, (15.0, 10.0), (45.0, 10.0))
+    assert np.array_equal(out, rgb_image)
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `cd cv-identity && pytest tests/test_preprocessing.py -k "crop_to_bbox" -v`
+Run: `cd cv-identity && pytest tests/test_preprocessing.py -k "crop_to_bbox or align" -v`
 Expected: FAIL with `ImportError`.
 
 - [ ] **Step 3: Add implementations to `app/preprocessing.py`**
 
 ```python
+import math
+
+
 def crop_to_bbox(image: np.ndarray, bbox: tuple[int, int, int, int]) -> np.ndarray:
     """Crop region (x, y, w, h), clamped to the image bounds."""
     x, y, w, h = bbox
@@ -377,27 +400,82 @@ def crop_to_bbox(image: np.ndarray, bbox: tuple[int, int, int, int]) -> np.ndarr
     return image[y0:y1, x0:x1]
 
 
-def detect_and_crop_face(image: np.ndarray) -> np.ndarray | None:
-    """Detect the largest face with a Haar cascade and crop to it.
+def align_by_eyes(
+    image: np.ndarray,
+    left_eye: tuple[float, float],
+    right_eye: tuple[float, float],
+) -> np.ndarray:
+    """Rotate the image so the line between the two eyes is horizontal.
 
-    Returns None if no face is detected. Detection is isolated here so the
-    rest of the pipeline can be unit-tested without real face images.
+    Pure geometry — no detector — so it is unit-testable. Eye coordinates are
+    (x, y) in pixels.
     """
+    dx = right_eye[0] - left_eye[0]
+    dy = right_eye[1] - left_eye[1]
+    angle = math.degrees(math.atan2(dy, dx))
+    if abs(angle) < 1e-6:
+        return image
+    h, w = image.shape[:2]
+    matrix = cv2.getRotationMatrix2D((w / 2, h / 2), angle, scale=1.0)
+    return cv2.warpAffine(image, matrix, (w, h), borderMode=cv2.BORDER_REFLECT)
+
+
+def _haar_face_bbox(image: np.ndarray) -> tuple[int, int, int, int] | None:
+    """Fallback face detection using OpenCV's bundled Haar cascade."""
     cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
     cascade = cv2.CascadeClassifier(cascade_path)
-    gray = to_grayscale(image)
-    faces = cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
+    faces = cascade.detectMultiScale(to_grayscale(image), scaleFactor=1.1,
+                                     minNeighbors=5)
     if len(faces) == 0:
         return None
-    # Largest detected face by area.
     x, y, w, h = max(faces, key=lambda f: f[2] * f[3])
-    return crop_to_bbox(image, (int(x), int(y), int(w), int(h)))
+    return int(x), int(y), int(w), int(h)
+
+
+def detect_and_crop_face(image: np.ndarray) -> np.ndarray | None:
+    """Detect the largest face, align by eyes, and crop to it.
+
+    Primary detector is MediaPipe (returns eye keypoints used for alignment);
+    if MediaPipe finds nothing, fall back to the Haar cascade (no alignment).
+    Returns None if no face is found by either. Detection is isolated here so
+    the rest of the pipeline stays unit-testable without real face images.
+    """
+    import mediapipe as mp
+
+    h_img, w_img = image.shape[:2]
+    rgb = to_colorspace(image, "RGB")
+    with mp.solutions.face_detection.FaceDetection(
+        model_selection=0, min_detection_confidence=0.5
+    ) as detector:
+        result = detector.process(rgb)
+
+    if result.detections:
+        det = max(
+            result.detections,
+            key=lambda d: d.location_data.relative_bounding_box.width
+            * d.location_data.relative_bounding_box.height,
+        )
+        box = det.location_data.relative_bounding_box
+        kp = det.location_data.relative_keypoints  # 0=right eye, 1=left eye
+        right_eye = (kp[0].x * w_img, kp[0].y * h_img)
+        left_eye = (kp[1].x * w_img, kp[1].y * h_img)
+        aligned = align_by_eyes(image, left_eye, right_eye)
+        bbox = (
+            int(box.xmin * w_img), int(box.ymin * h_img),
+            int(box.width * w_img), int(box.height * h_img),
+        )
+        return crop_to_bbox(aligned, bbox)
+
+    haar_bbox = _haar_face_bbox(image)
+    if haar_bbox is None:
+        return None
+    return crop_to_bbox(image, haar_bbox)
 ```
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `cd cv-identity && pytest tests/test_preprocessing.py -k "crop_to_bbox" -v`
-Expected: PASS (2 passed).
+Run: `cd cv-identity && pytest tests/test_preprocessing.py -k "crop_to_bbox or align" -v`
+Expected: PASS (4 passed).
 
 - [ ] **Step 5: Run the whole preprocessing suite**
 
@@ -408,7 +486,7 @@ Expected: PASS (all preprocessing tests).
 
 ```bash
 git add cv-identity/app/preprocessing.py cv-identity/tests/test_preprocessing.py
-git commit -m "feat(cv-identity): add bbox crop and Haar face-crop wrapper"
+git commit -m "feat(cv-identity): add bbox crop, eye alignment, MediaPipe face crop (Haar fallback)"
 ```
 
 ---
@@ -620,6 +698,98 @@ Expected: PASS (all augmentation tests).
 ```bash
 git add cv-identity/training/augmentation.py cv-identity/tests/test_augmentation.py
 git commit -m "feat(cv-identity): add augmentation pipeline"
+```
+
+---
+
+## Task 8b: Augmentation — ID-like degradation (blur & JPEG artifacts)
+
+**Files:**
+- Modify: `cv-identity/training/augmentation.py`
+- Test: `cv-identity/tests/test_augmentation.py`
+
+**Note (per Perplexity review):** an ID-card photo is flat, blurred, and JPEG-compressed compared to a selfie. Simulating that on selfies narrows the cross-domain gap for face matching. These two functions are added to `augment_image` so degraded variants appear in training.
+
+- [ ] **Step 1: Write the failing tests**
+
+```python
+from training.augmentation import gaussian_blur, add_jpeg_artifacts
+
+
+def test_gaussian_blur_preserves_shape(rgb_image):
+    out = gaussian_blur(rgb_image, ksize=5)
+    assert out.shape == rgb_image.shape
+    assert out.dtype == np.uint8
+
+
+def test_add_jpeg_artifacts_preserves_shape(rgb_image):
+    out = add_jpeg_artifacts(rgb_image, quality=30)
+    assert out.shape == rgb_image.shape
+    assert out.dtype == np.uint8
+```
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+Run: `cd cv-identity && pytest tests/test_augmentation.py -k "blur or jpeg" -v`
+Expected: FAIL with `ImportError`.
+
+- [ ] **Step 3: Add implementations to `training/augmentation.py`**
+
+```python
+def gaussian_blur(image: np.ndarray, ksize: int = 5) -> np.ndarray:
+    """Blur to mimic a low-resolution / printed ID photo. `ksize` must be odd."""
+    if ksize % 2 == 0:
+        ksize += 1
+    return cv2.GaussianBlur(image, (ksize, ksize), sigmaX=0)
+
+
+def add_jpeg_artifacts(image: np.ndarray, quality: int = 30) -> np.ndarray:
+    """Re-encode as low-quality JPEG to mimic compression artifacts."""
+    ok, buf = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, quality])
+    if not ok:
+        return image
+    return cv2.imdecode(buf, cv2.IMREAD_COLOR)
+```
+
+- [ ] **Step 4: Update `augment_image` to optionally apply ID-like degradation**
+
+Replace the body of `augment_image` with:
+
+```python
+def augment_image(image: np.ndarray, count: int,
+                  rng: np.random.Generator) -> list[np.ndarray]:
+    """Produce `count` randomly augmented variants of one image.
+
+    Each variant randomly composes rotation, brightness, noise, flip, scale,
+    and (sometimes) ID-like degradation (blur + JPEG artifacts). `rng` makes
+    the whole expansion reproducible.
+    """
+    variants: list[np.ndarray] = []
+    for _ in range(count):
+        out = image
+        out = rotate(out, angle=float(rng.uniform(-15, 15)))
+        out = adjust_brightness(out, delta=int(rng.integers(-40, 41)))
+        out = add_gaussian_noise(out, sigma=float(rng.uniform(0, 12)), rng=rng)
+        if rng.random() < 0.5:
+            out = flip_horizontal(out)
+        out = scale(out, factor=float(rng.uniform(0.9, 1.1)))
+        if rng.random() < 0.3:  # ID-like degradation on ~30% of variants
+            out = gaussian_blur(out, ksize=int(rng.choice([3, 5])))
+            out = add_jpeg_artifacts(out, quality=int(rng.integers(20, 50)))
+        variants.append(out)
+    return variants
+```
+
+- [ ] **Step 5: Run the augmentation suite to verify all pass**
+
+Run: `cd cv-identity && pytest tests/test_augmentation.py -v`
+Expected: PASS (all augmentation tests, including the deterministic-with-seed tests).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add cv-identity/training/augmentation.py cv-identity/tests/test_augmentation.py
+git commit -m "feat(cv-identity): add ID-like blur and JPEG-artifact augmentations"
 ```
 
 ---
@@ -863,6 +1033,72 @@ metrics). Default ratio train/val/test = 0.6 / 0.2 / 0.2.
 ```bash
 git add cv-identity/dataset/README.md
 git commit -m "docs(cv-identity): add dataset datasheet"
+```
+
+---
+
+## Task 11b: Golden-image integration test
+
+**Files:**
+- Create: `cv-identity/tests/golden/` (a few real sample images, committed)
+- Create: `cv-identity/tests/test_integration.py`
+
+**Note (per Perplexity review):** synthetic tests prove the math; golden images prove the pipeline works on *real* photos. Add 2–3 small real images: at least one with a clear frontal face (so `detect_and_crop_face` returns a crop) and one with no face (so it returns `None`).
+
+- [ ] **Step 1: Add golden images**
+
+Place 2–3 small JPGs in `cv-identity/tests/golden/`:
+- `face_frontal.jpg` — a clear single frontal face (a team member or a CC-licensed sample).
+- `no_face.jpg` — a scene with no face (e.g. a landscape).
+
+Note: these are committed (unlike `dataset/raw/`, which is git-ignored), so keep them small and free of real PII concerns.
+
+- [ ] **Step 2: Write the integration test**
+
+```python
+from pathlib import Path
+
+import cv2
+import numpy as np
+
+from app.preprocessing import (
+    resize_image, normalize_pixels, detect_and_crop_face,
+)
+
+GOLDEN = Path(__file__).parent / "golden"
+
+
+def _load(name: str) -> np.ndarray:
+    img = cv2.imread(str(GOLDEN / name))
+    assert img is not None, f"missing golden image: {name}"
+    return img
+
+
+def test_full_preprocess_on_real_face():
+    img = _load("face_frontal.jpg")
+    face = detect_and_crop_face(img)
+    assert face is not None and face.size > 0
+    out = normalize_pixels(resize_image(face, (112, 112)))
+    assert out.shape == (112, 112, 3)
+    assert out.dtype == np.float32
+    assert out.min() >= 0.0 and out.max() <= 1.0
+
+
+def test_detect_returns_none_when_no_face():
+    img = _load("no_face.jpg")
+    assert detect_and_crop_face(img) is None
+```
+
+- [ ] **Step 3: Run the integration test**
+
+Run: `cd cv-identity && pytest tests/test_integration.py -v`
+Expected: PASS (2 passed). If `test_full_preprocess_on_real_face` fails to find a face, replace `face_frontal.jpg` with a clearer frontal photo.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add cv-identity/tests/golden/ cv-identity/tests/test_integration.py
+git commit -m "test(cv-identity): add golden-image integration test"
 ```
 
 ---
