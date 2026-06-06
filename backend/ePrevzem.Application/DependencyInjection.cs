@@ -1,5 +1,6 @@
 using System.Reflection;
 using FluentValidation;
+using ePrevzem.Application.Audit;
 using ePrevzem.Application.Common.Abstractions;
 using ePrevzem.Application.Common.Behaviors;
 using ePrevzem.Application.Common.Events;
@@ -16,6 +17,7 @@ public static class DependencyInjection
 
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(assembly));
         services.AddValidatorsFromAssembly(assembly);
+        services.AddScoped<AuditLogWriter>();
         services.AddScoped<IDomainEventDispatcher, MediatRDomainEventDispatcher>();
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 

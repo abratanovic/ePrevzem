@@ -1,4 +1,5 @@
 using ePrevzem.Application.Common.Abstractions;
+using ePrevzem.Infrastructure.Audit;
 using ePrevzem.Infrastructure.Identity;
 using ePrevzem.Infrastructure.Lockers;
 using ePrevzem.Infrastructure.Organizations;
@@ -39,6 +40,8 @@ public static class DependencyInjection
         services.AddScoped<IStationClaimRepository, StationClaimRepository>();
         services.AddScoped<IPackageRepository, PackageRepository>();
         services.AddScoped<IPickupReadRepository, PickupReadRepository>();
+        services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+        services.AddScoped<IAuditContextLookup, AuditContextLookup>();
 
         var siTrustSecret = configuration["SiTrust:Secret"]
             ?? throw new InvalidOperationException("SiTrust:Secret is not configured");

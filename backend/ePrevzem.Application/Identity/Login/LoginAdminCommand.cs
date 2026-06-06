@@ -18,7 +18,7 @@ public sealed class LoginAdminCommandHandler : IRequestHandler<LoginAdminCommand
     private readonly IClock _clock;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITokenService _tokenService;
-    private readonly IMediator _mediator;
+    private readonly IDomainEventDispatcher _domainEventDispatcher;
 
     public LoginAdminCommandHandler(
         ISystemAdminRepository systemAdminRepository,
@@ -27,7 +27,7 @@ public sealed class LoginAdminCommandHandler : IRequestHandler<LoginAdminCommand
         IClock clock,
         IPasswordHasher passwordHasher,
         ITokenService tokenService,
-        IMediator mediator)
+        IDomainEventDispatcher domainEventDispatcher)
     {
         _systemAdminRepository = systemAdminRepository;
         _refreshTokenRepository = refreshTokenRepository;
@@ -35,7 +35,7 @@ public sealed class LoginAdminCommandHandler : IRequestHandler<LoginAdminCommand
         _clock = clock;
         _passwordHasher = passwordHasher;
         _tokenService = tokenService;
-        _mediator = mediator;
+        _domainEventDispatcher = domainEventDispatcher;
     }
 
     public async Task<AdminTokenResponse> Handle(LoginAdminCommand command, CancellationToken cancellationToken)
@@ -48,9 +48,10 @@ public sealed class LoginAdminCommandHandler : IRequestHandler<LoginAdminCommand
         if (admin is null)
         {
             _passwordHasher.Verify(FakeHashForTiming, command.Password);
-            await _mediator.Publish(
-                new SystemAdminLoginFailed(normalizedUsername, now),
+            await _domainEventDispatcher.DispatchAsync(
+                [new SystemAdminLoginFailed(normalizedUsername, now)],
                 cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             throw new InvalidCredentialsException("Invalid username or password.");
         }
@@ -59,9 +60,10 @@ public sealed class LoginAdminCommandHandler : IRequestHandler<LoginAdminCommand
 
         if (verificationResult == PasswordVerification.Failed)
         {
-            await _mediator.Publish(
-                new SystemAdminLoginFailed(normalizedUsername, now),
+            await _domainEventDispatcher.DispatchAsync(
+                [new SystemAdminLoginFailed(normalizedUsername, now)],
                 cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             throw new InvalidCredentialsException("Invalid username or password.");
         }
