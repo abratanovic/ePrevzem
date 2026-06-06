@@ -8,4 +8,6 @@ dataset/raw/
 dataset/processed/
 dataset/splits/
 dataset/*.zip
+dataset/*.7z
 !dataset/.gitkeep
+docs/*
