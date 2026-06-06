@@ -33,10 +33,11 @@ public sealed class RegisterPickupStationCommandHandler
         if (await _stationRepository.ExistsBySerialNumberAsync(command.SerialNumber, cancellationToken))
             throw new DuplicateSerialNumberException(command.SerialNumber);
 
-        var station = PickupStation.Create(PickupStationId.New(), command.SerialNumber, _clock.UtcNow);
+        var now = _clock.UtcNow;
+        var station = PickupStation.Create(PickupStationId.New(), command.SerialNumber, now);
 
         foreach (var number in command.LockerNumbers)
-            station.AddLocker(LockerId.New(), number);
+            station.AddLocker(LockerId.New(), number, now);
 
         await _stationRepository.AddAsync(station, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
