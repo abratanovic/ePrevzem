@@ -48,10 +48,17 @@ def crop_to_bbox(image: np.ndarray, bbox: tuple[int, int, int, int]) -> np.ndarr
 
 def align_by_eyes(
     image: np.ndarray,
-    left_eye: tuple[float, float],
-    right_eye: tuple[float, float],
+    eye_a: tuple[float, float],
+    eye_b: tuple[float, float],
 ) -> np.ndarray:
-    """Rotate the image so the line between the two eyes is horizontal."""
+    """Rotate the image so the line between the two eyes is horizontal.
+
+    The two eyes may be given in either order; they are ordered by image x
+    (left eye = smaller x) internally. This matters because face detectors
+    label keypoints from the subject's perspective, so the "right eye" sits on
+    the image's left — using detector order directly would mis-rotate ~180°.
+    """
+    left_eye, right_eye = sorted([eye_a, eye_b], key=lambda p: p[0])
     dx = right_eye[0] - left_eye[0]
     dy = right_eye[1] - left_eye[1]
     angle = math.degrees(math.atan2(dy, dx))
@@ -60,6 +67,20 @@ def align_by_eyes(
     h, w = image.shape[:2]
     matrix = cv2.getRotationMatrix2D((w / 2, h / 2), angle, scale=1.0)
     return cv2.warpAffine(image, matrix, (w, h), borderMode=cv2.BORDER_REFLECT)
+
+
+def _expand_bbox(
+    bbox: tuple[int, int, int, int], margin: float = 0.3
+) -> tuple[int, int, int, int]:
+    """Grow a (x, y, w, h) bbox by `margin` on every side.
+
+    Detector face boxes are tight (eyebrows to chin); a margin keeps the
+    forehead and chin and tolerates the small shift introduced by alignment.
+    `crop_to_bbox` clamps the result to the image bounds.
+    """
+    x, y, w, h = bbox
+    mx, my = int(w * margin), int(h * margin)
+    return (x - mx, y - my, w + 2 * mx, h + 2 * my)
 
 
 def _haar_face_bbox(image: np.ndarray) -> tuple[int, int, int, int] | None:
@@ -97,17 +118,20 @@ def detect_and_crop_face(image: np.ndarray) -> np.ndarray | None:
             * d.location_data.relative_bounding_box.height,
         )
         box = det.location_data.relative_bounding_box
-        kp = det.location_data.relative_keypoints  # 0=right eye, 1=left eye
-        right_eye = (kp[0].x * w_img, kp[0].y * h_img)
-        left_eye = (kp[1].x * w_img, kp[1].y * h_img)
-        aligned = align_by_eyes(image, left_eye, right_eye)
+        kp = det.location_data.relative_keypoints  # kp[0], kp[1] are the eyes
+        eye_a = (kp[0].x * w_img, kp[0].y * h_img)
+        eye_b = (kp[1].x * w_img, kp[1].y * h_img)
         bbox = (
             int(box.xmin * w_img), int(box.ymin * h_img),
             int(box.width * w_img), int(box.height * h_img),
         )
-        return crop_to_bbox(aligned, bbox)
+        # Crop a margin-padded face region first, then align around the crop's
+        # own centre. Eye dx/dy (and thus the angle) are translation-invariant,
+        # so the full-image eye coords are fine; align_by_eyes orders them by x.
+        face = crop_to_bbox(image, _expand_bbox(bbox))
+        return align_by_eyes(face, eye_a, eye_b)
 
     haar_bbox = _haar_face_bbox(image)
     if haar_bbox is None:
         return None
-    return crop_to_bbox(image, haar_bbox)
+    return crop_to_bbox(image, _expand_bbox(haar_bbox))

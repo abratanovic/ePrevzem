@@ -51,3 +51,12 @@ def test_align_by_eyes_preserves_shape(rgb_image):
 def test_align_by_eyes_level_eyes_is_noop(rgb_image):
     out = align_by_eyes(rgb_image, (15.0, 10.0), (45.0, 10.0))
     assert np.array_equal(out, rgb_image)
+
+
+def test_align_by_eyes_is_order_independent(rgb_image):
+    # Regression: a face detector may return the two eyes in either order.
+    # Alignment must order them by image x internally, so the result is
+    # identical regardless of argument order and never flips the image ~180°.
+    a = align_by_eyes(rgb_image, (10.0, 22.0), (50.0, 18.0))
+    b = align_by_eyes(rgb_image, (50.0, 18.0), (10.0, 22.0))
+    assert np.array_equal(a, b)
