@@ -108,3 +108,5 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+this line does not compile;
