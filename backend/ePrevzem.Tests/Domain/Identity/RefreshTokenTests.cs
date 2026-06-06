@@ -110,6 +110,20 @@ public class RefreshTokenTests
         ev.OrganizationAdminAccountId.Should().BeNull();
     }
 
+    // ── Citizen variant ──────────────────────────────────────────────────────
+
+    [Fact]
+    public void IssueForCitizen_sets_citizen_id_only()
+    {
+        var now = new DateTimeOffset(2026, 6, 7, 10, 0, 0, TimeSpan.Zero);
+        var citizenId = CitizenUserId.New();
+        var t = RefreshToken.IssueForCitizen(RefreshTokenId.New(), citizenId, "hash", now.AddDays(14), now);
+        Assert.Equal(citizenId, t.CitizenUserId);
+        Assert.Null(t.EmployeeAccountId);
+        Assert.Null(t.SystemAdminId);
+        Assert.Null(t.OrganizationAdminAccountId);
+    }
+
     // ── Shared behaviour ─────────────────────────────────────────────────────
 
     [Fact]
