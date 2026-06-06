@@ -256,10 +256,9 @@ export default function AuditLogPage() {
   }), [filters]);
 
   const loadEntries = useCallback(async () => {
-    setLoading(true);
-    setLoadError(false);
     try {
       setEntries(await getAuditLog(queryFilters));
+      setLoadError(false);
     } catch {
       setLoadError(true);
     } finally {
@@ -268,10 +267,15 @@ export default function AuditLogPage() {
   }, [queryFilters]);
 
   useEffect(() => {
-    void loadEntries();
+    const timer = window.setTimeout(() => {
+      void loadEntries();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [loadEntries]);
 
   const resetFilters = () => {
+    setLoading(true);
+    setLoadError(false);
     setFilters({ limit: "50", from: "", to: "", action: "", targetKind: "" });
   };
 
@@ -290,7 +294,11 @@ export default function AuditLogPage() {
           </div>
           <button
             type="button"
-            onClick={() => void loadEntries()}
+            onClick={() => {
+              setLoading(true);
+              setLoadError(false);
+              void loadEntries();
+            }}
             disabled={loading}
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
           >
@@ -304,7 +312,11 @@ export default function AuditLogPage() {
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Dejanje</span>
             <select
               value={filters.action}
-              onChange={(e) => setFilters((current) => ({ ...current, action: e.target.value }))}
+              onChange={(e) => {
+                setLoading(true);
+                setLoadError(false);
+                setFilters((current) => ({ ...current, action: e.target.value }));
+              }}
               className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-accent focus:ring-2 focus:ring-accent/10"
             >
               <option value="">Vsa dejanja</option>
@@ -318,7 +330,11 @@ export default function AuditLogPage() {
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Tarča</span>
             <select
               value={filters.targetKind}
-              onChange={(e) => setFilters((current) => ({ ...current, targetKind: e.target.value }))}
+              onChange={(e) => {
+                setLoading(true);
+                setLoadError(false);
+                setFilters((current) => ({ ...current, targetKind: e.target.value }));
+              }}
               className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-accent focus:ring-2 focus:ring-accent/10"
             >
               <option value="">Vse tarče</option>
@@ -333,7 +349,11 @@ export default function AuditLogPage() {
             <input
               type="date"
               value={filters.from}
-              onChange={(e) => setFilters((current) => ({ ...current, from: e.target.value }))}
+              onChange={(e) => {
+                setLoading(true);
+                setLoadError(false);
+                setFilters((current) => ({ ...current, from: e.target.value }));
+              }}
               className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-accent focus:ring-2 focus:ring-accent/10"
             />
           </label>
@@ -343,7 +363,11 @@ export default function AuditLogPage() {
             <input
               type="date"
               value={filters.to}
-              onChange={(e) => setFilters((current) => ({ ...current, to: e.target.value }))}
+              onChange={(e) => {
+                setLoading(true);
+                setLoadError(false);
+                setFilters((current) => ({ ...current, to: e.target.value }));
+              }}
               className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-accent focus:ring-2 focus:ring-accent/10"
             />
           </label>
@@ -352,7 +376,11 @@ export default function AuditLogPage() {
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Limit</span>
             <select
               value={filters.limit}
-              onChange={(e) => setFilters((current) => ({ ...current, limit: e.target.value }))}
+              onChange={(e) => {
+                setLoading(true);
+                setLoadError(false);
+                setFilters((current) => ({ ...current, limit: e.target.value }));
+              }}
               className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-accent focus:ring-2 focus:ring-accent/10"
             >
               <option value="25">25</option>
