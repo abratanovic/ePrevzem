@@ -7,4 +7,5 @@ out/
 dataset/raw/
 dataset/processed/
 dataset/splits/
+dataset/*.zip
 !dataset/.gitkeep
