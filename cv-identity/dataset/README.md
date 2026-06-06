@@ -8,9 +8,12 @@ dataset/
 │   ├── live/<person>/       # real live faces, multiple angles
 │   ├── spoof/<person>/      # printed-photo + screen-replay attacks
 │   └── id_cards/<person>/   # mock ID cards (no real PII)
-├── processed/               # after preprocessing (git-ignored)
 └── splits/{train,val,test}/ # leakage-free splits (git-ignored)
 ```
+
+`build_dataset.py` preprocesses each image **on the fly** (detect + align +
+resize) while writing into `splits/` — there is no separate `processed/` stage,
+so raw images are never duplicated to disk between steps.
 
 ## Classes
 
@@ -22,11 +25,37 @@ dataset/
 
 ## Capture protocol
 
-- Each team member: ~30-50 **live** frames across angles (front, left, right,
-  up, down) and lighting conditions.
-- For each member, create matching **spoof** frames: print their photo and/or
-  show it on a phone screen, then recapture with another device.
-- Mock **id_cards**: one or more per member, no real personal data.
+### Live
+- ~30-50 frames per member across **moderate** angles and lighting.
+- Keep the bulk near-frontal (±30°): some left/right (±15-30°) and a little
+  up/down for natural phone-holding poses. **Avoid extreme profiles (>45°)** —
+  MediaPipe often fails to detect them, and `build_dataset.py` then silently
+  skips the image (no face → dropped). Vary lighting/distance rather than angle.
+
+### Spoof
+- A "spoof sample" is each **capture**, not each source artifact: 2-3 printed
+  photos + 2-3 on-screen photos, each re-shot from several angles/distances and
+  lighting, yields plenty of frames (~30-50 per member).
+- Vary the **capture conditions** so the model learns real attack cues
+  (reflection, moiré, paper edges): tilt the print, change screen brightness,
+  move closer/farther.
+- Prefer **different media** (printed + phone screen + monitor, matte + glossy
+  paper) so the model doesn't latch onto one device as "spoof".
+- Re-shoot the **same angles** you used for that person's live frames, otherwise
+  the model learns "this pose = spoof" instead of genuine spoof cues.
+
+### Device & conditions (both classes)
+- Capture **live and spoof on the same device**, in **similar lighting and
+  background** — otherwise the model learns a shortcut (e.g. brightness or
+  sensor noise) instead of liveness.
+- Ideally capture with the **same kind of device used for the demo** (phone),
+  to reduce the train/serve domain gap. `scripts/capture.py` (laptop webcam) is
+  fine for a quick pipeline test, but real training data is best shot on a
+  phone and copied into `raw/<class>/<person>/`.
+
+### id_cards
+- One or more mock cards per member, **no real personal data**. Needed only for
+  the end-to-end ID <-> selfie demo (face matching), not for liveness training.
 
 ## Public datasets (supplementary)
 
