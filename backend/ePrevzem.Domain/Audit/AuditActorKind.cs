@@ -4,6 +4,7 @@ public enum AuditActorKind
 {
     Citizen,
     Employee,
+    OrganizationAdmin,
     SystemAdmin,
     System
 }

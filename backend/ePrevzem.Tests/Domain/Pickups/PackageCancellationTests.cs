@@ -60,6 +60,22 @@ public class PackageCancellationTests
         act.Should().Throw<InvalidOperationException>();
     }
 
+    [Fact]
+    public void MarkDeleted_on_fresh_package_raises_deleted_event()
+    {
+        var pkg = NewPackage();
+        pkg.ClearDomainEvents();
+        var employee = EmployeeAccountId.New();
+
+        pkg.MarkDeleted(employee, Now.AddMinutes(1));
+
+        var ev = pkg.DomainEvents.OfType<PackageDeleted>().Should().ContainSingle().Subject;
+        ev.PackageId.Should().Be(pkg.Id);
+        ev.OrganizationId.Should().Be(pkg.OrganizationId);
+        ev.DeletedByEmployeeAccountId.Should().Be(employee);
+        ev.DeletedByOrganizationAdminAccountId.Should().BeNull();
+    }
+
     private static Package NewPackage() => Package.Create(
         PackageId.New(), OrganizationId.New(), CitizenUserId.New(), EmployeeAccountId.New(),
         PickupStationId.New(), "desc", Now);
