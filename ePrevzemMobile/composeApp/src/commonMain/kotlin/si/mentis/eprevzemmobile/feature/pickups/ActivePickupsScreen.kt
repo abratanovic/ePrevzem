@@ -22,11 +22,15 @@ import si.mentis.eprevzemmobile.data.logevent.LogEventRepository
 import si.mentis.eprevzemmobile.data.pickups.PickupRepository
 import si.mentis.eprevzemmobile.data.security.SecurityRepository
 import si.mentis.eprevzemmobile.data.settings.UserSettingsRepository
-import si.mentis.eprevzemmobile.domain.User
 import si.mentis.eprevzemmobile.core.designsystem.components.buttons.EPrimaryButton
 import si.mentis.eprevzemmobile.core.designsystem.components.buttons.ESecondaryButton
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.EPickupCard
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.EIconChip
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.EDetailsCard
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.EDetailsDivider
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.EDetailsRow
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.EDetailsSectionLabel
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.EIconTint
 import si.mentis.eprevzemmobile.core.designsystem.components.dialogs.EBottomSheet
 import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EEmptyState
 import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EErrorBanner
@@ -41,7 +45,6 @@ import si.mentis.eprevzemmobile.core.designsystem.components.navigation.ETopBar
 import si.mentis.eprevzemmobile.core.designsystem.components.navigation.ETopBarVariant
 import si.mentis.eprevzemmobile.core.designsystem.icons.EPrevzemIcons
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
-import si.mentis.eprevzemmobile.data.pickups.PickupRepository
 import si.mentis.eprevzemmobile.domain.AppUser
 
 @Composable
@@ -116,7 +119,7 @@ fun ActivePickupsScreen(
 fun ActivePickupsRoute(
     user: AppUser,
     onPickupClicked: (String) -> Unit,
-    onUserUpdated: (User) -> Unit = {},
+    onUserUpdated: (AppUser) -> Unit = {},
     repository: PickupRepository = AppContainer.pickupRepository,
     logEventRepository: LogEventRepository = AppContainer.logEventRepository,
     securityRepository: SecurityRepository = AppContainer.securityRepository,
@@ -149,7 +152,7 @@ fun ActivePickupsRoute(
                 notificationsEnabled = notificationsEnabled.await(),
             )
         }
-        val syncedUser = user.copy(isBiometricEnabled = biometricEnabled)
+        val syncedUser = user.withBiometric(biometricEnabled)
         state = state.copy(
             pickups = pickups,
             auditLogEntries = logEvents,
@@ -188,7 +191,7 @@ fun ActivePickupsRoute(
                         scope.launch {
                             securityRepository.disableBiometric()
                                 .onSuccess {
-                                    val updatedUser = user.copy(isBiometricEnabled = false)
+                                    val updatedUser = user.withBiometric(false)
                                     state = state.copy(
                                         isBiometricEnabled = false,
                                         isUpdatingSettings = false,
@@ -221,7 +224,7 @@ fun ActivePickupsRoute(
                         scope.launch {
                             securityRepository.enableBiometric(pin)
                                 .onSuccess {
-                                    val updatedUser = user.copy(isBiometricEnabled = true)
+                                    val updatedUser = user.withBiometric(true)
                                     state = state.copy(
                                         isBiometricEnabled = true,
                                         isBiometricPinSheetVisible = false,
@@ -351,16 +354,28 @@ private data class LoadedActivePickupsData(
     val notificationsEnabled: Boolean,
 )
 
-private fun User.toProfileData(): ProfileData = ProfileData(
-    fullName = fullName,
-    email = email,
-    phone = phone,
-    status = status,
-    validUntil = validUntil,
-    organizationName = organizationName,
-    organizationType = organizationType,
-    organizationLocation = organizationLocation,
-)
+private fun AppUser.toProfileData(): ProfileData = when (this) {
+    is AppUser.Employee -> ProfileData(
+        fullName = fullName,
+        email = email,
+        phone = phone,
+        status = status,
+        validUntil = validUntil,
+        organizationName = organizationName,
+        organizationType = organizationType,
+        organizationLocation = organizationLocation,
+    )
+    is AppUser.RegularUser -> ProfileData(
+        fullName = fullName,
+        email = email,
+        phone = phone,
+    )
+}
+
+private fun AppUser.withBiometric(enabled: Boolean): AppUser = when (this) {
+    is AppUser.Employee -> copy(isBiometricEnabled = enabled)
+    is AppUser.RegularUser -> copy(isBiometricEnabled = enabled)
+}
 
 @Composable
 private fun ProfileSettingsContent(

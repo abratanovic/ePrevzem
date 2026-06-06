@@ -169,7 +169,9 @@ fun App() {
                         ActivePickupsRoute(
                             user = user,
                             onPickupClicked = { id -> destination = AppDestination.PickupDetails(id) },
-                            onUserUpdated = { updatedUser -> currentUser = updatedUser },
+                            onUserUpdated = { updatedUser ->
+                                scope.launch { AppContainer.sessionStore.addProfile(updatedUser) }
+                            },
                         )
                     }
                 }
