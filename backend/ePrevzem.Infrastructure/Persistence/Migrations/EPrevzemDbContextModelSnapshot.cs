@@ -22,6 +22,80 @@ namespace ePrevzem.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("ePrevzem.Domain.Audit.AuditLogEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("action");
+
+                    b.Property<Guid?>("ActorCitizenUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_citizen_user_id");
+
+                    b.Property<Guid?>("ActorEmployeeAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_employee_account_id");
+
+                    b.Property<string>("ActorKind")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("actor_kind");
+
+                    b.Property<Guid?>("ActorOrganizationAdminAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_organization_admin_account_id");
+
+                    b.Property<Guid?>("ActorSystemAdminId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_system_admin_id");
+
+                    b.Property<string>("Details")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("details");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<Guid>("TargetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_id");
+
+                    b.Property<string>("TargetKind")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("target_kind");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Action");
+
+                    b.HasIndex("ActorCitizenUserId");
+
+                    b.HasIndex("ActorEmployeeAccountId");
+
+                    b.HasIndex("ActorOrganizationAdminAccountId");
+
+                    b.HasIndex("ActorSystemAdminId");
+
+                    b.HasIndex("OrganizationId", "OccurredAt");
+
+                    b.HasIndex("TargetKind", "TargetId");
+
+                    b.ToTable("audit_log_entries", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_audit_log_entries_actor", "(\n    actor_kind = 'System'\n    AND actor_citizen_user_id IS NULL\n    AND actor_employee_account_id IS NULL\n    AND actor_organization_admin_account_id IS NULL\n    AND actor_system_admin_id IS NULL\n)\nOR (\n    actor_kind = 'Citizen'\n    AND actor_citizen_user_id IS NOT NULL\n    AND actor_employee_account_id IS NULL\n    AND actor_organization_admin_account_id IS NULL\n    AND actor_system_admin_id IS NULL\n)\nOR (\n    actor_kind = 'Employee'\n    AND actor_citizen_user_id IS NULL\n    AND actor_employee_account_id IS NOT NULL\n    AND actor_organization_admin_account_id IS NULL\n    AND actor_system_admin_id IS NULL\n)\nOR (\n    actor_kind = 'OrganizationAdmin'\n    AND actor_citizen_user_id IS NULL\n    AND actor_employee_account_id IS NULL\n    AND actor_organization_admin_account_id IS NOT NULL\n    AND actor_system_admin_id IS NULL\n)\nOR (\n    actor_kind = 'SystemAdmin'\n    AND actor_citizen_user_id IS NULL\n    AND actor_employee_account_id IS NULL\n    AND actor_organization_admin_account_id IS NULL\n    AND actor_system_admin_id IS NOT NULL\n)");
+                        });
+                });
+
             modelBuilder.Entity("ePrevzem.Domain.Identity.CitizenActivationCode", b =>
                 {
                     b.Property<Guid>("Id")

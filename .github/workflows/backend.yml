@@ -1,17 +1,28 @@
 name: backend-build
 "on":
   pull_request:
-    paths:
-      - "backend/**"
-      - "ePrevzem.sln"
-      - ".github/workflows/backend.yml"
+permissions:
+  contents: read
+  pull-requests: read
 jobs:
   build:
+    name: backend-build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            backend:
+              - "backend/**"
+              - "ePrevzem.sln"
+              - ".github/workflows/backend.yml"
       - uses: actions/setup-dotnet@v4
+        if: steps.changes.outputs.backend == 'true'
         with:
           dotnet-version: "9.0.x"
-      - run: dotnet build ePrevzem.sln
-      - run: dotnet test backend/ePrevzem.Tests
+      - if: steps.changes.outputs.backend == 'true'
+        run: dotnet build ePrevzem.sln
+      - if: steps.changes.outputs.backend == 'true'
+        run: dotnet test backend/ePrevzem.Tests

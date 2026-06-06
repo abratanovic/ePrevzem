@@ -1,14 +1,83 @@
 # CV Identity — Data Pipeline (Član 1) Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILLS: `superpowers:subagent-driven-development` + `superpowers:dispatching-parallel-agents`. This plan is **optimized for parallel execution** — see the "Execution Strategy" section below for the dependency graph, the 5 parallel workstreams, worktree isolation, and the **escalation rules (agents must not make significant decisions on their own)**. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build the data layer of the `cv-identity/` Python service — capture, preprocessing, augmentation, and leakage-free train/val/test splitting — so Član 2 has a clean, consistent dataset to train the liveness CNN and calibrate the face-match threshold.
 
 **Architecture:** A standalone Python subproject `cv-identity/`. Član 1 owns three pure, unit-tested modules (`preprocessing`, `augmentation`, `split`) plus a webcam capture script and a dataset datasheet. Pure image functions operate on `numpy` arrays so they are deterministic and testable with synthetic data; face detection is isolated behind a thin wrapper so the crop logic stays unit-testable. The same preprocessing + augmentation pipeline is applied to both team-captured and public datasets for consistency.
 
-**Tech Stack:** Python 3.11, `numpy`, `opencv-python` (cv2), `mediapipe` (face detection + landmarks), `pytest`. No `albumentations` — augmentation is implemented by hand (course requirement: own augmentation procedures).
+**Tech Stack:** Python 3.12 (required — `mediapipe==0.10.18` has no wheels for 3.13/3.14), `numpy`, `opencv-python` (cv2), `mediapipe` (face detection + landmarks), `pytest`. No `albumentations` — augmentation is implemented by hand (course requirement: own augmentation procedures). All venvs must be created with `py -3.12 -m venv .venv`.
 
 **Spec:** `docs/superpowers/specs/2026-06-06-cv-identity-verification-design.md` (§6 Data & training).
+
+**Jira:** Epic `PRVZM-72` → data-part subtask `PRVZM-62` → implementation subtasks below. **Every commit message MUST start with the Jira ID of the subtask it belongs to** (e.g. `PRVZM-66 feat(cv-identity): ...`), so Jira links the work automatically. Branch: `PRVZM-62-cv-identity-podatkovni-del`.
+
+| Plan task | Jira ID | Subtask |
+|---|---|---|
+| Task 0, 1 (skeleton, fixtures) | `PRVZM-63` | Postavitev cv-identity projekta in razvojnega okolja |
+| Task 11 (datasheet, dataset structure) | `PRVZM-64` | Definicija strukture dataseta in protokola zajema |
+| Task 10 (capture script) | `PRVZM-65` | Skripta za zajem slik iz kamere |
+| Task 2, 3, 4, 5 (preprocessing) | `PRVZM-66` | Modul za predobdelavo slik |
+| Task 6, 7, 8, 8b (augmentation) | `PRVZM-67` | Modul za augmentacijo podatkov |
+| Task 9 (split) | `PRVZM-68` | Leakage-free delitev na train/val/test |
+| Task 11b (golden integration test) | `PRVZM-71` | Golden-image integracijski test |
+| — manual data collection (no code) | `PRVZM-69` | Dejanski zajem dataseta (live + spoof + izkaznice) |
+| — public datasets (no code) | `PRVZM-70` | Integracija javnih datasetov (CelebA-Spoof, LFW) |
+
+`PRVZM-69` and `PRVZM-70` are data-collection tasks with no source commits; track them in Jira and tick the CHECKLIST.md boxes instead.
+
+---
+
+## Execution Strategy — parallel, subagent-driven
+
+The work is grouped into **independent workstreams** that touch disjoint files, so most of it runs **in parallel**. Use `superpowers:subagent-driven-development` together with `superpowers:dispatching-parallel-agents`. Dispatch each parallel stream as its own subagent in an **isolated git worktree** (`isolation: "worktree"`) so concurrent commits never collide; merge each stream branch back when its tests are green (no file overlap ⇒ trivial merges).
+
+### Dependency graph
+
+```
+Phase 0 (SEQUENTIAL BARRIER) — one subagent, must finish before anything else
+  Task 0  skeleton + deps   (PRVZM-63)
+  Task 1  test fixtures     (PRVZM-63)
+        │
+        ▼
+Phase 1 (PARALLEL — 5 independent streams, one subagent each)
+  Stream A: Task 2→3→4→5  preprocessing      (PRVZM-66)  owns app/preprocessing.py, tests/test_preprocessing.py
+  Stream B: Task 6→7→8→8b augmentation       (PRVZM-67)  owns training/augmentation.py, tests/test_augmentation.py
+  Stream C: Task 9        split              (PRVZM-68)  owns training/split.py, tests/test_split.py
+  Stream D: Task 10       capture script     (PRVZM-65)  owns scripts/capture.py
+  Stream E: Task 11       datasheet          (PRVZM-64)  owns dataset/README.md
+        │
+        ▼  (Stream A must be merged first)
+Phase 2 (SEQUENTIAL)
+  Task 11b golden-image integration test     (PRVZM-71)  needs app/preprocessing.detect_and_crop_face
+        │
+        ▼
+Phase 3 (SEQUENTIAL BARRIER — final verification)
+  Task 12  full suite green                  (verification only)
+```
+
+**File ownership is exclusive per stream** (see the table above) — no two parallel subagents write the same file. The only shared, read-only files are `tests/conftest.py` and `cv-identity/requirements.txt`, both produced in Phase 0. **Steps inside a stream stay sequential** (each modifies the same module and follows TDD red→green→commit).
+
+### Orchestration rules
+
+1. Do **not** start Phase 1 until Phase 0 is merged and `pytest` runs (even with zero tests collected). All streams import from the Phase-0 skeleton.
+2. Dispatch Streams A–E **concurrently**, each in its own worktree branched from the Phase-0 commit.
+3. After each stream reports green, merge it back to `PRVZM-62-cv-identity-podatkovni-del`. Merge order does not matter for A–E (disjoint files); only Phase 2 requires A first.
+4. Each subagent commits with the **Jira ID for its stream** (table above) and runs its module's tests before reporting done.
+5. The orchestrator runs the Phase-3 full suite once on the integrated branch.
+
+### Agents must NOT make significant decisions — escalate instead
+
+A subagent's autonomy is limited to writing the code exactly as specified in its task. For anything **not** spelled out in this plan, the subagent MUST **stop and report back to the orchestrator with a specific question** rather than guessing. Treat the following as hard stops:
+
+- **Dependency/version conflicts** — e.g. `pip install` fails or `mediapipe`/`numpy`/`opencv` versions are incompatible. Do **not** bump or unpin versions on your own — report the exact error and ask.
+- **A test fails for an unanticipated reason** — do **not** "fix" it by weakening an assertion, deleting the test, or adding `xfail`. Report the failure and the suspected cause.
+- **Any change to a public name or signature** that other streams depend on (function names, parameters, return types in `preprocessing` / `augmentation` / `split`). These are contracts — changing them is an orchestrator decision.
+- **Unspecified numeric choices** — thresholds, split ratios, kernel sizes, augmentation ranges beyond what the plan states. Use the plan's exact values; if the plan is silent, ask.
+- **Missing or ambiguous inputs** — e.g. a golden image does not contain a detectable face, a public dataset's license is unclear, or a real asset the plan assumes is absent. Do **not** substitute, fabricate, or download something different — report and ask.
+- **Environment/platform surprises** — missing camera, OS-specific path issues, GPU requirements. Report; do not silently change scope.
+
+When escalating, the subagent reports: what it was doing, the exact error/ambiguity, what it would need to proceed, and (optionally) options it sees — but it does **not** pick one. The orchestrator resolves it (asking the user when the decision is the user's per the normal escalation rules).
 
 ---
 
@@ -98,7 +167,7 @@ preprocessing, augmentation, and dataset splitting.
 
 ```bash
 cd cv-identity
-python -m venv .venv
+py -3.12 -m venv .venv      # Python 3.12 required for mediapipe
 . .venv/Scripts/activate    # Windows PowerShell: .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
@@ -112,8 +181,8 @@ pytest -v
 ## Capture data
 
 ```bash
-python scripts/capture.py --class live  --person alen
-python scripts/capture.py --class spoof --person alen
+python scripts/capture.py --class live  --person adnan
+python scripts/capture.py --class spoof --person adnan
 ```
 
 See `dataset/README.md` for the capture protocol and folder layout.
@@ -123,7 +192,7 @@ See `dataset/README.md` for the capture protocol and folder layout.
 
 Run:
 ```bash
-cd cv-identity && python -m venv .venv && .venv/Scripts/python -m pip install -r requirements.txt
+cd cv-identity && py -3.12 -m venv .venv && .venv/Scripts/python -m pip install -r requirements.txt
 ```
 Expected: pip installs numpy, opencv-python, pytest with no errors.
 
@@ -131,7 +200,7 @@ Expected: pip installs numpy, opencv-python, pytest with no errors.
 
 ```bash
 git add cv-identity/
-git commit -m "chore(cv-identity): scaffold data-pipeline project skeleton"
+git commit -m "PRVZM-63 chore(cv-identity): scaffold data-pipeline project skeleton"
 ```
 
 ---
@@ -165,7 +234,7 @@ def rng():
 
 ```bash
 git add cv-identity/tests/conftest.py
-git commit -m "test(cv-identity): add synthetic-image fixtures"
+git commit -m "PRVZM-63 test(cv-identity): add synthetic-image fixtures"
 ```
 
 ---
@@ -216,7 +285,7 @@ Expected: PASS.
 
 ```bash
 git add cv-identity/app/preprocessing.py cv-identity/tests/test_preprocessing.py
-git commit -m "feat(cv-identity): add image resize"
+git commit -m "PRVZM-66 feat(cv-identity): add image resize"
 ```
 
 ---
@@ -271,7 +340,7 @@ Expected: PASS (2 passed).
 
 ```bash
 git add cv-identity/app/preprocessing.py cv-identity/tests/test_preprocessing.py
-git commit -m "feat(cv-identity): add grayscale and pixel normalization"
+git commit -m "PRVZM-66 feat(cv-identity): add grayscale and pixel normalization"
 ```
 
 ---
@@ -334,7 +403,7 @@ Expected: PASS (2 passed).
 
 ```bash
 git add cv-identity/app/preprocessing.py cv-identity/tests/test_preprocessing.py
-git commit -m "feat(cv-identity): add denoise and color-space conversion"
+git commit -m "PRVZM-66 feat(cv-identity): add denoise and color-space conversion"
 ```
 
 ---
@@ -486,7 +555,7 @@ Expected: PASS (all preprocessing tests).
 
 ```bash
 git add cv-identity/app/preprocessing.py cv-identity/tests/test_preprocessing.py
-git commit -m "feat(cv-identity): add bbox crop, eye alignment, MediaPipe face crop (Haar fallback)"
+git commit -m "PRVZM-66 feat(cv-identity): add bbox crop, eye alignment, MediaPipe face crop (Haar fallback)"
 ```
 
 ---
@@ -569,7 +638,7 @@ Expected: PASS (3 passed).
 
 ```bash
 git add cv-identity/training/augmentation.py cv-identity/tests/test_augmentation.py
-git commit -m "feat(cv-identity): add geometric augmentations"
+git commit -m "PRVZM-67 feat(cv-identity): add geometric augmentations"
 ```
 
 ---
@@ -631,7 +700,7 @@ Expected: PASS (2 passed).
 
 ```bash
 git add cv-identity/training/augmentation.py cv-identity/tests/test_augmentation.py
-git commit -m "feat(cv-identity): add brightness and gaussian-noise augmentations"
+git commit -m "PRVZM-67 feat(cv-identity): add brightness and gaussian-noise augmentations"
 ```
 
 ---
@@ -697,7 +766,7 @@ Expected: PASS (all augmentation tests).
 
 ```bash
 git add cv-identity/training/augmentation.py cv-identity/tests/test_augmentation.py
-git commit -m "feat(cv-identity): add augmentation pipeline"
+git commit -m "PRVZM-67 feat(cv-identity): add augmentation pipeline"
 ```
 
 ---
@@ -789,7 +858,7 @@ Expected: PASS (all augmentation tests, including the deterministic-with-seed te
 
 ```bash
 git add cv-identity/training/augmentation.py cv-identity/tests/test_augmentation.py
-git commit -m "feat(cv-identity): add ID-like blur and JPEG-artifact augmentations"
+git commit -m "PRVZM-67 feat(cv-identity): add ID-like blur and JPEG-artifact augmentations"
 ```
 
 ---
@@ -809,8 +878,8 @@ from training.split import split_by_identity
 
 
 def _records():
-    # (person, path) — 5 people, 2 images each.
-    people = ["alen", "edvin", "maja", "luka", "ana"]
+    # (person, path) — 3 people, 2 images each.
+    people = ["adnan", "edvin", "emir"]
     return [(p, f"{p}_{i}.jpg") for p in people for i in range(2)]
 
 
@@ -891,7 +960,7 @@ Expected: PASS (3 passed).
 
 ```bash
 git add cv-identity/training/split.py cv-identity/tests/test_split.py
-git commit -m "feat(cv-identity): add leakage-free split by identity"
+git commit -m "PRVZM-68 feat(cv-identity): add leakage-free split by identity"
 ```
 
 ---
@@ -909,8 +978,8 @@ git commit -m "feat(cv-identity): add leakage-free split by identity"
 """Capture webcam frames into the dataset folder layout.
 
 Usage:
-    python scripts/capture.py --class live  --person alen
-    python scripts/capture.py --class spoof --person alen
+    python scripts/capture.py --class live  --person adnan
+    python scripts/capture.py --class spoof --person adnan
 
 Keys while the window is open:
     SPACE — save the current frame
@@ -972,7 +1041,7 @@ Expected: a webcam window opens; pressing SPACE saves `dataset/raw/live/test/tes
 
 ```bash
 git add cv-identity/scripts/capture.py
-git commit -m "feat(cv-identity): add webcam capture script"
+git commit -m "PRVZM-65 feat(cv-identity): add webcam capture script"
 ```
 
 ---
@@ -1032,7 +1101,7 @@ metrics). Default ratio train/val/test = 0.6 / 0.2 / 0.2.
 
 ```bash
 git add cv-identity/dataset/README.md
-git commit -m "docs(cv-identity): add dataset datasheet"
+git commit -m "PRVZM-64 docs(cv-identity): add dataset datasheet"
 ```
 
 ---
@@ -1098,7 +1167,7 @@ Expected: PASS (2 passed). If `test_full_preprocess_on_real_face` fails to find 
 
 ```bash
 git add cv-identity/tests/golden/ cv-identity/tests/test_integration.py
-git commit -m "test(cv-identity): add golden-image integration test"
+git commit -m "PRVZM-71 test(cv-identity): add golden-image integration test"
 ```
 
 ---

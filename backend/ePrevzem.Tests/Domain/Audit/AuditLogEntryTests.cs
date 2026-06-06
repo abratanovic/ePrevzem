@@ -24,6 +24,7 @@ public class AuditLogEntryTests
             actorKind: AuditActorKind.Employee,
             actorCitizenUserId: null,
             actorEmployeeAccountId: employee,
+            actorOrganizationAdminAccountId: null,
             actorSystemAdminId: null,
             organizationId: org,
             action: AuditAction.PackagePlaced,
@@ -47,7 +48,7 @@ public class AuditLogEntryTests
     {
         var entry = AuditLogEntry.Record(
             AuditLogEntryId.New(), Now,
-            AuditActorKind.System, null, null, null, null,
+            AuditActorKind.System, null, null, null, null, null,
             AuditAction.PackageExpired, AuditTargetKind.Package, Guid.NewGuid(), null);
 
         entry.ActorKind.Should().Be(AuditActorKind.System);
@@ -59,11 +60,12 @@ public class AuditLogEntryTests
     [Theory]
     [InlineData(AuditActorKind.Citizen)]
     [InlineData(AuditActorKind.Employee)]
+    [InlineData(AuditActorKind.OrganizationAdmin)]
     [InlineData(AuditActorKind.SystemAdmin)]
     public void Record_non_system_actor_without_matching_id_throws(AuditActorKind kind)
     {
         var act = () => AuditLogEntry.Record(
-            AuditLogEntryId.New(), Now, kind, null, null, null, null,
+            AuditLogEntryId.New(), Now, kind, null, null, null, null, null,
             AuditAction.PackagePlaced, AuditTargetKind.Package, Guid.NewGuid(), null);
         act.Should().Throw<ArgumentException>();
     }
@@ -75,6 +77,7 @@ public class AuditLogEntryTests
             AuditLogEntryId.New(), Now, AuditActorKind.Employee,
             actorCitizenUserId: CitizenUserId.New(),
             actorEmployeeAccountId: EmployeeAccountId.New(),
+            actorOrganizationAdminAccountId: null,
             actorSystemAdminId: null,
             organizationId: null,
             action: AuditAction.PackagePlaced,
@@ -91,6 +94,7 @@ public class AuditLogEntryTests
             AuditLogEntryId.New(), Now, AuditActorKind.System,
             actorCitizenUserId: CitizenUserId.New(),
             actorEmployeeAccountId: null,
+            actorOrganizationAdminAccountId: null,
             actorSystemAdminId: null,
             organizationId: null,
             action: AuditAction.PackageExpired,
@@ -98,5 +102,28 @@ public class AuditLogEntryTests
             targetId: Guid.NewGuid(),
             details: null);
         act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Record_with_organization_admin_actor_constructs_entry()
+    {
+        var admin = OrganizationAdminAccountId.New();
+
+        var entry = AuditLogEntry.Record(
+            AuditLogEntryId.New(),
+            Now,
+            AuditActorKind.OrganizationAdmin,
+            actorCitizenUserId: null,
+            actorEmployeeAccountId: null,
+            actorOrganizationAdminAccountId: admin,
+            actorSystemAdminId: null,
+            organizationId: OrganizationId.New(),
+            action: AuditAction.PackageCreated,
+            targetKind: AuditTargetKind.Package,
+            targetId: Guid.NewGuid(),
+            details: null);
+
+        entry.ActorKind.Should().Be(AuditActorKind.OrganizationAdmin);
+        entry.ActorOrganizationAdminAccountId.Should().Be(admin);
     }
 }

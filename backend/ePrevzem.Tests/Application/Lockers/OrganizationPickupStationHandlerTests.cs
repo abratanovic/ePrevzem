@@ -110,7 +110,8 @@ public class OrganizationPickupStationHandlerTests
         var handler = new UpdateOrganizationLockerServiceabilityCommandHandler(
             claimRepo,
             stationRepo,
-            unitOfWork);
+            unitOfWork,
+            new TestClockForStation(Now));
 
         var result = await handler.Handle(
             new UpdateOrganizationLockerServiceabilityCommand(

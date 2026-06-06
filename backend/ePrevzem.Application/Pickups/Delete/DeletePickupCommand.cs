@@ -18,17 +18,20 @@ public sealed class DeletePickupCommandHandler : IRequestHandler<DeletePickupCom
     private readonly IEmployeeAccountRepository _employeeRepository;
     private readonly IOrganizationAdminAccountRepository _adminRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IClock _clock;
 
     public DeletePickupCommandHandler(
         IPackageRepository packageRepository,
         IEmployeeAccountRepository employeeRepository,
         IOrganizationAdminAccountRepository adminRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IClock clock)
     {
         _packageRepository = packageRepository;
         _employeeRepository = employeeRepository;
         _adminRepository = adminRepository;
         _unitOfWork = unitOfWork;
+        _clock = clock;
     }
 
     public async Task Handle(DeletePickupCommand command, CancellationToken cancellationToken)
@@ -39,18 +42,18 @@ public sealed class DeletePickupCommandHandler : IRequestHandler<DeletePickupCom
             cancellationToken)
             ?? throw new PickupNotFoundException(command.PickupId);
 
-        await EnsureCanManagePickup(command, package.OrganizationId, cancellationToken);
-
         if (package.Status != PackageStatus.AwaitingPlacement || package.Placements.Count != 0)
             throw new PickupDeletionForbiddenException();
+
+        await MarkDeleted(command, package, cancellationToken);
 
         _packageRepository.Remove(package);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task EnsureCanManagePickup(
+    private async Task MarkDeleted(
         DeletePickupCommand command,
-        OrganizationId organizationId,
+        Package package,
         CancellationToken cancellationToken)
     {
         if (command.ActorRole == "OrganizationAdmin")
@@ -59,9 +62,12 @@ public sealed class DeletePickupCommandHandler : IRequestHandler<DeletePickupCom
                 new OrganizationAdminAccountId(command.ActorId),
                 cancellationToken);
             if (admin is not null
-                && admin.OrganizationId == organizationId
+                && admin.OrganizationId == package.OrganizationId
                 && admin.Status == OrganizationAdminAccountStatus.Active)
+            {
+                package.MarkDeleted(admin.Id, _clock.UtcNow);
                 return;
+            }
         }
         else if (command.ActorRole == "Employee")
         {
@@ -69,10 +75,13 @@ public sealed class DeletePickupCommandHandler : IRequestHandler<DeletePickupCom
                 new EmployeeAccountId(command.ActorId),
                 cancellationToken);
             if (employee is not null
-                && employee.OrganizationId == organizationId
+                && employee.OrganizationId == package.OrganizationId
                 && employee.Status == EmployeeAccountStatus.Active
                 && employee.CanManageRecords)
+            {
+                package.MarkDeleted(employee.Id, _clock.UtcNow);
                 return;
+            }
         }
 
         throw new PickupManagementForbiddenException();

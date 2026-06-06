@@ -18,15 +18,18 @@ public sealed class UpdateOrganizationLockerServiceabilityCommandHandler
     private readonly IStationClaimRepository _claimRepository;
     private readonly IPickupStationRepository _stationRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IClock _clock;
 
     public UpdateOrganizationLockerServiceabilityCommandHandler(
         IStationClaimRepository claimRepository,
         IPickupStationRepository stationRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IClock clock)
     {
         _claimRepository = claimRepository;
         _stationRepository = stationRepository;
         _unitOfWork = unitOfWork;
+        _clock = clock;
     }
 
     public async Task<OrganizationPickupStationResponse> Handle(
@@ -44,7 +47,7 @@ public sealed class UpdateOrganizationLockerServiceabilityCommandHandler
         if (station.Lockers.All(x => x.Id.Value != command.LockerId))
             throw new OrganizationLockerNotFoundException(command.LockerId);
 
-        station.SetLockerServiceability(new LockerId(command.LockerId), command.IsServiceable);
+        station.SetLockerServiceability(new LockerId(command.LockerId), command.IsServiceable, _clock.UtcNow);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return OrganizationPickupStationResponse.From(claim, station);
