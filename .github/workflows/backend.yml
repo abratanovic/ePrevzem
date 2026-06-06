@@ -1,6 +1,9 @@
 name: backend-build
 "on":
   pull_request:
+permissions:
+  contents: read
+  pull-requests: read
 jobs:
   build:
     name: backend-build
