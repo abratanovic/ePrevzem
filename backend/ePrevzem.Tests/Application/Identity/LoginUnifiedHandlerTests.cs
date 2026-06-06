@@ -200,6 +200,7 @@ public sealed class TestTokenServiceForUnifiedLogin : ITokenService
     public AccessTokenResult IssueAccessToken(SystemAdmin a) => new("sys_token", DateTimeOffset.UtcNow.AddMinutes(15));
     public AccessTokenResult IssueAccessToken(OrganizationAdminAccount a) => new("org_token", DateTimeOffset.UtcNow.AddMinutes(15));
     public AccessTokenResult IssueAccessToken(EmployeeAccount e) => new("emp_token", DateTimeOffset.UtcNow.AddMinutes(15));
+    public AccessTokenResult IssueAccessToken(CitizenUser citizen) => new("citizen_token", DateTimeOffset.UtcNow.AddMinutes(15));
     public RefreshTokenResult IssueRefreshToken(DateTimeOffset now) => new("refresh_plain", "refresh_hash", now.AddDays(14));
 }
 
