@@ -1,20 +1,29 @@
 name: mobile-build
 "on":
   pull_request:
-    paths:
-      - "ePrevzemMobile/**"
-      - ".github/workflows/mobile.yml"
+permissions:
+  contents: read
+  pull-requests: read
 jobs:
   build:
+    name: mobile-build
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ePrevzemMobile
     steps:
       - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            mobile:
+              - "ePrevzemMobile/**"
+              - ".github/workflows/mobile.yml"
       - uses: actions/setup-java@v4
+        if: steps.changes.outputs.mobile == 'true'
         with:
           distribution: temurin
           java-version: "17"
       - uses: gradle/actions/setup-gradle@v3
-      - run: ./gradlew :composeApp:compileCommonMainKotlinMetadata :composeApp:testDebugUnitTest
+        if: steps.changes.outputs.mobile == 'true'
+      - if: steps.changes.outputs.mobile == 'true'
+        working-directory: ePrevzemMobile
+        run: ./gradlew :composeApp:compileCommonMainKotlinMetadata :composeApp:testDebugUnitTest
