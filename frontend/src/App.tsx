@@ -18,6 +18,7 @@ import OrganizationPage from "./pages/OrganizationPage";
 import OrganizationMembersPage from "./pages/OrganizationMembersPage";
 import AddPickupPage from "./pages/AddPickupPage";
 import PickupsPage from "./pages/PickupsPage";
+import AuditLogPage from "./pages/AuditLogPage";
 
 export default function App() {
   return (
@@ -41,6 +42,7 @@ export default function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/prevzemi" element={<PickupsPage />} />
             <Route path="/prevzemi/dodaj" element={<AddPickupPage />} />
+            <Route path="/audit-log" element={<AuditLogPage />} />
             <Route path="/profil" element={<ProfilePage />} />
             <Route path="/paketniki" element={<OrganizationAdminRoute><PickupStationsPage /></OrganizationAdminRoute>} />
             <Route path="/paketniki/dodaj" element={<OrganizationAdminRoute><AddPickupStationPage /></OrganizationAdminRoute>} />
