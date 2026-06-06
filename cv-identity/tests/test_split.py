@@ -2,8 +2,8 @@ from training.split import split_by_identity
 
 
 def _records():
-    # (person, path) — 5 people, 2 images each.
-    people = ["alen", "edvin", "maja", "luka", "ana"]
+    # (person, path) — 3 people, 2 images each.
+    people = ["adnan", "edvin", "emir"]
     return [(p, f"{p}_{i}.jpg") for p in people for i in range(2)]
 
 

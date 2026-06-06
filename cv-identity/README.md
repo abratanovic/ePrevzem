@@ -21,8 +21,8 @@ pytest -v
 ## Capture data
 
 ```bash
-python scripts/capture.py --class live  --person alen
-python scripts/capture.py --class spoof --person alen
+python scripts/capture.py --class live  --person adnan
+python scripts/capture.py --class spoof --person adnan
 ```
 
 See `dataset/README.md` for the capture protocol and folder layout.

@@ -1,8 +1,8 @@
 """Capture webcam frames into the dataset folder layout.
 
 Usage:
-    python scripts/capture.py --class live  --person alen
-    python scripts/capture.py --class spoof --person alen
+    python scripts/capture.py --class live  --person adnan
+    python scripts/capture.py --class spoof --person adnan
 
 Keys while the window is open:
     SPACE — save the current frame

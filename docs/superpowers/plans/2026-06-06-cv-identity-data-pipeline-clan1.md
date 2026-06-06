@@ -181,8 +181,8 @@ pytest -v
 ## Capture data
 
 ```bash
-python scripts/capture.py --class live  --person alen
-python scripts/capture.py --class spoof --person alen
+python scripts/capture.py --class live  --person adnan
+python scripts/capture.py --class spoof --person adnan
 ```
 
 See `dataset/README.md` for the capture protocol and folder layout.
@@ -878,8 +878,8 @@ from training.split import split_by_identity
 
 
 def _records():
-    # (person, path) — 5 people, 2 images each.
-    people = ["alen", "edvin", "maja", "luka", "ana"]
+    # (person, path) — 3 people, 2 images each.
+    people = ["adnan", "edvin", "emir"]
     return [(p, f"{p}_{i}.jpg") for p in people for i in range(2)]
 
 
@@ -978,8 +978,8 @@ git commit -m "PRVZM-68 feat(cv-identity): add leakage-free split by identity"
 """Capture webcam frames into the dataset folder layout.
 
 Usage:
-    python scripts/capture.py --class live  --person alen
-    python scripts/capture.py --class spoof --person alen
+    python scripts/capture.py --class live  --person adnan
+    python scripts/capture.py --class spoof --person adnan
 
 Keys while the window is open:
     SPACE — save the current frame
