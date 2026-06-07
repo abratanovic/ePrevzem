@@ -4,7 +4,9 @@ import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
 import si.mentis.eprevzemmobile.data.api.ApiClient
 import si.mentis.eprevzemmobile.data.api.DeviceSessionDto
 import si.mentis.eprevzemmobile.data.api.OnboardingPreviewDto
@@ -57,6 +59,7 @@ class HttpRegistrationRepository(
                 label = null,
             )
             val response = api.client.post("${api.baseUrl}/api/onboarding/$validatedCode/redeem") {
+                contentType(ContentType.Application.Json)
                 setBody(request)
             }
             if (response.status.value !in 200..299) {
