@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -145,7 +144,7 @@ private fun AccountTypeLabel(account: AccountRow) {
         ?: typeText
     Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(50))
+            .clip(EPrevzemTheme.shapes.pill)
             .background(colors.surfaceMuted)
             .padding(horizontal = 10.dp, vertical = 4.dp),
     ) {
