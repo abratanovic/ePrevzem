@@ -2,6 +2,7 @@ package si.mentis.eprevzemmobile.feature.profile
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -9,6 +10,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import si.mentis.eprevzemmobile.AppContainer
+import si.mentis.eprevzemmobile.data.auth.SessionStore
 import si.mentis.eprevzemmobile.data.security.SecurityRepository
 import si.mentis.eprevzemmobile.data.settings.UserSettingsRepository
 import si.mentis.eprevzemmobile.domain.AppUser
@@ -23,11 +25,14 @@ import si.mentis.eprevzemmobile.domain.AppUser
 fun ProfileContent(
     user: AppUser,
     onAddAccount: () -> Unit,
+    onSwitchAccount: (String) -> Unit,
     onUserUpdated: (AppUser) -> Unit,
     securityRepository: SecurityRepository = AppContainer.securityRepository,
     userSettingsRepository: UserSettingsRepository = AppContainer.userSettingsRepository,
+    sessionStore: SessionStore = AppContainer.sessionStore,
 ) {
     val scope = rememberCoroutineScope()
+    val profiles by sessionStore.profiles.collectAsState()
     var state by remember(user.id) {
         mutableStateOf(
             ProfileUiState(
@@ -36,6 +41,10 @@ fun ProfileContent(
                 isBiometricEnabled = user.isBiometricEnabled,
             )
         )
+    }
+
+    LaunchedEffect(profiles, user.id) {
+        state = state.copy(accounts = profiles.toProfileAccounts(activeId = user.id))
     }
 
     LaunchedEffect(user.id) {
@@ -215,9 +224,43 @@ fun ProfileContent(
                         }
                     }
                 }
-                ProfileUiEvent.AddAccountClicked -> onAddAccount()
+                ProfileUiEvent.AvatarClicked -> {
+                    state = state.copy(isAccountSwitcherVisible = true)
+                }
+                ProfileUiEvent.AccountSwitcherDismissed -> {
+                    state = state.copy(isAccountSwitcherVisible = false)
+                }
+                is ProfileUiEvent.SwitchAccountRequested -> {
+                    state = state.copy(isAccountSwitcherVisible = false)
+                    onSwitchAccount(event.accountId)
+                }
+                ProfileUiEvent.AddAccountClicked -> {
+                    state = state.copy(isAccountSwitcherVisible = false)
+                    onAddAccount()
+                }
             }
         },
+    )
+}
+
+private fun List<AppUser>.toProfileAccounts(activeId: String): List<ProfileAccount> =
+    map { user -> user.toProfileAccount(isActive = user.id == activeId) }
+        .sortedByDescending { it.isActive }
+
+private fun AppUser.toProfileAccount(isActive: Boolean): ProfileAccount = when (this) {
+    is AppUser.Employee -> ProfileAccount(
+        id = id,
+        fullName = fullName,
+        roleLabel = organizationName.takeIf { it.isNotBlank() }
+            ?.let { "Zaposleni · $it" }
+            ?: "Zaposleni",
+        isActive = isActive,
+    )
+    is AppUser.RegularUser -> ProfileAccount(
+        id = id,
+        fullName = fullName,
+        roleLabel = "Občan",
+        isActive = isActive,
     )
 }
 

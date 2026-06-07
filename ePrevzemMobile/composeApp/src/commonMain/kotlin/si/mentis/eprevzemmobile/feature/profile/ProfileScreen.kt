@@ -1,15 +1,29 @@
 package si.mentis.eprevzemmobile.feature.profile
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import si.mentis.eprevzemmobile.core.designsystem.components.avatar.EAvatar
+import si.mentis.eprevzemmobile.core.designsystem.components.avatar.avatarInitials
 import si.mentis.eprevzemmobile.core.designsystem.components.buttons.EPrimaryButton
 import si.mentis.eprevzemmobile.core.designsystem.components.buttons.ESecondaryButton
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.EDetailsCard
@@ -37,10 +51,21 @@ data class ProfileData(
     val organizationLocation: String = "",
 )
 
+/** One identity registered on this device, as shown in the account switcher. */
+@Immutable
+data class ProfileAccount(
+    val id: String,
+    val fullName: String,
+    val roleLabel: String,
+    val isActive: Boolean,
+)
+
 @Immutable
 data class ProfileUiState(
     val userName: String = "",
     val profile: ProfileData = ProfileData(),
+    val accounts: List<ProfileAccount> = emptyList(),
+    val isAccountSwitcherVisible: Boolean = false,
     val isBiometricEnabled: Boolean = false,
     val areNotificationsEnabled: Boolean = false,
     val isBiometricPinSheetVisible: Boolean = false,
@@ -58,6 +83,7 @@ data class ProfileUiState(
     val isUpdatingSettings: Boolean = false,
     val settingsError: String? = null,
 ) {
+    val activeAccount: ProfileAccount? get() = accounts.firstOrNull { it.isActive }
     val canConfirmBiometric: Boolean get() = biometricPin.length == BIOMETRIC_PIN_LENGTH
     val isNewPinMismatch: Boolean get() =
         newPin.length == PIN_LENGTH && newPinConfirmation.length == PIN_LENGTH && newPin != newPinConfirmation
@@ -89,6 +115,9 @@ sealed interface ProfileUiEvent {
     data object NewPinVisibilityToggled : ProfileUiEvent
     data object NewPinConfirmationVisibilityToggled : ProfileUiEvent
     data object ChangePinConfirmed : ProfileUiEvent
+    data object AvatarClicked : ProfileUiEvent
+    data object AccountSwitcherDismissed : ProfileUiEvent
+    data class SwitchAccountRequested(val accountId: String) : ProfileUiEvent
     data object AddAccountClicked : ProfileUiEvent
 }
 
@@ -106,23 +135,12 @@ fun ProfileScreen(
     val typo = EPrevzemTheme.typography
     val profile = state.profile
 
-    Column(verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
-        Text(
-            text = "PROFIL",
-            style = typo.caption,
-            color = colors.textMuted,
-        )
-        Text(
-            text = profile.fullName.ifBlank { state.userName },
-            style = typo.title,
-            color = colors.textPrimary,
-        )
-        Text(
-            text = profile.organizationName,
-            style = typo.body,
-            color = colors.textSecondary,
-        )
-    }
+    ProfileHeaderControl(
+        fullName = profile.fullName.ifBlank { state.userName },
+        roleLabel = state.activeAccount?.roleLabel
+            ?: profile.organizationName.takeIf { it.isNotBlank() }.orEmpty(),
+        onClick = { onEvent(ProfileUiEvent.AvatarClicked) },
+    )
 
     if (state.settingsError != null && !state.isBiometricPinSheetVisible) {
         EErrorBanner(title = state.settingsError)
@@ -195,22 +213,188 @@ fun ProfileScreen(
                 enabled = !state.isUpdatingSettings && !state.isChangingPin,
                 onClick = { onEvent(ProfileUiEvent.ChangePinClicked) },
             )
-            EDetailsDivider()
-            SettingsActionRow(
-                icon = EPrevzemIcons.profile(),
-                title = "Dodaj račun",
-                description = "Registrirajte dodaten račun na tej napravi z registracijsko kodo.",
-                enabled = true,
-                onClick = { onEvent(ProfileUiEvent.AddAccountClicked) },
-            )
         }
     }
 
+    if (state.isAccountSwitcherVisible) {
+        AccountSwitcherSheet(state = state, onEvent = onEvent)
+    }
     if (state.isBiometricPinSheetVisible) {
         BiometricPinSheet(state = state, onEvent = onEvent)
     }
     if (state.isChangePinSheetVisible) {
         ChangePinSheet(state = state, onEvent = onEvent)
+    }
+}
+
+@Composable
+private fun ProfileHeaderControl(
+    fullName: String,
+    roleLabel: String,
+    onClick: () -> Unit,
+) {
+    val colors = EPrevzemTheme.colors
+    val spacing = EPrevzemTheme.spacing
+    val typo = EPrevzemTheme.typography
+    val shape = EPrevzemTheme.shapes.large
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(spacing.md),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(colors.surface)
+            .border(1.dp, colors.border, shape)
+            .clickable(onClick = onClick)
+            .padding(spacing.md),
+    ) {
+        EAvatar(initials = avatarInitials(fullName), size = 56.dp)
+        Column(
+            verticalArrangement = Arrangement.spacedBy(spacing.xxs),
+            modifier = Modifier.weight(1f),
+        ) {
+            Text(
+                text = fullName,
+                style = typo.title,
+                color = colors.textPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (roleLabel.isNotBlank()) {
+                Text(
+                    text = roleLabel,
+                    style = typo.bodySmall,
+                    color = colors.textSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        Icon(
+            painter = EPrevzemIcons.unfoldMore(),
+            contentDescription = "Zamenjaj račun",
+            tint = colors.textMuted,
+            modifier = Modifier.size(22.dp),
+        )
+    }
+}
+
+@Composable
+private fun AccountSwitcherSheet(
+    state: ProfileUiState,
+    onEvent: (ProfileUiEvent) -> Unit,
+) {
+    val spacing = EPrevzemTheme.spacing
+
+    EBottomSheet(
+        title = "Zamenjaj račun",
+        onDismiss = { onEvent(ProfileUiEvent.AccountSwitcherDismissed) },
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(spacing.xxs)) {
+            state.accounts.forEach { account ->
+                AccountSwitcherRow(
+                    account = account,
+                    onClick = {
+                        if (!account.isActive) {
+                            onEvent(ProfileUiEvent.SwitchAccountRequested(account.id))
+                        }
+                    },
+                )
+            }
+            AddProfileRow(onClick = { onEvent(ProfileUiEvent.AddAccountClicked) })
+        }
+    }
+}
+
+@Composable
+private fun AccountSwitcherRow(
+    account: ProfileAccount,
+    onClick: () -> Unit,
+) {
+    val colors = EPrevzemTheme.colors
+    val spacing = EPrevzemTheme.spacing
+    val typo = EPrevzemTheme.typography
+    val shape = EPrevzemTheme.shapes.medium
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(spacing.md),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(if (account.isActive) colors.primary50 else colors.surface)
+            .clickable(enabled = !account.isActive, onClick = onClick)
+            .padding(horizontal = spacing.sm, vertical = spacing.sm),
+    ) {
+        EAvatar(initials = avatarInitials(account.fullName), size = 44.dp)
+        Column(
+            verticalArrangement = Arrangement.spacedBy(spacing.xxs),
+            modifier = Modifier.weight(1f),
+        ) {
+            Text(
+                text = account.fullName,
+                style = typo.body.copy(fontWeight = FontWeight.SemiBold),
+                color = colors.textPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (account.roleLabel.isNotBlank()) {
+                Text(
+                    text = account.roleLabel,
+                    style = typo.bodySmall,
+                    color = colors.textSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        if (account.isActive) {
+            Icon(
+                painter = EPrevzemIcons.success(),
+                contentDescription = "Prijavljeni račun",
+                tint = colors.primary,
+                modifier = Modifier.size(22.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun AddProfileRow(onClick: () -> Unit) {
+    val colors = EPrevzemTheme.colors
+    val spacing = EPrevzemTheme.spacing
+    val typo = EPrevzemTheme.typography
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(spacing.md),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(EPrevzemTheme.shapes.medium)
+            .clickable(onClick = onClick)
+            .padding(horizontal = spacing.sm, vertical = spacing.sm),
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(colors.primary50)
+                .border(1.dp, colors.primary100, CircleShape),
+        ) {
+            Icon(
+                painter = EPrevzemIcons.add(),
+                contentDescription = null,
+                tint = colors.primary,
+                modifier = Modifier.size(22.dp),
+            )
+        }
+        Text(
+            text = "Dodaj profil",
+            style = typo.body.copy(fontWeight = FontWeight.SemiBold),
+            color = colors.primary,
+        )
     }
 }
 

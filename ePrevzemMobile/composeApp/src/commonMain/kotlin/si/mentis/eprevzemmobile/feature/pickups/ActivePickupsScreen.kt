@@ -85,6 +85,7 @@ fun ActivePickupsRoute(
     user: AppUser,
     onPickupClicked: (String) -> Unit,
     onAddAccount: () -> Unit = {},
+    onSwitchAccount: (String) -> Unit = {},
     onUserUpdated: (AppUser) -> Unit = {},
     repository: PickupRepository = AppContainer.pickupRepository,
     modifier: Modifier = Modifier,
@@ -113,6 +114,7 @@ fun ActivePickupsRoute(
             ProfileContent(
                 user = user,
                 onAddAccount = onAddAccount,
+                onSwitchAccount = onSwitchAccount,
                 onUserUpdated = onUserUpdated,
             )
         },

@@ -15,6 +15,7 @@ fun OperatorHomeRoute(
     user: AppUser.Employee,
     onScanQrClicked: () -> Unit,
     onAddAccount: () -> Unit = {},
+    onSwitchAccount: (String) -> Unit = {},
     onUserUpdated: (AppUser) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -28,6 +29,7 @@ fun OperatorHomeRoute(
             ProfileContent(
                 user = user,
                 onAddAccount = onAddAccount,
+                onSwitchAccount = onSwitchAccount,
                 onUserUpdated = onUserUpdated,
             )
         },
