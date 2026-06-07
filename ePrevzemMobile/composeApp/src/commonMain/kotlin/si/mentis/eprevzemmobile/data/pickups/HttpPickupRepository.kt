@@ -80,6 +80,8 @@ class HttpPickupRepository(
         locationName = locationName,
         locationAddress = locationAddress,
         lockerNumber = formatLocker(lockerNumber),
+        latitude = latitude,
+        longitude = longitude,
         unlockedAt = formatTime(pickedUpAt),
     )
 }
