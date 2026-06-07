@@ -71,7 +71,7 @@ fun WelcomeScreen(
 ) {
     EScaffold(
         modifier = modifier,
-        topBar = { ETopBar(variant = ETopBarVariant.Home, eyebrow = "Republika Slovenija", actionIcon = null, onAction = null) },
+        topBar = { ETopBar(variant = ETopBarVariant.Home, actionIcon = null, onAction = null) },
         bottomBar = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(EPrevzemTheme.spacing.sm),

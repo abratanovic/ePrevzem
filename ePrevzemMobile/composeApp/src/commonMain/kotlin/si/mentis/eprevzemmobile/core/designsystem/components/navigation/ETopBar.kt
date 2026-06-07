@@ -1,15 +1,18 @@
 package si.mentis.eprevzemmobile.core.designsystem.components.navigation
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.clickable
 import androidx.compose.material3.Icon
@@ -20,11 +23,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import si.mentis.eprevzemmobile.core.designsystem.components.cards.EIconChip
-import si.mentis.eprevzemmobile.core.designsystem.components.cards.EIconTint
+import eprevzemmobile.composeapp.generated.resources.Res
+import eprevzemmobile.composeapp.generated.resources.rs_logo
+import org.jetbrains.compose.resources.painterResource
 import si.mentis.eprevzemmobile.core.designsystem.icons.EPrevzemIcons
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
 
@@ -41,7 +46,6 @@ fun ETopBar(
     actionIcon: Painter? = EPrevzemIcons.settings(),
     onAction: (() -> Unit)? = null,
     notificationCount: Int = 0,
-    leadingIcon: Painter? = null,
     userInitials: String? = null,
 ) {
     val colors = EPrevzemTheme.colors
@@ -62,19 +66,27 @@ fun ETopBar(
             if (variant == ETopBarVariant.Detail && onBack != null) {
                 TopBarCircleButton(icon = EPrevzemIcons.back(), onClick = onBack)
             }
-            if (variant == ETopBarVariant.Home && leadingIcon != null) {
-                EIconChip(painter = leadingIcon, tint = EIconTint.Green)
-            }
             Box(modifier = Modifier.weight(1f)) {
                 when (variant) {
-                    ETopBarVariant.Home -> Column {
-                        if (eyebrow != null) {
-                            Text(
-                                text = eyebrow.uppercase(),
-                                style = typo.caption.copy(letterSpacing = 1.0.sp, fontSize = 11.sp),
-                                color = Color.White.copy(alpha = 0.7f),
-                            )
-                        }
+                    // Shared home brand: Republika Slovenija emblem + wordmark, then the
+                    // service name — mirrors the SI-PASS web header (logo | divider | service).
+                    // Same header for every home screen (operator and citizen).
+                    ETopBarVariant.Home -> Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Image(
+                            painter = painterResource(Res.drawable.rs_logo),
+                            contentDescription = "Republika Slovenija",
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.height(28.dp),
+                        )
+                        Box(
+                            modifier = Modifier
+                                .height(28.dp)
+                                .width(1.dp)
+                                .background(Color.White.copy(alpha = 0.3f)),
+                        )
                         Text(
                             text = appName,
                             style = typo.section.copy(fontSize = 18.sp, fontWeight = FontWeight.Bold),

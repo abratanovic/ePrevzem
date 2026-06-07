@@ -51,7 +51,6 @@ fun ActivePickupsScreen(
         topBar = {
             ETopBar(
                 variant = ETopBarVariant.Home,
-                leadingIcon = EPrevzemIcons.organization(),
                 userInitials = state.userName.split(" ")
                     .mapNotNull { it.firstOrNull()?.toString() }
                     .take(2)
