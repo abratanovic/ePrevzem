@@ -270,12 +270,16 @@ fun PickupDetailsRoute(
                 PickupDetailsEvent.Share -> {}
                 PickupDetailsEvent.UnlockClicked -> state = state.copy(showUnlockDialog = true)
                 PickupDetailsEvent.UnlockConfirmed -> {
-                    val biometricEnabled = user?.isBiometricEnabled ?: true
-                    state = state.copy(
-                        showUnlockDialog = false,
-                        showBiometricSheet = biometricEnabled,
-                        showPinSheet = !biometricEnabled,
-                    )
+                    val accountId = user?.id
+                    state = state.copy(showUnlockDialog = false)
+                    scope.launch {
+                        val biometricEnabled =
+                            accountId?.let { securityRepository.isBiometricEnabled(it) } ?: false
+                        state = state.copy(
+                            showBiometricSheet = biometricEnabled,
+                            showPinSheet = !biometricEnabled,
+                        )
+                    }
                 }
                 PickupDetailsEvent.UnlockCancelled -> state = state.copy(
                     showUnlockDialog = false,

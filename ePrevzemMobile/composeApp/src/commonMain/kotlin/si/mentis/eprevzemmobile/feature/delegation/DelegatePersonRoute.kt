@@ -109,11 +109,19 @@ fun DelegatePersonRoute(
                         state = state.copy(isLoading = true, errorTitle = null, errorMessage = null)
                     }
                 }
-                DelegatePersonEvent.PersonSelected -> state = state.copy(
-                    phase = DelegatePersonPhase.Confirming,
-                    showBiometricSheet = true,
-                    confirmError = null,
-                )
+                DelegatePersonEvent.PersonSelected -> {
+                    state = state.copy(
+                        phase = DelegatePersonPhase.Confirming,
+                        confirmError = null,
+                    )
+                    scope.launch {
+                        val biometricEnabled = securityRepository.isBiometricEnabled(accountId)
+                        state = state.copy(
+                            showBiometricSheet = biometricEnabled,
+                            showPinSheet = !biometricEnabled,
+                        )
+                    }
+                }
                 DelegatePersonEvent.BiometricSelected -> state = state.copy(
                     showPinSheet = false,
                     showBiometricSheet = true,
