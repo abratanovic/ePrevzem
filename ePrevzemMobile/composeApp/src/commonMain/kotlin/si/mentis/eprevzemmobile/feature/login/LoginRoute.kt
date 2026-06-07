@@ -93,7 +93,12 @@ fun LoginRoute(
     }
 
     LaunchedEffect(Unit) {
-        authWithBiometric()
+        if (securityRepository.isBiometricEnabled(accountId)) {
+            state = state.copy(isBiometricAvailable = true)
+            authWithBiometric()
+        } else {
+            state = state.copy(phase = LoginPhase.Pin, isBiometricAvailable = false)
+        }
     }
 
     LoginScreen(

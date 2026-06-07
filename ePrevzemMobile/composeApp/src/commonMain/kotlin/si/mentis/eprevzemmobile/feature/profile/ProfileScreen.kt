@@ -154,28 +154,34 @@ fun ProfileScreen(
                 label = "Ime in priimek",
                 value = profile.fullName,
             )
-            EDetailsDivider()
-            EDetailsRow(
-                icon = EPrevzemIcons.inbox(),
-                label = "E-pošta",
-                value = profile.email,
-                tint = EIconTint.Teal,
-            )
-            EDetailsDivider()
-            EDetailsRow(
-                icon = EPrevzemIcons.notifications(),
-                label = "Telefon",
-                value = profile.phone,
-                tint = EIconTint.Teal,
-                mono = true,
-            )
-            EDetailsDivider()
-            EDetailsRow(
-                icon = EPrevzemIcons.clock(),
-                label = "Veljavnost",
-                value = "Do ${profile.validUntil}",
-                tint = EIconTint.Gold,
-            )
+            if (profile.email.isNotEmpty()) {
+                EDetailsDivider()
+                EDetailsRow(
+                    icon = EPrevzemIcons.inbox(),
+                    label = "E-pošta",
+                    value = profile.email,
+                    tint = EIconTint.Teal,
+                )
+            }
+            if (profile.phone.isNotEmpty()) {
+                EDetailsDivider()
+                EDetailsRow(
+                    icon = EPrevzemIcons.notifications(),
+                    label = "Telefon",
+                    value = profile.phone,
+                    tint = EIconTint.Teal,
+                    mono = true,
+                )
+            }
+            if (profile.validUntil.isNotEmpty()) {
+                EDetailsDivider()
+                EDetailsRow(
+                    icon = EPrevzemIcons.clock(),
+                    label = "Veljavnost",
+                    value = "Do ${profile.validUntil}",
+                    tint = EIconTint.Gold,
+                )
+            }
         }
     }
 
@@ -193,18 +199,18 @@ fun ProfileScreen(
                     onEvent(ProfileUiEvent.BiometricToggleRequested(enabled))
                 },
             )
-            EDetailsDivider()
-            SettingsSwitchRow(
-                icon = EPrevzemIcons.notifications(),
-                title = "Obvestila o prevzemih",
-                description = "Prejmite obvestilo, ko vas čaka nov dokument ali se bliža rok prevzema.",
-                checked = state.areNotificationsEnabled,
-                enabled = !state.isUpdatingSettings,
-                tint = EIconTint.Teal,
-                onCheckedChange = { enabled ->
-                    onEvent(ProfileUiEvent.NotificationsToggled(enabled))
-                },
-            )
+//            EDetailsDivider()
+//            SettingsSwitchRow(
+//                icon = EPrevzemIcons.notifications(),
+//                title = "Obvestila o prevzemih",
+//                description = "Prejmite obvestilo, ko vas čaka nov dokument ali se bliža rok prevzema.",
+//                checked = state.areNotificationsEnabled,
+//                enabled = !state.isUpdatingSettings,
+//                tint = EIconTint.Teal,
+//                onCheckedChange = { enabled ->
+//                    onEvent(ProfileUiEvent.NotificationsToggled(enabled))
+//                },
+//            )
             EDetailsDivider()
             SettingsActionRow(
                 icon = EPrevzemIcons.key(),

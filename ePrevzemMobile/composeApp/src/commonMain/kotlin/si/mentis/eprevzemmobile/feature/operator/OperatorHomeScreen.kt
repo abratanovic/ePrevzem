@@ -95,7 +95,6 @@ fun OperatorHomeScreen(
             when (state.activeTab) {
                 OperatorTab.Pickups -> {
                     Column(verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
-                        Text(text = "DOBRODOŠLI", style = typo.caption, color = colors.textMuted)
                         Text(
                             text = "Pozdravljeni, ${state.userName}",
                             style = typo.display,
@@ -180,13 +179,13 @@ private fun ScanPanel(
                     modifier = Modifier.size(52.dp),
                 )
             }
-            Text(
-                text = "Skeniraj QR kodo na paketniku",
-                style = typo.title,
-                color = colors.textPrimary,
-            )
+//            Text(
+//                text = "Skeniraj QR kodo na paketniku",
+//                style = typo.title,
+//                color = colors.textPrimary,
+//            )
             EPrimaryButton(
-                label = "Začni skeniranje",
+                label = "Skeniraj QR kodo na paketomatu",
                 onClick = onClick,
                 modifier = Modifier
                     .fillMaxWidth()

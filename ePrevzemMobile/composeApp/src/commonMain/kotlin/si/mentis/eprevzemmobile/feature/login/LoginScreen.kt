@@ -158,8 +158,12 @@ private fun PinPhase(
                 value = state.pin,
                 onDigit = { digit -> onEvent(LoginEvent.PinDigitEntered(digit)) },
                 onBackspace = { onEvent(LoginEvent.PinBackspaceClicked) },
-                onSwitchToFallback = { onEvent(LoginEvent.BiometricRequested) },
-                switchFallbackLabel = LoginStrings.SwitchToBiometricCta,
+                onSwitchToFallback = if (state.isBiometricAvailable) {
+                    { onEvent(LoginEvent.BiometricRequested) }
+                } else {
+                    null
+                },
+                switchFallbackLabel = if (state.isBiometricAvailable) LoginStrings.SwitchToBiometricCta else null,
             )
             ETextButton(
                 label = LoginStrings.ResetSecureStorageCta,

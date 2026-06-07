@@ -5,6 +5,8 @@ import si.mentis.eprevzemmobile.data.auth.AuthSession
 import si.mentis.eprevzemmobile.data.auth.DeviceSessionStore
 import si.mentis.eprevzemmobile.data.auth.PersistedSessionStore
 import si.mentis.eprevzemmobile.data.auth.SessionStore
+import si.mentis.eprevzemmobile.data.dashboard.DashboardRepository
+import si.mentis.eprevzemmobile.data.dashboard.HttpDashboardRepository
 import si.mentis.eprevzemmobile.data.delegation.DelegationRepository
 import si.mentis.eprevzemmobile.data.delegation.FakeDelegationRepository
 import si.mentis.eprevzemmobile.data.insertion.HttpInsertionRepository
@@ -33,6 +35,7 @@ object AppContainer {
     )
     val registrationRepository: RegistrationRepository = HttpRegistrationRepository(apiClient, deviceSessionStore)
     val pickupRepository: PickupRepository = HttpPickupRepository(apiClient)
+    val dashboardRepository: DashboardRepository = HttpDashboardRepository(apiClient)
     val delegationRepository: DelegationRepository = FakeDelegationRepository()
     val logEventRepository: LogEventRepository =
         HttpLogEventRepository(apiClient) { sessionStore.activeProfile() }

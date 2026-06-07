@@ -122,6 +122,9 @@ public sealed class PickupReadRepository : IPickupReadRepository
             x => x.Status != PackageStatus.PickedUp && x.Status != PackageStatus.Cancelled,
             cancellationToken);
         var activePickupsTrend = await packages.CountAsync(x => x.CreatedAt >= thirtyDaysAgo, cancellationToken);
+        var awaitingPlacement = await packages.CountAsync(
+            x => x.Status == PackageStatus.AwaitingPlacement,
+            cancellationToken);
         var pendingPickups = await packages.CountAsync(x => x.Status == PackageStatus.InLocker, cancellationToken);
         var pendingExpiresToday = await packages.CountAsync(
             x => x.Status == PackageStatus.InLocker
@@ -146,6 +149,7 @@ public sealed class PickupReadRepository : IPickupReadRepository
         return new DashboardStatsResponse(
             activePickups,
             activePickupsTrend,
+            awaitingPlacement,
             pendingPickups,
             pendingExpiresToday,
             occupiedLockers,
