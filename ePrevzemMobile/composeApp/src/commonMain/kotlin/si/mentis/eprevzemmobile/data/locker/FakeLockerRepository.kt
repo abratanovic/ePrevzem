@@ -3,7 +3,11 @@ package si.mentis.eprevzemmobile.data.locker
 import kotlinx.coroutines.delay
 
 class FakeLockerRepository : LockerRepository {
-    override suspend fun openBox(boxId: Long, tokenFormat: Int): OpenBoxResult {
+    override suspend fun openForPickup(pickupId: String): OpenBoxResult = fakeOpen()
+
+    override suspend fun openForInsertion(packageId: String, lockerId: String): OpenBoxResult = fakeOpen()
+
+    private suspend fun fakeOpen(): OpenBoxResult {
         delay(800)
         // Minimal 44-byte WAV header with zero data — enough for MediaPlayer to start/finish.
         return OpenBoxResult.Success(EMPTY_WAV)

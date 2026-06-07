@@ -10,15 +10,6 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
 }
 
-val direct4MeApiKey: String = run {
-    val props = Properties()
-    val localPropsFile = rootProject.file("local.properties")
-    if (localPropsFile.exists()) {
-        localPropsFile.inputStream().use { props.load(it) }
-    }
-    props.getProperty("direct4me.api.key", "")
-}
-
 // ePrevzem backend base URL config
 // Developer can override via local.properties: eprevzem.api.base.url=http://10.0.2.2:5080
 val eprevzemApiBaseUrl: String = run {
@@ -98,7 +89,6 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
-        buildConfigField("String", "DIRECT4ME_API_KEY", "\"$direct4MeApiKey\"")
         buildConfigField("String", "EPREVZEM_API_BASE_URL", "\"$eprevzemApiBaseUrl\"")
     }
     buildFeatures {

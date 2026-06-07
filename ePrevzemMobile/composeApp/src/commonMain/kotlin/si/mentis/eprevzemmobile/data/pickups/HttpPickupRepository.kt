@@ -42,6 +42,19 @@ class HttpPickupRepository(
         }
     }
 
+    override suspend fun confirmPickup(pickupId: String): Result<Unit> {
+        return try {
+            val response = api.authorizedPost("/api/citizen/pickups/$pickupId/confirm-pickup")
+            if (response.status.value in 200..299) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Confirm failed: ${response.status.value}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     private fun CitizenPickupDto.toPickupItem(): PickupItem = PickupItem(
         id = id,
         title = description,
