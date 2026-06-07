@@ -48,6 +48,7 @@ class HttpAuthRepository(
             }
             val dto = response.body<si.mentis.eprevzemmobile.data.api.DeviceSessionDto>()
             sessionStore.updateTokens(
+                accountId = deviceId,
                 accessToken = dto.accessToken,
                 accessExpiresAt = dto.accessTokenExpiresAt,
                 refreshToken = dto.refreshToken,
