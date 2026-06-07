@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.Painter
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.EDetailsCard
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.EDetailsDivider
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.EDetailsRow
@@ -50,37 +51,46 @@ fun AuditLogScreen(entries: List<AuditLogEntry>){
 }
 @Composable
 private fun AuditLogCard(entry: AuditLogEntry) {
+    // Icons must be resolved unconditionally (they are @Composable); the rows are
+    // then assembled from whichever values are present so missing details are
+    // dropped instead of rendered as placeholders.
+    val documentIcon = EPrevzemIcons.document()
+    val organizationIcon = EPrevzemIcons.organization()
+    val lockerIcon = EPrevzemIcons.locker()
+    val clockIcon = EPrevzemIcons.clock()
+
+    val rows = buildList {
+        entry.documentTitle?.let { add(AuditRowData(documentIcon, "Dokument", it, EIconTint.Green)) }
+        entry.organization?.let { add(AuditRowData(organizationIcon, "Organizacija", it, EIconTint.Teal)) }
+        entry.lockerNumber?.let { add(AuditRowData(lockerIcon, "Paketnik", it, EIconTint.Gray)) }
+        add(AuditRowData(clockIcon, "Odpiranje", entry.openedAt, EIconTint.Gold))
+    }
+
     EDetailsCard {
-        EDetailsRow(
-            icon = EPrevzemIcons.document(),
-            label = "Dokument",
-            value = entry.documentTitle,
-            tint = EIconTint.Green,
-            trailing = { AuditStatusBadge(badge = entry.badge) },
-        )
-        EDetailsDivider()
-        EDetailsRow(
-            icon = EPrevzemIcons.organization(),
-            label = "Organizacija",
-            value = entry.organization,
-            tint = EIconTint.Teal,
-        )
-        EDetailsDivider()
-        EDetailsRow(
-            icon = EPrevzemIcons.locker(),
-            label = "Paketnik",
-            value = entry.lockerNumber,
-            tint = EIconTint.Gray,
-        )
-        EDetailsDivider()
-        EDetailsRow(
-            icon = EPrevzemIcons.clock(),
-            label = "Odpiranje",
-            value = entry.openedAt,
-            tint = EIconTint.Gold,
-        )
+        rows.forEachIndexed { index, row ->
+            if (index > 0) EDetailsDivider()
+            EDetailsRow(
+                icon = row.icon,
+                label = row.label,
+                value = row.value,
+                tint = row.tint,
+                // Keep the status badge visible by anchoring it to the first present row.
+                trailing = if (index == 0) {
+                    { AuditStatusBadge(badge = entry.badge) }
+                } else {
+                    null
+                },
+            )
+        }
     }
 }
+
+private data class AuditRowData(
+    val icon: Painter,
+    val label: String,
+    val value: String,
+    val tint: EIconTint,
+)
 @Composable
 private fun AuditStatusBadge(badge: AuditLogBadge) {
     val colors = EPrevzemTheme.colors

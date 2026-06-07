@@ -8,10 +8,12 @@ fun LogEvent.toAuditLogEntry(): AuditLogEntry {
 
     return AuditLogEntry(
         id = id,
-        documentTitle = eventDetails?.documentTitle ?: "Dokument",
-        organization = eventDetails?.organizationName ?: "Organizacija",
-        lockerNumber = eventDetails?.lockerLabel ?: "Paketnik",
-        location = eventDetails?.location ?: "",
+        // Missing details are left null so the card omits the row entirely
+        // rather than showing a placeholder.
+        documentTitle = eventDetails?.documentTitle?.takeIf { it.isNotBlank() },
+        organization = eventDetails?.organizationName?.takeIf { it.isNotBlank() },
+        lockerNumber = eventDetails?.lockerLabel?.takeIf { it.isNotBlank() },
+        location = eventDetails?.location?.takeIf { it.isNotBlank() },
         openedAt = occurredAt.toAuditLogDisplayTime(),
         badge = action.toAuditLogBadge(),
     )
