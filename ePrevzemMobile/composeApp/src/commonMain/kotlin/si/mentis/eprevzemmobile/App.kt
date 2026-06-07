@@ -216,6 +216,10 @@ fun App() {
                             onScanQrClicked = {
                                 destination = AppDestination.OperatorInsertion
                             },
+                            onAddAccount = { destination = AppDestination.RegistrationCode },
+                            onUserUpdated = { updatedUser ->
+                                scope.launch { AppContainer.sessionStore.addProfile(updatedUser) }
+                            },
                         )
                     }
                 }
