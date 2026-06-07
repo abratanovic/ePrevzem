@@ -29,6 +29,8 @@ services:
       SiTrust__Secret: ${SITRUST_JWT_SECRET}
       Identity__BootstrapAdmin__Username: ${BOOTSTRAP_ADMIN_USERNAME}
       Identity__BootstrapAdmin__InitialPassword: ${BOOTSTRAP_ADMIN_PASSWORD}
+      Direct4Me__BaseUrl: ${D4ME_BASE_URL}
+      Direct4Me__ApiKey: ${D4ME_API_KEY}
     depends_on:
       postgres-db:
         condition: service_healthy
