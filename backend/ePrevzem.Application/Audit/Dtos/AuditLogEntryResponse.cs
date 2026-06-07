@@ -4,6 +4,8 @@ public sealed record AuditLogEntryResponse(
     Guid Id,
     DateTimeOffset OccurredAt,
     string ActorKind,
+    string? ActorDisplayName,
+    string? ActorEmail,
     Guid? ActorCitizenUserId,
     Guid? ActorEmployeeAccountId,
     Guid? ActorOrganizationAdminAccountId,

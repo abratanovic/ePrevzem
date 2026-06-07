@@ -85,6 +85,8 @@ export interface AuditLogEntry {
   id: string;
   occurredAt: string;
   actorKind: AuditActorKind;
+  actorDisplayName?: string | null;
+  actorEmail?: string | null;
   actorCitizenUserId: string | null;
   actorEmployeeAccountId: string | null;
   actorOrganizationAdminAccountId: string | null;
