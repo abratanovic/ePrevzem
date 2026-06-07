@@ -161,6 +161,10 @@ public sealed class TestEmployeeRepoForUnifiedLogin : IEmployeeAccountRepository
         => Task.FromResult(_items.SingleOrDefault(x => x.Email == email));
     public Task<EmployeeAccount?> GetByIdAsync(EmployeeAccountId id, CancellationToken ct = default)
         => Task.FromResult(_items.SingleOrDefault(x => x.Id == id));
+    public Task<EmployeeAccount?> GetByEmployeeDeviceIdAsync(EmployeeDeviceId deviceId, CancellationToken ct = default)
+        => Task.FromResult(_items.FirstOrDefault(x => x.Devices.Any(d => d.Id == deviceId)));
+    public Task<EmployeeAccount?> GetByProvisioningCodeIdAsync(ProvisioningCodeId provisioningCodeId, CancellationToken ct = default)
+        => Task.FromResult(_items.FirstOrDefault(x => x.CreatedFromProvisioningCodeId == provisioningCodeId));
     public Task AddAsync(EmployeeAccount account, CancellationToken ct = default) { _items.Add(account); return Task.CompletedTask; }
     public Task<IReadOnlyList<EmployeeAccount>> GetByOrganisationIdAsync(OrganizationId organisationId, CancellationToken ct = default)
         => Task.FromResult<IReadOnlyList<EmployeeAccount>>(_items.Where(x => x.OrganizationId == organisationId).ToList());
@@ -200,6 +204,7 @@ public sealed class TestTokenServiceForUnifiedLogin : ITokenService
     public AccessTokenResult IssueAccessToken(SystemAdmin a) => new("sys_token", DateTimeOffset.UtcNow.AddMinutes(15));
     public AccessTokenResult IssueAccessToken(OrganizationAdminAccount a) => new("org_token", DateTimeOffset.UtcNow.AddMinutes(15));
     public AccessTokenResult IssueAccessToken(EmployeeAccount e) => new("emp_token", DateTimeOffset.UtcNow.AddMinutes(15));
+    public AccessTokenResult IssueAccessToken(CitizenUser citizen) => new("citizen_token", DateTimeOffset.UtcNow.AddMinutes(15));
     public RefreshTokenResult IssueRefreshToken(DateTimeOffset now) => new("refresh_plain", "refresh_hash", now.AddDays(14));
 }
 

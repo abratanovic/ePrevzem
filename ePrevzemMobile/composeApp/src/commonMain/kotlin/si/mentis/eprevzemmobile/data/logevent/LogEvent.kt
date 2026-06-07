@@ -6,6 +6,7 @@ data class LogEvent(
     val actorKind: LogActorKind,
     val actorCitizenUserId: String?,
     val actorEmployeeAccountId: String?,
+    val actorOrganizationAdminAccountId: String?,
     val actorSystemAdminId: String?,
     val organizationId: String?,
     val action: LogAction,

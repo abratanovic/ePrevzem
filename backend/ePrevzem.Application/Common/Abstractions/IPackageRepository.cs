@@ -6,6 +6,7 @@ namespace ePrevzem.Application.Common.Abstractions;
 public interface IPackageRepository
 {
     Task<bool> ExistsByReferenceAsync(string reference, CancellationToken cancellationToken = default);
+    Task<Package?> GetByIdAsync(PackageId id, CancellationToken cancellationToken = default);
     Task<Package?> GetByIdForOrganizationAsync(
         PackageId id,
         OrganizationId organizationId,

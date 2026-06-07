@@ -57,6 +57,31 @@ public class JwtTokenServiceTests
         first.Hash.Should().NotBe(second.Hash);
     }
 
+    [Fact]
+    public void IssueAccessToken_creates_citizen_jwt_with_no_organization_claim()
+    {
+        var service = CreateService();
+        var citizen = global::ePrevzem.Domain.Identity.CitizenUser.Onboard(
+            global::ePrevzem.Domain.Identity.CitizenUserId.New(),
+            "Marko",
+            "Horvat",
+            "1234567890123",
+            "marko@example.com",
+            null,
+            Now);
+
+        var result = service.IssueAccessToken(citizen);
+        var token = new JwtSecurityTokenHandler().ReadJwtToken(result.Token);
+
+        result.ExpiresAt.Should().Be(Now.AddMinutes(15));
+        token.Issuer.Should().Be("ePrevzem");
+        token.Audiences.Should().Contain("ePrevzem.Clients");
+        token.Subject.Should().Be(citizen.Id.Value.ToString());
+        token.Claims.Should().Contain(x => x.Type == ClaimTypes.Role && x.Value == "Citizen");
+        token.Claims.Should().NotContain(x => x.Type == "organization_id");
+        token.ValidTo.Should().Be(result.ExpiresAt.UtcDateTime);
+    }
+
     private static JwtTokenService CreateService()
     {
         var jwtOptions = Options.Create(new JwtTokenOptions

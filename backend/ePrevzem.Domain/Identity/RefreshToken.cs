@@ -8,6 +8,7 @@ public sealed class RefreshToken : AggregateRoot<RefreshTokenId>
     public SystemAdminId? SystemAdminId { get; private set; }
     public OrganizationAdminAccountId? OrganizationAdminAccountId { get; private set; }
     public EmployeeAccountId? EmployeeAccountId { get; private set; }
+    public CitizenUserId? CitizenUserId { get; private set; }
     public string TokenHash { get; private set; } = default!;
     public DateTimeOffset ExpiresAt { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
@@ -70,6 +71,24 @@ public sealed class RefreshToken : AggregateRoot<RefreshTokenId>
         };
     }
 
+    public static RefreshToken IssueForCitizen(
+        RefreshTokenId id,
+        CitizenUserId citizenUserId,
+        string tokenHash,
+        DateTimeOffset expiresAt,
+        DateTimeOffset now)
+    {
+        ValidateCommon(tokenHash, expiresAt, now);
+        return new RefreshToken
+        {
+            Id = id,
+            CitizenUserId = citizenUserId,
+            TokenHash = tokenHash,
+            ExpiresAt = expiresAt,
+            CreatedAt = now
+        };
+    }
+
     public void Rotate(RefreshTokenId replacementId, DateTimeOffset now)
     {
         if (RevokedAt is not null)
@@ -79,7 +98,7 @@ public sealed class RefreshToken : AggregateRoot<RefreshTokenId>
 
         RevokedAt = now;
         ReplacedByTokenId = replacementId;
-        Raise(new RefreshTokenRotated(Id, replacementId, SystemAdminId, OrganizationAdminAccountId, EmployeeAccountId, now));
+        Raise(new RefreshTokenRotated(Id, replacementId, SystemAdminId, OrganizationAdminAccountId, EmployeeAccountId, CitizenUserId, now));
     }
 
     public void Revoke(DateTimeOffset revokedAt)
@@ -97,7 +116,7 @@ public sealed class RefreshToken : AggregateRoot<RefreshTokenId>
         if (occurredAt < CreatedAt)
             throw new ArgumentException("Occurred-at must be on or after created-at.", nameof(occurredAt));
 
-        Raise(new RefreshTokenChainRevoked(SystemAdminId, OrganizationAdminAccountId, EmployeeAccountId, Id, occurredAt));
+        Raise(new RefreshTokenChainRevoked(SystemAdminId, OrganizationAdminAccountId, EmployeeAccountId, CitizenUserId, Id, occurredAt));
     }
 
     public bool IsActive(DateTimeOffset now) => RevokedAt is null && now < ExpiresAt;

@@ -105,6 +105,32 @@ public sealed class JwtTokenService : ITokenService
             expiresAt);
     }
 
+    public AccessTokenResult IssueAccessToken(CitizenUser citizen)
+    {
+        var now = _clock.UtcNow;
+        var expiresAt = now.AddMinutes(_identityOptions.AccessTokenLifetimeMinutes);
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Secret));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var claims = new[]
+        {
+            new Claim(JwtRegisteredClaimNames.Sub, citizen.Id.Value.ToString()),
+            new Claim(ClaimTypes.Role, "Citizen"),
+            new Claim(JwtRegisteredClaimNames.Iat, now.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
+        };
+
+        var token = new JwtSecurityToken(
+            issuer: _jwtOptions.Issuer,
+            audience: _jwtOptions.Audience,
+            claims: claims,
+            notBefore: now.UtcDateTime,
+            expires: expiresAt.UtcDateTime,
+            signingCredentials: credentials);
+
+        return new AccessTokenResult(
+            new JwtSecurityTokenHandler().WriteToken(token),
+            expiresAt);
+    }
+
     public RefreshTokenResult IssueRefreshToken(DateTimeOffset now)
     {
         var plaintextBytes = RandomNumberGenerator.GetBytes(32);

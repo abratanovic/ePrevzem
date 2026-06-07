@@ -10,18 +10,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.launch
 import si.mentis.eprevzemmobile.AppContainer
+import si.mentis.eprevzemmobile.data.auth.SessionStore
 import si.mentis.eprevzemmobile.data.registration.RegistrationRepository
 import si.mentis.eprevzemmobile.data.security.SecurityRepository
-import si.mentis.eprevzemmobile.domain.User
+import si.mentis.eprevzemmobile.domain.AppUser
 
 @Composable
 fun ConfirmAccountRoute(
     validatedCode: String,
     onBack: () -> Unit,
     onUseAnotherCode: () -> Unit,
-    onConfirmed: (User) -> Unit = {},
     repository: RegistrationRepository = AppContainer.registrationRepository,
     securityRepository: SecurityRepository = AppContainer.securityRepository,
+    sessionStore: SessionStore = AppContainer.sessionStore,
     modifier: Modifier = Modifier,
 ) {
     var state by remember { mutableStateOf(ConfirmAccountState()) }
@@ -30,20 +31,29 @@ fun ConfirmAccountRoute(
     LaunchedEffect(validatedCode) {
         repository.fetchAccountPreview(validatedCode)
             .onSuccess { user ->
-                state = state.copy(
-                    account = ConfirmAccountData(
-                        fullName = user.fullName,
-                        email = user.email,
-                        phone = user.phone,
-                        status = user.status,
-                        validUntil = user.validUntil,
-                    ),
-                    organization = ConfirmOrganizationData(
-                        name = user.organizationName,
-                        type = user.organizationType,
-                        location = user.organizationLocation,
-                    ),
-                )
+                state = when (user) {
+                    is AppUser.Employee -> state.copy(
+                        account = ConfirmAccountData(
+                            fullName = user.fullName,
+                            email = user.email,
+                            phone = user.phone,
+                            status = user.status,
+                            validUntil = user.validUntil,
+                        ),
+                        organization = ConfirmOrganizationData(
+                            name = user.organizationName,
+                            type = user.organizationType,
+                            location = user.organizationLocation,
+                        ),
+                    )
+                    is AppUser.RegularUser -> state.copy(
+                        account = ConfirmAccountData(
+                            fullName = user.fullName,
+                            email = user.email,
+                            phone = user.phone,
+                        ),
+                    )
+                }
             }
     }
 
@@ -62,10 +72,24 @@ fun ConfirmAccountRoute(
                                 .onSuccess { publicKey ->
                                     repository.confirmAccount(validatedCode, publicKey)
                                         .onSuccess { user ->
-                                            state = state.copy(isLoading = false)
-                                            onConfirmed(user)
+                                            val committed = runCatching {
+                                                securityRepository.commitRegistration(user.id).getOrThrow()
+                                                sessionStore.addProfile(user)
+                                                sessionStore.setAuthenticated(user.id)
+                                            }
+                                            committed
+                                                .onSuccess { state = state.copy(isLoading = false) }
+                                                .onFailure {
+                                                    securityRepository.discardStaging()
+                                                    securityRepository.reset(user.id)
+                                                    state = state.copy(
+                                                        isLoading = false,
+                                                        error = "Registracija ni uspela. Poskusite znova.",
+                                                    )
+                                                }
                                         }
                                         .onFailure {
+                                            securityRepository.discardStaging()
                                             state = state.copy(
                                                 isLoading = false,
                                                 error = "Registracija ni uspela. Poskusite znova.",
@@ -73,6 +97,7 @@ fun ConfirmAccountRoute(
                                         }
                                 }
                                 .onFailure {
+                                    securityRepository.discardStaging()
                                     state = state.copy(
                                         isLoading = false,
                                         error = "Varnostna nastavitev ni uspela: ${it::class.simpleName}: ${it.message}",

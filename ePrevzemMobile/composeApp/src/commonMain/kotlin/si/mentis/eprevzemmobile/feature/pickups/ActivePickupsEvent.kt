@@ -19,4 +19,5 @@ sealed interface ActivePickupsEvent {
     data object NewPinVisibilityToggled : ActivePickupsEvent
     data object NewPinConfirmationVisibilityToggled : ActivePickupsEvent
     data object ChangePinConfirmed : ActivePickupsEvent
+    data object AddAccountClicked : ActivePickupsEvent
 }

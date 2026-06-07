@@ -10,34 +10,52 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.launch
 import si.mentis.eprevzemmobile.AppContainer
+import si.mentis.eprevzemmobile.data.auth.DeviceSessionStore
+import si.mentis.eprevzemmobile.data.auth.SessionStore
 import si.mentis.eprevzemmobile.data.security.AuthRepository
 import si.mentis.eprevzemmobile.data.security.SecurityRepository
-import si.mentis.eprevzemmobile.domain.User
-
-private const val DEVICE_ID = "device-01"
 
 @Composable
 fun LoginRoute(
-    onAuthenticated: (User) -> Unit,
+    accountId: String,
     onResetSecureStorage: () -> Unit,
     securityRepository: SecurityRepository = AppContainer.securityRepository,
     authRepository: AuthRepository = AppContainer.authRepository,
+    sessionStore: SessionStore = AppContainer.sessionStore,
+    deviceSessionStore: DeviceSessionStore = AppContainer.deviceSessionStore,
     modifier: Modifier = Modifier,
 ) {
     var state by remember { mutableStateOf(LoginState()) }
     val scope = rememberCoroutineScope()
 
+    suspend fun finishAuthenticated() {
+        sessionStore.setAuthenticated(accountId)
+    }
+
+    fun resetThisAccount() {
+        scope.launch {
+            securityRepository.reset(accountId)
+            sessionStore.removeProfile(accountId)
+            onResetSecureStorage()
+        }
+    }
+
     fun authWithBiometric() {
         scope.launch {
             state = state.copy(isLoading = true, error = null)
-            val challenge = authRepository.getChallenge(DEVICE_ID).getOrElse {
+            val deviceId = deviceSessionStore.deviceId(accountId)
+            if (deviceId == null) {
+                resetThisAccount()
+                return@launch
+            }
+            val challenge = authRepository.getChallenge(deviceId).getOrElse {
                 state = state.copy(isLoading = false, error = "Napaka pri prijavi. Poskusite znova.")
                 return@launch
             }
-            securityRepository.signChallengeWithBiometric(challenge)
+            securityRepository.signChallengeWithBiometric(accountId, challenge)
                 .onSuccess { signature ->
-                    authRepository.verifySignature(DEVICE_ID, signature)
-                        .onSuccess { onAuthenticated(cachedUser()) }
+                    authRepository.verifySignature(deviceId, signature)
+                        .onSuccess { finishAuthenticated() }
                         .onFailure {
                             state = state.copy(isLoading = false, error = "Avtentikacija ni uspela.")
                         }
@@ -51,14 +69,19 @@ fun LoginRoute(
     fun authWithPin(pin: String) {
         scope.launch {
             state = state.copy(isLoading = true, error = null)
-            val challenge = authRepository.getChallenge(DEVICE_ID).getOrElse {
+            val deviceId = deviceSessionStore.deviceId(accountId)
+            if (deviceId == null) {
+                resetThisAccount()
+                return@launch
+            }
+            val challenge = authRepository.getChallenge(deviceId).getOrElse {
                 state = state.copy(isLoading = false, error = "Napaka pri prijavi. Poskusite znova.")
                 return@launch
             }
-            securityRepository.signChallengeWithPin(pin, challenge)
+            securityRepository.signChallengeWithPin(accountId, pin, challenge)
                 .onSuccess { signature ->
-                    authRepository.verifySignature(DEVICE_ID, signature)
-                        .onSuccess { onAuthenticated(cachedUser()) }
+                    authRepository.verifySignature(deviceId, signature)
+                        .onSuccess { finishAuthenticated() }
                         .onFailure {
                             state = state.copy(isLoading = false, error = "Avtentikacija ni uspela.")
                         }
@@ -96,25 +119,8 @@ fun LoginRoute(
                         state = state.copy(pin = state.pin.dropLast(1), error = null)
                     }
                 }
-                LoginEvent.ResetSecureStorageClicked -> {
-                    scope.launch {
-                        securityRepository.reset()
-                        onResetSecureStorage()
-                    }
-                }
+                LoginEvent.ResetSecureStorageClicked -> resetThisAccount()
             }
         },
     )
 }
-
-private fun cachedUser() = User(
-    id = DEVICE_ID,
-    fullName = "Marko Horvat",
-    email = "marko.horvat@gov.si",
-    phone = "+386 41 234 567",
-    status = "Aktiven",
-    validUntil = "14. nov 2025",
-    organizationName = "Upravna enota Ljubljana",
-    organizationType = "Javna uprava",
-    organizationLocation = "Adamič-Lundrovo nabrežje 2, Ljubljana",
-)

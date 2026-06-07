@@ -20,6 +20,7 @@ private const val DelegationErrorMessage = "Napaka pri pooblastitvi. Poskusite z
 @Composable
 fun DelegatePersonRoute(
     pickupId: String,
+    accountId: String,
     onBack: () -> Unit,
     onDelegated: () -> Unit,
     repository: DelegationRepository = AppContainer.delegationRepository,
@@ -52,7 +53,7 @@ fun DelegatePersonRoute(
 
     fun verifyBiometric() {
         scope.launch {
-            securityRepository.signChallengeWithBiometric("verify".encodeToByteArray())
+            securityRepository.signChallengeWithBiometric(accountId, "verify".encodeToByteArray())
                 .onSuccess {
                     state = state.copy(showBiometricSheet = false, isConfirming = true)
                 }
@@ -64,7 +65,7 @@ fun DelegatePersonRoute(
 
     fun verifyPin(pin: String) {
         scope.launch {
-            securityRepository.signChallengeWithPin(pin, "verify".encodeToByteArray())
+            securityRepository.signChallengeWithPin(accountId, pin, "verify".encodeToByteArray())
                 .onSuccess {
                     state = state.copy(showPinSheet = false, pinValue = "", isConfirming = true)
                 }

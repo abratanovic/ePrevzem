@@ -1,54 +1,64 @@
 package si.mentis.eprevzemmobile.data.security
 
 class FakeSecurityRepository : SecurityRepository {
-    private var registered = false
-    private var biometricEnabled = false
-    private var registeredPin = ""
-    private var publicKeyPem = "-----BEGIN PUBLIC KEY-----\nfake-public-key\n-----END PUBLIC KEY-----"
+    private data class Cred(val pin: String, val biometric: Boolean)
 
-    override suspend fun isRegistered(): Boolean = registered
+    private val accounts = mutableMapOf<String, Cred>()
+    private var staged: Cred? = null
+    private var stagedPublicKey: String = ""
 
-    override suspend fun isBiometricEnabled(): Boolean = biometricEnabled
+    override suspend fun isRegistered(accountId: String): Boolean = accounts.containsKey(accountId)
+
+    override suspend fun isBiometricEnabled(accountId: String): Boolean = accounts[accountId]?.biometric ?: false
 
     override suspend fun register(pin: String, biometricEnabled: Boolean): Result<String> {
-        registered = true
-        registeredPin = pin
-        this.biometricEnabled = biometricEnabled
-        publicKeyPem = "-----BEGIN PUBLIC KEY-----\nfake-public-key-biometric-$biometricEnabled\n-----END PUBLIC KEY-----"
-        return Result.success(publicKeyPem)
+        staged = Cred(pin, biometricEnabled)
+        stagedPublicKey = "-----BEGIN PUBLIC KEY-----\nfake-public-key-biometric-$biometricEnabled\n-----END PUBLIC KEY-----"
+        return Result.success(stagedPublicKey)
     }
 
-    override suspend fun enableBiometric(pin: String): Result<Unit> {
-        if (!registered) return Result.failure(SecurityNotRegisteredException())
-        if (pin != registeredPin) return Result.failure(InvalidPinException())
-        biometricEnabled = true
+    override suspend fun commitRegistration(accountId: String): Result<Unit> {
+        val cred = staged ?: return Result.failure(SecurityNotRegisteredException())
+        accounts[accountId] = cred
+        staged = null
         return Result.success(Unit)
     }
 
-    override suspend fun disableBiometric(): Result<Unit> {
-        biometricEnabled = false
+    override suspend fun discardStaging() {
+        staged = null
+    }
+
+    override suspend fun enableBiometric(accountId: String, pin: String): Result<Unit> {
+        val cred = accounts[accountId] ?: return Result.failure(SecurityNotRegisteredException())
+        if (pin != cred.pin) return Result.failure(InvalidPinException())
+        accounts[accountId] = cred.copy(biometric = true)
         return Result.success(Unit)
     }
 
-    override suspend fun changePin(currentPin: String, newPin: String): Result<Unit> {
-        if (!registered) return Result.failure(SecurityNotRegisteredException())
-        if (currentPin != registeredPin) return Result.failure(InvalidPinException())
-        registeredPin = newPin
+    override suspend fun disableBiometric(accountId: String): Result<Unit> {
+        accounts[accountId]?.let { accounts[accountId] = it.copy(biometric = false) }
         return Result.success(Unit)
     }
 
-    override suspend fun signChallengeWithPin(pin: String, challenge: ByteArray): Result<ByteArray> {
-        if (!registered) return Result.failure(SecurityNotRegisteredException())
-        if (pin != registeredPin) return Result.failure(InvalidPinException())
+    override suspend fun changePin(accountId: String, currentPin: String, newPin: String): Result<Unit> {
+        val cred = accounts[accountId] ?: return Result.failure(SecurityNotRegisteredException())
+        if (currentPin != cred.pin) return Result.failure(InvalidPinException())
+        accounts[accountId] = cred.copy(pin = newPin)
+        return Result.success(Unit)
+    }
+
+    override suspend fun signChallengeWithPin(accountId: String, pin: String, challenge: ByteArray): Result<ByteArray> {
+        val cred = accounts[accountId] ?: return Result.failure(SecurityNotRegisteredException())
+        if (pin != cred.pin) return Result.failure(InvalidPinException())
         return Result.success("fake-pin-signature:${challenge.toBase64()}".encodeToByteArray())
     }
 
-    override suspend fun signChallengeWithBiometric(challenge: ByteArray): Result<ByteArray> =
-        Result.success("fake-biometric-signature:${challenge.toBase64()}".encodeToByteArray())
+    override suspend fun signChallengeWithBiometric(accountId: String, challenge: ByteArray): Result<ByteArray> {
+        if (!accounts.containsKey(accountId)) return Result.failure(SecurityNotRegisteredException())
+        return Result.success("fake-biometric-signature:${challenge.toBase64()}".encodeToByteArray())
+    }
 
-    override suspend fun reset() {
-        registered = false
-        biometricEnabled = false
-        registeredPin = ""
+    override suspend fun reset(accountId: String) {
+        accounts.remove(accountId)
     }
 }

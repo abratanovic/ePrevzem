@@ -175,7 +175,7 @@ fun PickupDetailsRoute(
     onLockerDidNotOpen: (PickupDetails) -> Unit = onIdentityVerified,
     onDelegatePerson: () -> Unit = {},
     initialUnlockedAt: String? = null,
-    user: si.mentis.eprevzemmobile.domain.User? = null,
+    user: si.mentis.eprevzemmobile.domain.AppUser? = null,
     repository: si.mentis.eprevzemmobile.data.pickups.PickupRepository = si.mentis.eprevzemmobile.AppContainer.pickupRepository,
     delegationRepository: si.mentis.eprevzemmobile.data.delegation.DelegationRepository = si.mentis.eprevzemmobile.AppContainer.delegationRepository,
     securityRepository: si.mentis.eprevzemmobile.data.security.SecurityRepository = si.mentis.eprevzemmobile.AppContainer.securityRepository,
@@ -206,8 +206,9 @@ fun PickupDetailsRoute(
     }
 
     fun verifyBiometric() {
+        val accountId = user?.id ?: return
         scope.launch {
-            securityRepository.signChallengeWithBiometric("verify".encodeToByteArray())
+            securityRepository.signChallengeWithBiometric(accountId, "verify".encodeToByteArray())
                 .onSuccess {
                     state = state.copy(showBiometricSheet = false)
                     onIdentityVerified(state.details)
@@ -219,8 +220,9 @@ fun PickupDetailsRoute(
     }
 
     fun verifyPin(pin: String) {
+        val accountId = user?.id ?: return
         scope.launch {
-            securityRepository.signChallengeWithPin(pin, "verify".encodeToByteArray())
+            securityRepository.signChallengeWithPin(accountId, pin, "verify".encodeToByteArray())
                 .onSuccess {
                     state = state.copy(showPinSheet = false, pinValue = "")
                     onIdentityVerified(state.details)
@@ -306,7 +308,15 @@ fun PickupDetailsRoute(
                     }
                 }
                 PickupDetailsEvent.IdentityVerified -> onIdentityVerified(state.details)
-                PickupDetailsEvent.Finish -> onPickupConfirmed(state.details)
+                PickupDetailsEvent.Finish -> {
+                    val confirmed = state.details
+                    scope.launch {
+                        // Commit the pickup (→ PickedUp). Navigate regardless: the
+                        // locker is already open, so a failed confirm must not trap the user.
+                        repository.confirmPickup(confirmed.id)
+                        onPickupConfirmed(confirmed)
+                    }
+                }
                 PickupDetailsEvent.LockerDidNotOpen -> onLockerDidNotOpen(state.details)
                 PickupDetailsEvent.DelegatePersonClicked -> onDelegatePerson()
                 is PickupDetailsEvent.RemoveDelegateClicked -> state = state.copy(
@@ -393,8 +403,10 @@ private fun IdlePhase(
                 Column {
                     DetailRow(label = "Referenca", value = state.details.reference)
                     EDivider()
-                    DetailRow(label = "Vrsta", value = state.details.type)
-                    EDivider()
+                    // "Vrsta" (document type) hidden: the backend does not model a
+                    // document type, so there is no value to show here.
+                    // DetailRow(label = "Vrsta", value = state.details.type)
+                    // EDivider()
                     DetailRow(label = "Organizacija", value = state.details.organization)
                     EDivider()
                     DetailRow(label = "Na voljo od", value = state.details.availableFrom)

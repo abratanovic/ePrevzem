@@ -19,8 +19,8 @@ public class PickupReadRepositoryTests
         await using var db = CreateContext();
         var orgId = OrganizationId.New();
         var station = PickupStation.Create(PickupStationId.New(), "EP-PM-001", Now);
-        var firstLocker = station.AddLocker(LockerId.New(), 1);
-        station.AddLocker(LockerId.New(), 2);
+        var firstLocker = station.AddLocker(LockerId.New(), 1, 1001);
+        station.AddLocker(LockerId.New(), 2, 1002);
         var claim = StationClaim.Claim(
             StationClaimId.New(),
             station.Id,

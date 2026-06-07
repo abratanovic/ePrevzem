@@ -97,4 +97,9 @@ class FakePickupRepository : PickupRepository {
         delay(600)
         return details[id]
     }
+
+    override suspend fun confirmPickup(pickupId: String): Result<Unit> {
+        delay(300)
+        return Result.success(Unit)
+    }
 }

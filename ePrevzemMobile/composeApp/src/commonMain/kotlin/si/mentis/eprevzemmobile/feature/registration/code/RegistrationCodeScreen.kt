@@ -215,18 +215,18 @@ private fun HeroBadge(icon: Painter = EPrevzemIcons.key(), modifier: Modifier = 
 }
 
 /**
- * Strips non-alphanumerics, uppercases, caps at 9 characters, and rejoins
- * with hyphens in a 3-3-3 pattern. Pure function — safe to call from the
- * value-changed callback before emitting [RegistrationCodeEvent.CodeChanged].
+ * Strips non-alphanumerics, uppercases, and rejoins with hyphens in groups of
+ * three. Imposes no fixed length — codes of any length are accepted. Pure
+ * function — safe to call from the value-changed callback before emitting
+ * [RegistrationCodeEvent.CodeChanged].
  */
 private fun formatCode(raw: String): String {
     val cleaned = raw
         .uppercase()
         .filter { it.isLetterOrDigit() }
-        .take(RegistrationCodeState.CODE_LENGTH)
     return buildString {
         cleaned.forEachIndexed { index, c ->
-            if (index == 3 || index == 6) append('-')
+            if (index > 0 && index % 3 == 0) append('-')
             append(c)
         }
     }

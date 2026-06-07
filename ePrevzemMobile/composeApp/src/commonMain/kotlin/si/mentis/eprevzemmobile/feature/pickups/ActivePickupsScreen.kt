@@ -2,23 +2,11 @@ package si.mentis.eprevzemmobile.feature.pickups
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,11 +22,15 @@ import si.mentis.eprevzemmobile.data.logevent.LogEventRepository
 import si.mentis.eprevzemmobile.data.pickups.PickupRepository
 import si.mentis.eprevzemmobile.data.security.SecurityRepository
 import si.mentis.eprevzemmobile.data.settings.UserSettingsRepository
-import si.mentis.eprevzemmobile.domain.User
 import si.mentis.eprevzemmobile.core.designsystem.components.buttons.EPrimaryButton
 import si.mentis.eprevzemmobile.core.designsystem.components.buttons.ESecondaryButton
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.EPickupCard
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.EIconChip
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.EDetailsCard
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.EDetailsDivider
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.EDetailsRow
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.EDetailsSectionLabel
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.EIconTint
 import si.mentis.eprevzemmobile.core.designsystem.components.dialogs.EBottomSheet
 import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EEmptyState
 import si.mentis.eprevzemmobile.core.designsystem.components.feedback.EErrorBanner
@@ -53,13 +45,8 @@ import si.mentis.eprevzemmobile.core.designsystem.components.navigation.ETopBar
 import si.mentis.eprevzemmobile.core.designsystem.components.navigation.ETopBarVariant
 import si.mentis.eprevzemmobile.core.designsystem.icons.EPrevzemIcons
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
-import kotlin.enums.EnumEntries
-import si.mentis.eprevzemmobile.core.designsystem.components.cards.EDetailsCard
-import si.mentis.eprevzemmobile.core.designsystem.components.cards.EDetailsDivider
-import si.mentis.eprevzemmobile.core.designsystem.components.cards.EDetailsRow
-import si.mentis.eprevzemmobile.core.designsystem.components.cards.EDetailsSectionLabel
-import si.mentis.eprevzemmobile.core.designsystem.components.cards.EIconTint
-import androidx.compose.foundation.layout.padding
+import si.mentis.eprevzemmobile.domain.AppUser
+
 @Composable
 fun ActivePickupsScreen(
     state: ActivePickupsState,
@@ -130,9 +117,10 @@ fun ActivePickupsScreen(
 
 @Composable
 fun ActivePickupsRoute(
-    user: User,
+    user: AppUser,
     onPickupClicked: (String) -> Unit,
-    onUserUpdated: (User) -> Unit = {},
+    onAddAccount: () -> Unit = {},
+    onUserUpdated: (AppUser) -> Unit = {},
     repository: PickupRepository = AppContainer.pickupRepository,
     logEventRepository: LogEventRepository = AppContainer.logEventRepository,
     securityRepository: SecurityRepository = AppContainer.securityRepository,
@@ -156,7 +144,7 @@ fun ActivePickupsRoute(
         val (pickups, logEvents, biometricEnabled, notificationsEnabled) = coroutineScope {
             val pickups = async { repository.getActivePickups() }
             val logEvents = async { logEventRepository.getLogEventsForCurrentUser() }
-            val biometricEnabled = async { securityRepository.isBiometricEnabled() }
+            val biometricEnabled = async { securityRepository.isBiometricEnabled(user.id) }
             val notificationsEnabled = async { userSettingsRepository.areNotificationsEnabled() }
             LoadedActivePickupsData(
                 pickups = pickups.await(),
@@ -165,7 +153,7 @@ fun ActivePickupsRoute(
                 notificationsEnabled = notificationsEnabled.await(),
             )
         }
-        val syncedUser = user.copy(isBiometricEnabled = biometricEnabled)
+        val syncedUser = user.withBiometric(biometricEnabled)
         state = state.copy(
             pickups = pickups,
             auditLogEntries = logEvents,
@@ -190,6 +178,7 @@ fun ActivePickupsRoute(
                     }
                 }
                 is ActivePickupsEvent.PickupClicked -> onPickupClicked(event.id)
+                ActivePickupsEvent.AddAccountClicked -> onAddAccount()
                 is ActivePickupsEvent.TabSelected -> state = state.copy(activeTab = event.tab)
                 is ActivePickupsEvent.BiometricToggleRequested -> {
                     if (event.enabled) {
@@ -202,9 +191,9 @@ fun ActivePickupsRoute(
                     } else if (!state.isUpdatingSettings) {
                         state = state.copy(isUpdatingSettings = true, settingsError = null)
                         scope.launch {
-                            securityRepository.disableBiometric()
+                            securityRepository.disableBiometric(user.id)
                                 .onSuccess {
-                                    val updatedUser = user.copy(isBiometricEnabled = false)
+                                    val updatedUser = user.withBiometric(false)
                                     state = state.copy(
                                         isBiometricEnabled = false,
                                         isUpdatingSettings = false,
@@ -235,9 +224,9 @@ fun ActivePickupsRoute(
                         val pin = state.biometricPin
                         state = state.copy(isUpdatingSettings = true, settingsError = null)
                         scope.launch {
-                            securityRepository.enableBiometric(pin)
+                            securityRepository.enableBiometric(user.id, pin)
                                 .onSuccess {
-                                    val updatedUser = user.copy(isBiometricEnabled = true)
+                                    val updatedUser = user.withBiometric(true)
                                     state = state.copy(
                                         isBiometricEnabled = true,
                                         isBiometricPinSheetVisible = false,
@@ -332,7 +321,7 @@ fun ActivePickupsRoute(
                         val newPin = state.newPin
                         state = state.copy(isChangingPin = true, pinChangeError = null)
                         scope.launch {
-                            securityRepository.changePin(currentPin, newPin)
+                            securityRepository.changePin(user.id, currentPin, newPin)
                                 .onSuccess {
                                     state = state.copy(
                                         isChangePinSheetVisible = false,
@@ -367,16 +356,28 @@ private data class LoadedActivePickupsData(
     val notificationsEnabled: Boolean,
 )
 
-private fun User.toProfileData(): ProfileData = ProfileData(
-    fullName = fullName,
-    email = email,
-    phone = phone,
-    status = status,
-    validUntil = validUntil,
-    organizationName = organizationName,
-    organizationType = organizationType,
-    organizationLocation = organizationLocation,
-)
+private fun AppUser.toProfileData(): ProfileData = when (this) {
+    is AppUser.Employee -> ProfileData(
+        fullName = fullName,
+        email = email,
+        phone = phone,
+        status = status,
+        validUntil = validUntil,
+        organizationName = organizationName,
+        organizationType = organizationType,
+        organizationLocation = organizationLocation,
+    )
+    is AppUser.RegularUser -> ProfileData(
+        fullName = fullName,
+        email = email,
+        phone = phone,
+    )
+}
+
+private fun AppUser.withBiometric(enabled: Boolean): AppUser = when (this) {
+    is AppUser.Employee -> copy(isBiometricEnabled = enabled)
+    is AppUser.RegularUser -> copy(isBiometricEnabled = enabled)
+}
 
 @Composable
 private fun ProfileSettingsContent(
@@ -476,6 +477,14 @@ private fun ProfileSettingsContent(
                 description = "Zamenjajte 6-mestni PIN, ki ga uporabljate kot rezervno potrditev identitete.",
                 enabled = !state.isUpdatingSettings && !state.isChangingPin,
                 onClick = { onEvent(ActivePickupsEvent.ChangePinClicked) },
+            )
+            EDetailsDivider()
+            SettingsActionRow(
+                icon = EPrevzemIcons.profile(),
+                title = "Dodaj račun",
+                description = "Registrirajte dodaten račun na tej napravi z registracijsko kodo.",
+                enabled = true,
+                onClick = { onEvent(ActivePickupsEvent.AddAccountClicked) },
             )
         }
     }

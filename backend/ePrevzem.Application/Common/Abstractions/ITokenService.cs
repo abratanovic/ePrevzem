@@ -7,6 +7,7 @@ public interface ITokenService
     AccessTokenResult IssueAccessToken(SystemAdmin admin);
     AccessTokenResult IssueAccessToken(OrganizationAdminAccount admin);
     AccessTokenResult IssueAccessToken(EmployeeAccount employee);
+    AccessTokenResult IssueAccessToken(CitizenUser citizen);
     RefreshTokenResult IssueRefreshToken(DateTimeOffset now);
 }
 
