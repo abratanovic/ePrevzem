@@ -2,3 +2,14 @@ numpy==1.26.4
 opencv-python==4.10.0.84
 mediapipe==0.10.18
 pytest==8.3.4
+fastapi==0.115.6
+uvicorn==0.34.0
+python-multipart==0.0.20
+Pillow==11.0.0
+tensorflow==2.18.0
+tf-keras==2.18.0
+deepface==0.0.93
+scikit-learn==1.6.0
+pytesseract==0.3.13
+passporteye==2.2.2
+httpx==0.28.1

@@ -106,12 +106,15 @@ def detect_and_crop_face(image: np.ndarray) -> np.ndarray | None:
 
     h_img, w_img = image.shape[:2]
     rgb = to_colorspace(image, "RGB")
-    with mp.solutions.face_detection.FaceDetection(
-        model_selection=0, min_detection_confidence=0.5
-    ) as detector:
-        result = detector.process(rgb)
+    try:
+        with mp.solutions.face_detection.FaceDetection(
+            model_selection=0, min_detection_confidence=0.5
+        ) as detector:
+            result = detector.process(rgb)
+    except RuntimeError:
+        result = None
 
-    if result.detections:
+    if result and result.detections:
         det = max(
             result.detections,
             key=lambda d: d.location_data.relative_bounding_box.width

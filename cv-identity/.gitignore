@@ -3,6 +3,8 @@ __pycache__/
 *.pyc
 .pytest_cache/
 out/
+app/models/*.keras
+app/models/*.tflite
 # Raw images are large and may contain team likenesses — keep them out of git.
 dataset/raw/
 dataset/processed/
