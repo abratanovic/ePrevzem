@@ -27,7 +27,6 @@ Backend:  [B1 B2]            wave B-I   (domain, parallel)
            B4                 wave B-II' (SINGLE schema+migration task — see note)
           [B8 B9 B10 B11 B12] wave B-III (use cases, parallel)
           [B14 B15 B16] B13   wave B-IV  (controllers parallel; B13 DI separate)
-           B17                wave B-V   (integration tests; may be split 3 ways)
 
 Mobile:   [M1 M2]            wave M-I   (config + storage, parallel)
            M3                 wave M-II  (Ktor client; depends M1,M2)
@@ -483,15 +482,7 @@ Commit this before dispatching B8-B12.
 ### Task B16: Rewrite `OrgProvisioningController.Redeem`
 **Files:** Modify `backend/ePrevzem.Api/Controllers/Org/OrgProvisioningController.cs:98-105`. Replace the 501 body with a delegation to `RedeemOnboardingCodeCommand` (same request body as B14). Keep the existing `Peek` as-is. Commit.
 
-## Wave B-V — Integration tests
-
-### Task B17: Endpoint integration tests (Testcontainers)
-**Files:** Create `backend/ePrevzem.Tests/Api/Onboarding/OnboardingFlowTests.cs` and `backend/ePrevzem.Tests/Api/Auth/DeviceAuthFlowTests.cs`. Follow the existing `WebApplicationFactory` + Testcontainers harness used by other API tests (locate one, e.g. a Pickups or Auth integration test, and copy its fixture usage).
-- [ ] **Citizen happy path:** seed a `CitizenActivationCode` (via `RegisterCitizen` or direct seed) → `GET /api/onboarding/{code}` returns kind Citizen → generate a real P-256 key in-test → `POST redeem` returns tokens + deviceId → `POST /api/auth/device/challenge` → sign nonce (`SHA256withECDSA`, DER) → `POST verify` returns 200 → `POST refresh` returns a new pair.
-- [ ] **Replay:** second `verify` with the same challenge → 401.
-- [ ] **Bad signature:** tampered signature → 401.
-- [ ] **Employee redeem** (resolve existing account) returns role Employee + organization.
-- [ ] Run: `dotnet test backend/ePrevzem.Tests --filter "FullyQualifiedName~Onboarding|FullyQualifiedName~DeviceAuth"` → all green. Commit.
+> **Integration tests removed per user request (2026-06-07).** There is intentionally no Testcontainers/`WebApplicationFactory` endpoint test suite for this work. Validation of runtime behaviour that unit tests cannot cover — EF query translation for the `OwnsMany` device lookups, the migration applying cleanly, the `refresh_tokens` check constraint, and the full redeem→challenge→verify→refresh flow — relies on the **live smoke test in task M8** against the local backend. Handlers retain their unit tests with in-memory repository fakes.
 
 ---
 
@@ -588,7 +579,7 @@ Keep the `Fake*` classes in the tree (used by tests). Keep `lockerRepository` un
 
 ## Self-Review notes (author)
 
-- **Spec coverage:** onboarding peek (B8/B14), redeem citizen+employee (B9/B14/B16), challenge (B10/B15), verify (B11/B15), refresh (B12/B15); domain `DeviceChallenge` (B1) + `RefreshToken` citizen (B2); infra verifier (B3), token (B5), persistence+migration (B4), lookups (B6), DI (B13); tests (B17); mobile config (M1), storage (M2), client (M3), DTOs (M4), repos (M5/M6), wiring (M7), tests (M8). All spec sections mapped.
+- **Spec coverage:** onboarding peek (B8/B14), redeem citizen+employee (B9/B14/B16), challenge (B10/B15), verify (B11/B15), refresh (B12/B15); domain `DeviceChallenge` (B1) + `RefreshToken` citizen (B2); infra verifier (B3), token (B5), persistence+migration (B4), lookups (B6), DI (B13); mobile config (M1), storage (M2), client (M3), DTOs (M4), repos (M5/M6), wiring (M7), tests (M8). All spec sections mapped.
 - **Open items carried from spec:** employee resolve-vs-create field (verify in B9); keep `OrgProvisioning` peek (B16 keeps it). New mobile open item: `AppUser.Employee`/`RegularUser` carry fields the backend doesn't return yet (email/phone/org detail/validUntil) — mapped to explicit defaults in M5, to be backfilled by a citizen/employee profile endpoint in a later sub-project.
 - **Type consistency:** `DeviceSessionResponse` (backend) ↔ `DeviceSessionDto` (mobile) share the same field set; `IssueForCitizen`, `IssueAccessToken(CitizenUser)`, `ISignatureVerifier.Verify`, `IDeviceChallengeRepository.GetLatestActiveAsync` names used consistently across tasks.
 </content>
