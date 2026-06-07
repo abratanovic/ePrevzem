@@ -75,8 +75,6 @@ public sealed class RedeemOnboardingCodeCommandHandler
                 now);
 
             citizenCode.Redeem(now);
-            await _citizenUserRepo.AddAsync(citizen, cancellationToken);
-            await _citizenCodeRepo.AddAsync(citizenCode, cancellationToken);
 
             var response = await DeviceSessionFactory.ForCitizenAsync(
                 citizen,
@@ -139,7 +137,6 @@ public sealed class RedeemOnboardingCodeCommandHandler
                 now);
 
             provisioningCode.Redeem(now, employee.Id);
-            await _provisioningCodeRepo.AddAsync(provisioningCode, cancellationToken);
 
             if (isNewAccount)
             {

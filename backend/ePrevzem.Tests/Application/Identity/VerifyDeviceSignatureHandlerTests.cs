@@ -252,6 +252,63 @@ public class VerifyDeviceSignatureHandlerTests
     }
 
     [Fact]
+    public async Task Handle_with_valid_base64_but_wrong_signature_throws_invalid_signature_and_preserves_challenge()
+    {
+        // Regression test for BUG 1: signature result must be enforced
+        // Create two P-256 keys: one for the device, one for signing (different key)
+        using var deviceEcdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var devicePublicKeyBytes = deviceEcdsa.ExportSubjectPublicKeyInfo();
+        var devicePublicKeyPemChars = PemEncoding.Write("PUBLIC KEY", devicePublicKeyBytes);
+        var devicePublicKeyPem = new string(devicePublicKeyPemChars);
+
+        using var wrongEcdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+
+        var citizenRepo = new TestCitizenUserRepoForVerify();
+        var citizen = CitizenUser.Onboard(
+            CitizenId, "Janez", "Novak", "1234567890123",
+            "janez@example.com", "0123456789", Now);
+        var device = citizen.RegisterDevice(
+            CitizenDeviceId,
+            Encoding.UTF8.GetBytes(devicePublicKeyPem),
+            "fingerprint",
+            "MyPhone",
+            Now);
+        citizenRepo.Add(citizen);
+
+        var nonce = new byte[] { 1, 2, 3, 4, 5 };
+        var challenge = DeviceChallenge.Issue(
+            DeviceChallengeId.New(),
+            CitizenDeviceId.Value,
+            DeviceKind.Citizen,
+            nonce,
+            Now,
+            Now.AddMinutes(2));
+        var challengeRepo = new TestDeviceChallengeRepoForVerify();
+        challengeRepo.Add(challenge);
+
+        // Sign with the WRONG key, producing valid base64 but wrong signature
+        var wrongSignature = wrongEcdsa.SignData(nonce, HashAlgorithmName.SHA256, DSASignatureFormat.Rfc3279DerSequence);
+        var wrongSignatureBase64 = Convert.ToBase64String(wrongSignature);
+
+        var verifier = new TestSignatureVerifier();
+        // Setup: when asked to verify with devicePublicKeyPem, nonce, and the wrong signature, return false
+        verifier.SetupVerification(devicePublicKeyPem, nonce, wrongSignature, shouldSucceed: false);
+
+        var handler = BuildHandler(
+            challengeRepo: challengeRepo,
+            citizenUserRepo: citizenRepo,
+            verifier: verifier);
+
+        var act = () => handler.Handle(
+            new VerifyDeviceSignatureCommand(CitizenDeviceId.Value, wrongSignatureBase64),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidSignatureException>();
+        // Challenge should still be active (NOT consumed)
+        challenge.ConsumedAt.Should().BeNull();
+    }
+
+    [Fact]
     public async Task Handle_with_unknown_device_throws_device_not_found()
     {
         var nonce = new byte[] { 1, 2, 3, 4, 5 };
@@ -289,7 +346,10 @@ public sealed class TestDeviceChallengeRepoForVerify : IDeviceChallengeRepositor
 
     public Task AddAsync(DeviceChallenge challenge, CancellationToken cancellationToken = default)
     {
-        _items.Add(challenge);
+        if (!_items.Contains(challenge))
+        {
+            _items.Add(challenge);
+        }
         return Task.CompletedTask;
     }
 
@@ -307,17 +367,20 @@ public sealed class TestCitizenUserRepoForVerify : ICitizenUserRepository
     public void Add(CitizenUser user) => _items.Add(user);
 
     public Task<CitizenUser?> GetByIdAsync(CitizenUserId id, CancellationToken cancellationToken = default)
-        => Task.FromResult(_items.SingleOrDefault(x => x.Id == id));
+        => Task.FromResult(_items.FirstOrDefault(x => x.Id == id));
 
     public Task<CitizenUser?> GetByEmsoAsync(string emso, CancellationToken cancellationToken = default)
-        => Task.FromResult(_items.SingleOrDefault(x => x.Emso == emso));
+        => Task.FromResult(_items.FirstOrDefault(x => x.Emso == emso));
 
     public Task<CitizenUser?> GetByCitizenDeviceIdAsync(CitizenDeviceId deviceId, CancellationToken cancellationToken = default)
         => Task.FromResult(_items.FirstOrDefault(x => x.Devices.Any(d => d.Id == deviceId)));
 
     public Task AddAsync(CitizenUser user, CancellationToken cancellationToken = default)
     {
-        _items.Add(user);
+        if (!_items.Contains(user))
+        {
+            _items.Add(user);
+        }
         return Task.CompletedTask;
     }
 }
@@ -329,10 +392,10 @@ public sealed class TestEmployeeAccountRepoForVerify : IEmployeeAccountRepositor
     public void Add(EmployeeAccount account) => _items.Add(account);
 
     public Task<EmployeeAccount?> GetByIdAsync(EmployeeAccountId id, CancellationToken cancellationToken = default)
-        => Task.FromResult(_items.SingleOrDefault(x => x.Id == id));
+        => Task.FromResult(_items.FirstOrDefault(x => x.Id == id));
 
     public Task<EmployeeAccount?> GetByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)
-        => Task.FromResult(_items.SingleOrDefault(x => x.Email == normalizedEmail));
+        => Task.FromResult(_items.FirstOrDefault(x => x.Email == normalizedEmail));
 
     public Task<EmployeeAccount?> GetByEmployeeDeviceIdAsync(EmployeeDeviceId deviceId, CancellationToken cancellationToken = default)
         => Task.FromResult(_items.FirstOrDefault(x => x.Devices.Any(d => d.Id == deviceId)));
@@ -342,7 +405,10 @@ public sealed class TestEmployeeAccountRepoForVerify : IEmployeeAccountRepositor
 
     public Task AddAsync(EmployeeAccount account, CancellationToken cancellationToken = default)
     {
-        _items.Add(account);
+        if (!_items.Contains(account))
+        {
+            _items.Add(account);
+        }
         return Task.CompletedTask;
     }
 
@@ -406,9 +472,8 @@ public sealed class TestSignatureVerifier : ISignatureVerifier
 
     public bool Verify(string publicKeyPem, byte[] data, byte[] signatureDer)
     {
-        if (!_shouldSucceed)
-            throw new InvalidOperationException("Signature verification failed.");
-        return true;
+        // Return bool directly: true for valid, false for invalid
+        return _shouldSucceed;
     }
 }
 

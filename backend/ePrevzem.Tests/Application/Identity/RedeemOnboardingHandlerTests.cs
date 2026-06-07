@@ -342,11 +342,14 @@ public sealed class TestCitizenActivationCodeRepoForRedeem : ICitizenActivationC
     public void Add(CitizenActivationCode code) => _items.Add(code);
 
     public Task<CitizenActivationCode?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
-        => Task.FromResult(_items.SingleOrDefault(x => x.Code == code));
+        => Task.FromResult(_items.FirstOrDefault(x => x.Code == code));
 
     public Task AddAsync(CitizenActivationCode code, CancellationToken cancellationToken = default)
     {
-        _items.Add(code);
+        if (!_items.Contains(code))
+        {
+            _items.Add(code);
+        }
         return Task.CompletedTask;
     }
 }
@@ -358,11 +361,14 @@ public sealed class TestProvisioningCodeRepoForRedeem : IProvisioningCodeReposit
     public void Add(ProvisioningCode code) => _items.Add(code);
 
     public Task<ProvisioningCode?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
-        => Task.FromResult(_items.SingleOrDefault(x => x.Code == code));
+        => Task.FromResult(_items.FirstOrDefault(x => x.Code == code));
 
     public Task AddAsync(ProvisioningCode provisioningCode, CancellationToken cancellationToken = default)
     {
-        _items.Add(provisioningCode);
+        if (!_items.Contains(provisioningCode))
+        {
+            _items.Add(provisioningCode);
+        }
         return Task.CompletedTask;
     }
 }
@@ -374,17 +380,20 @@ public sealed class TestCitizenUserRepoForRedeem : ICitizenUserRepository
     public void Add(CitizenUser user) => _items.Add(user);
 
     public Task<CitizenUser?> GetByIdAsync(CitizenUserId id, CancellationToken cancellationToken = default)
-        => Task.FromResult(_items.SingleOrDefault(x => x.Id == id));
+        => Task.FromResult(_items.FirstOrDefault(x => x.Id == id));
 
     public Task<CitizenUser?> GetByEmsoAsync(string emso, CancellationToken cancellationToken = default)
-        => Task.FromResult(_items.SingleOrDefault(x => x.Emso == emso));
+        => Task.FromResult(_items.FirstOrDefault(x => x.Emso == emso));
 
     public Task<CitizenUser?> GetByCitizenDeviceIdAsync(CitizenDeviceId deviceId, CancellationToken cancellationToken = default)
         => Task.FromResult(_items.FirstOrDefault(x => x.Devices.Any(d => d.Id == deviceId)));
 
     public Task AddAsync(CitizenUser user, CancellationToken cancellationToken = default)
     {
-        _items.Add(user);
+        if (!_items.Contains(user))
+        {
+            _items.Add(user);
+        }
         return Task.CompletedTask;
     }
 }
@@ -398,10 +407,10 @@ public sealed class TestEmployeeAccountRepoForRedeem : IEmployeeAccountRepositor
     public void Add(EmployeeAccount account) => _items.Add(account);
 
     public Task<EmployeeAccount?> GetByIdAsync(EmployeeAccountId id, CancellationToken cancellationToken = default)
-        => Task.FromResult(_items.SingleOrDefault(x => x.Id == id));
+        => Task.FromResult(_items.FirstOrDefault(x => x.Id == id));
 
     public Task<EmployeeAccount?> GetByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)
-        => Task.FromResult(_items.SingleOrDefault(x => x.Email == normalizedEmail));
+        => Task.FromResult(_items.FirstOrDefault(x => x.Email == normalizedEmail));
 
     public Task<EmployeeAccount?> GetByEmployeeDeviceIdAsync(EmployeeDeviceId deviceId, CancellationToken cancellationToken = default)
         => Task.FromResult(_items.FirstOrDefault(x => x.Devices.Any(d => d.Id == deviceId)));
@@ -411,7 +420,10 @@ public sealed class TestEmployeeAccountRepoForRedeem : IEmployeeAccountRepositor
 
     public Task AddAsync(EmployeeAccount account, CancellationToken cancellationToken = default)
     {
-        _items.Add(account);
+        if (!_items.Contains(account))
+        {
+            _items.Add(account);
+        }
         return Task.CompletedTask;
     }
 

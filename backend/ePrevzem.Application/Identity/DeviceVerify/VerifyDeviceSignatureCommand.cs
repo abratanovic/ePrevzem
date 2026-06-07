@@ -62,17 +62,19 @@ public sealed class VerifyDeviceSignatureCommandHandler
                 ?? throw new InvalidChallengeException();
 
             var publicKeyPem = System.Text.Encoding.UTF8.GetString(device.PublicKey);
+            bool valid;
             try
             {
-                _verifier.Verify(publicKeyPem, challenge.Nonce, Convert.FromBase64String(command.SignatureBase64));
+                valid = _verifier.Verify(publicKeyPem, challenge.Nonce, Convert.FromBase64String(command.SignatureBase64));
             }
-            catch (Exception)
+            catch (FormatException)
             {
-                throw new InvalidSignatureException();
+                valid = false; // malformed base64 signature
             }
+            if (!valid)
+                throw new InvalidSignatureException();
 
             challenge.Consume(now);
-            await _challengeRepo.AddAsync(challenge, cancellationToken);
 
             var response = await DeviceSessionFactory.ForCitizenAsync(
                 citizen,
@@ -95,17 +97,19 @@ public sealed class VerifyDeviceSignatureCommandHandler
                 ?? throw new InvalidChallengeException();
 
             var publicKeyPem = System.Text.Encoding.UTF8.GetString(device.PublicKey);
+            bool valid;
             try
             {
-                _verifier.Verify(publicKeyPem, challenge.Nonce, Convert.FromBase64String(command.SignatureBase64));
+                valid = _verifier.Verify(publicKeyPem, challenge.Nonce, Convert.FromBase64String(command.SignatureBase64));
             }
-            catch (Exception)
+            catch (FormatException)
             {
-                throw new InvalidSignatureException();
+                valid = false; // malformed base64 signature
             }
+            if (!valid)
+                throw new InvalidSignatureException();
 
             challenge.Consume(now);
-            await _challengeRepo.AddAsync(challenge, cancellationToken);
 
             var org = await _orgRepo.GetByIdAsync(employee.OrganizationId, cancellationToken);
             var response = await DeviceSessionFactory.ForEmployeeAsync(
