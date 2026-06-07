@@ -107,8 +107,8 @@ class HttpRegistrationRepository(
             AppUser.Employee(
                 id = deviceId,
                 fullName = "$firstName $lastName",
-                email = "",
-                phone = "",
+                email = email ?: "",
+                phone = phoneNumber ?: "",
                 status = "Aktiven",
                 validUntil = "",
                 organizationId = organizationId ?: "",
@@ -121,8 +121,8 @@ class HttpRegistrationRepository(
             AppUser.RegularUser(
                 id = deviceId,
                 fullName = "$firstName $lastName",
-                email = "",
-                phone = "",
+                email = email ?: "",
+                phone = phoneNumber ?: "",
             )
         }
     }

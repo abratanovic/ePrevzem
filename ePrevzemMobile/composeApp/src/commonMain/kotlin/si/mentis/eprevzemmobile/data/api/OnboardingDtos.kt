@@ -31,6 +31,8 @@ data class DeviceSessionDto(
     val refreshTokenExpiresAt: String,
     val firstName: String,
     val lastName: String,
+    val email: String? = null,
+    val phoneNumber: String? = null,
     val organizationId: String? = null,
     val organizationName: String? = null,
     val roles: List<String> = emptyList(),
