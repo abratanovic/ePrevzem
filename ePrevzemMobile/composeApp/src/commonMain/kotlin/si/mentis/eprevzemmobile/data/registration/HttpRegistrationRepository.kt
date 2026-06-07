@@ -4,7 +4,9 @@ import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
 import si.mentis.eprevzemmobile.data.api.ApiClient
 import si.mentis.eprevzemmobile.data.api.DeviceSessionDto
 import si.mentis.eprevzemmobile.data.api.OnboardingPreviewDto
@@ -24,13 +26,11 @@ class HttpRegistrationRepository(
             val response = api.client.get("${api.baseUrl}/api/onboarding/$normalized")
             if (response.status.value in 200..299) {
                 Result.success(normalized)
-            } else if (response.status.value == 404 || response.status.value == 410) {
-                Result.failure(InvalidCodeException())
             } else {
                 Result.failure(InvalidCodeException())
             }
         } catch (e: Exception) {
-            Result.failure(InvalidCodeException())
+            Result.failure(NetworkException())
         }
     }
 
@@ -43,7 +43,7 @@ class HttpRegistrationRepository(
             val dto = response.body<OnboardingPreviewDto>()
             Result.success(dto.toAppUser(validatedCode))
         } catch (e: Exception) {
-            Result.failure(InvalidCodeException())
+            Result.failure(NetworkException())
         }
     }
 
@@ -59,6 +59,7 @@ class HttpRegistrationRepository(
                 label = null,
             )
             val response = api.client.post("${api.baseUrl}/api/onboarding/$validatedCode/redeem") {
+                contentType(ContentType.Application.Json)
                 setBody(request)
             }
             if (response.status.value !in 200..299) {
@@ -73,7 +74,7 @@ class HttpRegistrationRepository(
             )
             Result.success(dto.toAppUser())
         } catch (e: Exception) {
-            Result.failure(InvalidCodeException())
+            Result.failure(NetworkException())
         }
     }
 

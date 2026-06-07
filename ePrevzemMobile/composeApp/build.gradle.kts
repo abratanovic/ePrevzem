@@ -11,14 +11,14 @@ plugins {
 }
 
 // ePrevzem backend base URL config
-// Developer can override via local.properties: eprevzem.api.base.url=http://116.202.15.208:8080
+// Developer can override via local.properties: eprevzem.api.base.url=http://10.0.2.2:8080
 val eprevzemApiBaseUrl: String = run {
     val props = Properties()
     val localPropsFile = rootProject.file("local.properties")
     if (localPropsFile.exists()) {
         localPropsFile.inputStream().use { props.load(it) }
     }
-    props.getProperty("eprevzem.api.base.url", "http://116.202.15.208:8080")
+    props.getProperty("eprevzem.api.base.url", "http://10.0.2.2:8080")
 }
 
 // cv-identity face matching API base URL
@@ -30,6 +30,35 @@ val cvIdentityBaseUrl: String = run {
         localPropsFile.inputStream().use { props.load(it) }
     }
     props.getProperty("cv.identity.base.url", "http://10.0.2.2:8000")
+}
+
+val capturedEprevzemApiBaseUrl: String = eprevzemApiBaseUrl
+val capturedCvIdentityBaseUrl: String = cvIdentityBaseUrl
+
+val generateIosPlatformConfig by tasks.registering {
+    val apiUrl = capturedEprevzemApiBaseUrl
+    val cvUrl = capturedCvIdentityBaseUrl
+    inputs.property("eprevzemApiBaseUrl", apiUrl)
+    inputs.property("cvIdentityBaseUrl", cvUrl)
+    val outputFile = layout.buildDirectory.file("generated/iosMain/kotlin/si/mentis/eprevzemmobile/PlatformConfig.ios.kt")
+    outputs.file(outputFile)
+    doLast {
+        outputFile.get().asFile.also { it.parentFile.mkdirs() }.writeText(
+            """package si.mentis.eprevzemmobile
+
+internal actual object PlatformConfig {
+    actual val eprevzemApiBaseUrl: String = "$apiUrl"
+    actual val cvIdentityBaseUrl: String = "$cvUrl"
+}
+"""
+        )
+    }
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
+    if (name.contains("Ios", ignoreCase = true)) {
+        dependsOn(generateIosPlatformConfig)
+    }
 }
 
 kotlin {
@@ -50,6 +79,9 @@ kotlin {
     }
 
     sourceSets {
+        iosMain {
+            kotlin.srcDir(layout.buildDirectory.dir("generated/iosMain/kotlin"))
+        }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
         }
