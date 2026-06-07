@@ -42,6 +42,7 @@ public static class DependencyInjection
         services.AddScoped<IPickupReadRepository, PickupReadRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         services.AddScoped<IAuditContextLookup, AuditContextLookup>();
+        services.AddScoped<IDeviceChallengeRepository, DeviceChallengeRepository>();
 
         var siTrustSecret = configuration["SiTrust:Secret"]
             ?? throw new InvalidOperationException("SiTrust:Secret is not configured");
@@ -52,6 +53,7 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, PasswordHasherAdapter>();
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddSingleton<IPackageReferenceGenerator, PackageReferenceGenerator>();
+        services.AddSingleton<ISignatureVerifier, EcdsaSignatureVerifier>();
         services.AddHostedService<IdentitySeeder>();
 
         // Outbound ports — adapters wired here when implemented.
