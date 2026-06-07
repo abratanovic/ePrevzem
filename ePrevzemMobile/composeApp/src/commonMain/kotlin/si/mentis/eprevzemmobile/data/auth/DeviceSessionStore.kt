@@ -14,17 +14,17 @@ class DeviceSessionStore(
         accessExpiresAt: String,
         refreshToken: String,
     ) {
-        storage.write(KEY_DEVICE_ID, deviceId)
-        storage.write(KEY_ACCESS_TOKEN, accessToken)
-        storage.write(KEY_ACCESS_EXPIRES, accessExpiresAt)
-        storage.write(KEY_REFRESH_TOKEN, refreshToken)
+        storage.write(deviceIdKey(deviceId), deviceId)
+        storage.write(accessTokenKey(deviceId), accessToken)
+        storage.write(accessExpiresKey(deviceId), accessExpiresAt)
+        storage.write(refreshTokenKey(deviceId), refreshToken)
     }
 
-    suspend fun deviceId(): String? = storage.read(KEY_DEVICE_ID)
+    suspend fun deviceId(accountId: String): String? = storage.read(deviceIdKey(accountId))
 
-    suspend fun accessToken(): String? = storage.read(KEY_ACCESS_TOKEN)
+    suspend fun accessToken(accountId: String): String? = storage.read(accessTokenKey(accountId))
 
-    suspend fun refreshToken(): String? = storage.read(KEY_REFRESH_TOKEN)
+    suspend fun refreshToken(accountId: String): String? = storage.read(refreshTokenKey(accountId))
 
     suspend fun fingerprint(): String {
         val existing = storage.read(KEY_FINGERPRINT)
@@ -37,27 +37,29 @@ class DeviceSessionStore(
     }
 
     suspend fun updateTokens(
+        accountId: String,
         accessToken: String,
         accessExpiresAt: String,
         refreshToken: String,
     ) {
-        storage.write(KEY_ACCESS_TOKEN, accessToken)
-        storage.write(KEY_ACCESS_EXPIRES, accessExpiresAt)
-        storage.write(KEY_REFRESH_TOKEN, refreshToken)
+        storage.write(accessTokenKey(accountId), accessToken)
+        storage.write(accessExpiresKey(accountId), accessExpiresAt)
+        storage.write(refreshTokenKey(accountId), refreshToken)
     }
 
-    suspend fun clear() {
-        storage.remove(KEY_DEVICE_ID)
-        storage.remove(KEY_ACCESS_TOKEN)
-        storage.remove(KEY_ACCESS_EXPIRES)
-        storage.remove(KEY_REFRESH_TOKEN)
+    suspend fun clear(accountId: String) {
+        storage.remove(deviceIdKey(accountId))
+        storage.remove(accessTokenKey(accountId))
+        storage.remove(accessExpiresKey(accountId))
+        storage.remove(refreshTokenKey(accountId))
     }
 
     private companion object {
-        const val KEY_DEVICE_ID = "auth.device_id"
-        const val KEY_ACCESS_TOKEN = "auth.access_token"
-        const val KEY_ACCESS_EXPIRES = "auth.access_expires"
-        const val KEY_REFRESH_TOKEN = "auth.refresh_token"
         const val KEY_FINGERPRINT = "auth.device_fingerprint"
+
+        fun deviceIdKey(accountId: String) = "auth.$accountId.device_id"
+        fun accessTokenKey(accountId: String) = "auth.$accountId.access_token"
+        fun accessExpiresKey(accountId: String) = "auth.$accountId.access_expires"
+        fun refreshTokenKey(accountId: String) = "auth.$accountId.refresh_token"
     }
 }
