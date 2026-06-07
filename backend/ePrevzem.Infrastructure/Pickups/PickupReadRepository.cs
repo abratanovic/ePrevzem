@@ -1,6 +1,7 @@
 using ePrevzem.Application.Common.Abstractions;
 using ePrevzem.Application.Pickups.Dtos;
 using ePrevzem.Domain.Identity;
+using ePrevzem.Domain.Lockers;
 using ePrevzem.Domain.Organizations;
 using ePrevzem.Domain.Pickups;
 using ePrevzem.Infrastructure.Persistence;
@@ -300,6 +301,98 @@ public sealed class PickupReadRepository : IPickupReadRepository
                         && placement.EndReason == PlacementEndReason.PickedUpByCitizen
                     select placement.EndedAt).FirstOrDefault()
            };
+
+    public async Task<long?> GetActivePickupBoxIdAsync(
+        CitizenUserId citizenId,
+        PackageId packageId,
+        CancellationToken cancellationToken = default)
+    {
+        return await (
+            from placement in _dbContext.Placements.AsNoTracking()
+            join package in _dbContext.Packages.AsNoTracking()
+                on placement.PackageId equals package.Id
+            join locker in _dbContext.Lockers.AsNoTracking()
+                on placement.LockerId equals locker.Id
+            where package.Id == packageId
+                && package.RecipientCitizenUserId == citizenId
+                && package.Status == PackageStatus.InLocker
+                && placement.EndedAt == null
+            select (long?)locker.BoxId).FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<InsertionContextResponse?> GetInsertionContextAsync(
+        OrganizationId organizationId,
+        string serialNumber,
+        CancellationToken cancellationToken = default)
+    {
+        var station = await _dbContext.PickupStations.AsNoTracking()
+            .Where(s => s.SerialNumber == serialNumber)
+            .Select(s => new { s.Id })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (station is null)
+            return null;
+
+        var claim = await _dbContext.StationClaims.AsNoTracking()
+            .Where(c => c.PickupStationId == station.Id
+                && c.OrganizationId == organizationId
+                && c.ReleasedAt == null)
+            .Select(c => new { c.Location.Address, c.Location.HouseNumber, c.Location.ZipCode, c.Location.City })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (claim is null)
+            return null;
+
+        var packageRows = await (
+            from package in _dbContext.Packages.AsNoTracking()
+            join citizen in _dbContext.CitizenUsers.AsNoTracking()
+                on package.RecipientCitizenUserId equals citizen.Id
+            where package.OrganizationId == organizationId
+                && package.TargetPickupStationId == station.Id
+                && package.Status == PackageStatus.AwaitingPlacement
+            orderby package.CreatedAt
+            select new
+            {
+                package.Id,
+                package.Reference,
+                package.Description,
+                RecipientName = citizen.FirstName + " " + citizen.LastName
+            }).ToListAsync(cancellationToken);
+
+        var occupiedLockerIds = _dbContext.Placements.AsNoTracking()
+            .Where(p => p.EndedAt == null)
+            .Select(p => p.LockerId);
+        var lockerRows = await _dbContext.Lockers.AsNoTracking()
+            .Where(l => l.PickupStationId == station.Id
+                && l.IsServiceable
+                && !occupiedLockerIds.Contains(l.Id))
+            .OrderBy(l => l.LockerNumber)
+            .Select(l => new { l.Id, l.LockerNumber })
+            .ToListAsync(cancellationToken);
+
+        return new InsertionContextResponse(
+            station.Id.Value,
+            serialNumber,
+            FormatAddress(claim.Address, claim.HouseNumber, claim.ZipCode, claim.City),
+            packageRows.Select(p => new InsertionPackageResponse(
+                p.Id.Value, p.Reference, p.Description, p.RecipientName)).ToList(),
+            lockerRows.Select(l => new FreeLockerResponse(l.Id.Value, l.LockerNumber)).ToList());
+    }
+
+    public async Task<long?> GetFreeLockerBoxIdAsync(
+        PickupStationId stationId,
+        LockerId lockerId,
+        CancellationToken cancellationToken = default)
+    {
+        var locker = await _dbContext.Lockers.AsNoTracking()
+            .Where(l => l.Id == lockerId && l.PickupStationId == stationId && l.IsServiceable)
+            .Select(l => new { l.BoxId })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (locker is null)
+            return null;
+
+        var occupied = await _dbContext.Placements.AsNoTracking()
+            .AnyAsync(p => p.LockerId == lockerId && p.EndedAt == null, cancellationToken);
+        return occupied ? null : locker.BoxId;
+    }
 
     private static bool IsExpiringSoon(PackageStatus status, DateTimeOffset? deadlineAt, DateTimeOffset now)
         => status == PackageStatus.InLocker

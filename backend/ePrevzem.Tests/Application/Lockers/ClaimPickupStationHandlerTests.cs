@@ -29,7 +29,7 @@ public class ClaimPickupStationHandlerTests
         string serial = "SN-001")
     {
         var station = PickupStation.Create(PickupStationId.New(), serial, Now);
-        station.AddLocker(LockerId.New(), 1);
+        station.AddLocker(LockerId.New(), 1, 1001);
         repo.Items.Add(station);
         return station;
     }

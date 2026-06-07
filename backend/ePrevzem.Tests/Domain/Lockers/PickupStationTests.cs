@@ -37,7 +37,7 @@ public class PickupStationTests
         var station = PickupStation.Create(PickupStationId.New(), Serial, Now);
         station.ClearDomainEvents();
 
-        var locker = station.AddLocker(LockerId.New(), 1, Now);
+        var locker = station.AddLocker(LockerId.New(), 1, 1001, Now);
 
         station.Lockers.Should().ContainSingle().Which.Should().BeSameAs(locker);
         station.DomainEvents.OfType<LockerCreated>().Should().ContainSingle()
@@ -48,9 +48,9 @@ public class PickupStationTests
     public void AddLocker_with_duplicate_number_throws()
     {
         var station = PickupStation.Create(PickupStationId.New(), Serial, Now);
-        station.AddLocker(LockerId.New(), 1);
+        station.AddLocker(LockerId.New(), 1, 1001);
 
-        var act = () => station.AddLocker(LockerId.New(), 1);
+        var act = () => station.AddLocker(LockerId.New(), 1, 1002);
 
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*locker number*1*");
@@ -60,7 +60,7 @@ public class PickupStationTests
     public void AddLocker_with_non_positive_number_throws()
     {
         var station = PickupStation.Create(PickupStationId.New(), Serial, Now);
-        var act = () => station.AddLocker(LockerId.New(), 0);
+        var act = () => station.AddLocker(LockerId.New(), 0, 1001);
         act.Should().Throw<ArgumentOutOfRangeException>().WithParameterName("lockerNumber");
     }
 
@@ -68,7 +68,7 @@ public class PickupStationTests
     public void SetLockerServiceability_marks_requested_locker_out_of_service()
     {
         var station = PickupStation.Create(PickupStationId.New(), Serial, Now);
-        var locker = station.AddLocker(LockerId.New(), 1);
+        var locker = station.AddLocker(LockerId.New(), 1, 1001);
         station.ClearDomainEvents();
 
         station.SetLockerServiceability(locker.Id, false, Now);

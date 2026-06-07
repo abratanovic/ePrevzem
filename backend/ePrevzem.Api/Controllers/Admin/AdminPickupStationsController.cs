@@ -32,7 +32,9 @@ public sealed class AdminPickupStationsController : ControllerBase
         try
         {
             var response = await _mediator.Send(
-                new RegisterPickupStationCommand(request.SerialNumber, request.LockerNumbers),
+                new RegisterPickupStationCommand(
+                    request.SerialNumber,
+                    request.Lockers.Select(l => new LockerRegistration(l.Number, l.BoxId)).ToList()),
                 cancellationToken);
 
             return CreatedAtAction(nameof(Register), new { id = response.Id }, response);
@@ -65,4 +67,6 @@ public sealed class AdminPickupStationsController : ControllerBase
 
 public sealed record RegisterPickupStationRequest(
     string SerialNumber,
-    IReadOnlyList<int> LockerNumbers);
+    IReadOnlyList<LockerRegistrationRequest> Lockers);
+
+public sealed record LockerRegistrationRequest(int Number, long BoxId);

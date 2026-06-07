@@ -1,5 +1,7 @@
 using ePrevzem.Application.Common.Abstractions;
+using ePrevzem.Application.Pickups.Delete;
 using ePrevzem.Application.Pickups.Dtos;
+using ePrevzem.Application.Pickups.Open;
 using ePrevzem.Application.Pickups.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -49,6 +51,63 @@ public sealed class CitizenPickupsController : ControllerBase
                 title: "Pickup not found",
                 detail: "Prevzem ni bil najden.")
             : Ok(result);
+    }
+
+    [HttpPost("{pickupId:guid}/open")]
+    [ProducesResponseType<LockerTokenResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status502BadGateway)]
+    public async Task<IActionResult> Open(
+        [FromRoute] Guid pickupId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await _mediator.Send(new OpenCitizenPickupCommand(GetCitizenId(), pickupId), cancellationToken));
+        }
+        catch (PickupNotFoundException)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                title: "Pickup not found",
+                detail: "Prevzem ni bil najden ali ni v paketniku.");
+        }
+        catch (LockerOpenException)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status502BadGateway,
+                title: "Locker open failed",
+                detail: "Predalčka ni bilo mogoče odpreti. Poskusite znova.");
+        }
+    }
+
+    [HttpPost("{pickupId:guid}/confirm-pickup")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ConfirmPickup(
+        [FromRoute] Guid pickupId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _mediator.Send(new ConfirmCitizenPickupCommand(GetCitizenId(), pickupId), cancellationToken);
+            return NoContent();
+        }
+        catch (PickupNotFoundException)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                title: "Pickup not found",
+                detail: "Prevzem ni bil najden.");
+        }
+        catch (InvalidOperationException)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Pickup cannot be confirmed",
+                detail: "Prevzema v trenutnem stanju ni mogoče potrditi.");
+        }
     }
 
     private Guid GetCitizenId()

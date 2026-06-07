@@ -190,6 +190,8 @@ public sealed class TestPackageRepository(IEnumerable<string>? existingReference
 
     public Task<bool> ExistsByReferenceAsync(string reference, CancellationToken cancellationToken = default)
         => Task.FromResult(_references.Contains(reference));
+    public Task<Package?> GetByIdAsync(PackageId id, CancellationToken cancellationToken = default)
+        => Task.FromResult(Items.SingleOrDefault(x => x.Id == id));
     public Task<Package?> GetByIdForOrganizationAsync(
         PackageId id,
         OrganizationId organizationId,

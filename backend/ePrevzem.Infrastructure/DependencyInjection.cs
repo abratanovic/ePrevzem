@@ -9,6 +9,7 @@ using ePrevzem.Infrastructure.Time;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace ePrevzem.Infrastructure;
 
@@ -56,9 +57,17 @@ public static class DependencyInjection
         services.AddSingleton<ISignatureVerifier, EcdsaSignatureVerifier>();
         services.AddHostedService<IdentitySeeder>();
 
-        // Outbound ports — adapters wired here when implemented.
-        // services.AddHttpClient<ISiTrustClient, SiTrustClient>(...);
-        // services.AddHttpClient<ILockerGateway, Direct4MeLockerGateway>(...);
+        // Outbound ports.
+        services.Configure<Direct4MeOptions>(configuration.GetSection("Direct4Me"));
+        services.AddHttpClient<ILockerGateway, Direct4MeLockerGateway>((sp, client) =>
+        {
+            var options = sp.GetRequiredService<IOptions<Direct4MeOptions>>().Value;
+            var baseUrl = options.BaseUrl.EndsWith('/') ? options.BaseUrl : options.BaseUrl + "/";
+            client.BaseAddress = new Uri(baseUrl);
+            if (!string.IsNullOrWhiteSpace(options.ApiKey))
+                client.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", options.ApiKey);
+        });
 
         return services;
     }
