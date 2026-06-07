@@ -63,6 +63,7 @@ internal static class DeviceSessionFactory
             employee.LastName,
             employee.Email,
             null,
+            null,
             employee.OrganizationId.Value,
             organizationName,
             employee.Roles.Select(r => r.ToString()).ToList());
