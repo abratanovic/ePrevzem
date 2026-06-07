@@ -10,11 +10,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.launch
 import si.mentis.eprevzemmobile.AppContainer
+import si.mentis.eprevzemmobile.data.auth.DeviceSessionStore
 import si.mentis.eprevzemmobile.data.auth.SessionStore
 import si.mentis.eprevzemmobile.data.security.AuthRepository
 import si.mentis.eprevzemmobile.data.security.SecurityRepository
-
-private const val DEVICE_ID = "device-01"
 
 @Composable
 fun LoginRoute(
@@ -22,6 +21,7 @@ fun LoginRoute(
     securityRepository: SecurityRepository = AppContainer.securityRepository,
     authRepository: AuthRepository = AppContainer.authRepository,
     sessionStore: SessionStore = AppContainer.sessionStore,
+    deviceSessionStore: DeviceSessionStore = AppContainer.deviceSessionStore,
     modifier: Modifier = Modifier,
 ) {
     var state by remember { mutableStateOf(LoginState()) }
@@ -41,13 +41,20 @@ fun LoginRoute(
     fun authWithBiometric() {
         scope.launch {
             state = state.copy(isLoading = true, error = null)
-            val challenge = authRepository.getChallenge(DEVICE_ID).getOrElse {
+            val deviceId = deviceSessionStore.deviceId()
+            if (deviceId == null) {
+                securityRepository.reset()
+                sessionStore.forgetAllIdentities()
+                onResetSecureStorage()
+                return@launch
+            }
+            val challenge = authRepository.getChallenge(deviceId).getOrElse {
                 state = state.copy(isLoading = false, error = "Napaka pri prijavi. Poskusite znova.")
                 return@launch
             }
             securityRepository.signChallengeWithBiometric(challenge)
                 .onSuccess { signature ->
-                    authRepository.verifySignature(DEVICE_ID, signature)
+                    authRepository.verifySignature(deviceId, signature)
                         .onSuccess { finishAuthenticated() }
                         .onFailure {
                             state = state.copy(isLoading = false, error = "Avtentikacija ni uspela.")
@@ -62,13 +69,20 @@ fun LoginRoute(
     fun authWithPin(pin: String) {
         scope.launch {
             state = state.copy(isLoading = true, error = null)
-            val challenge = authRepository.getChallenge(DEVICE_ID).getOrElse {
+            val deviceId = deviceSessionStore.deviceId()
+            if (deviceId == null) {
+                securityRepository.reset()
+                sessionStore.forgetAllIdentities()
+                onResetSecureStorage()
+                return@launch
+            }
+            val challenge = authRepository.getChallenge(deviceId).getOrElse {
                 state = state.copy(isLoading = false, error = "Napaka pri prijavi. Poskusite znova.")
                 return@launch
             }
             securityRepository.signChallengeWithPin(pin, challenge)
                 .onSuccess { signature ->
-                    authRepository.verifySignature(DEVICE_ID, signature)
+                    authRepository.verifySignature(deviceId, signature)
                         .onSuccess { finishAuthenticated() }
                         .onFailure {
                             state = state.copy(isLoading = false, error = "Avtentikacija ni uspela.")
