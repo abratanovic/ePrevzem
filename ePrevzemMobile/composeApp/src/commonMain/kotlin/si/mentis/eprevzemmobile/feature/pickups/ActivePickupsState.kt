@@ -11,6 +11,7 @@ data class ActivePickupsState(
     val profile: ProfileData = ProfileData(),
     val pickups: List<PickupItem> = emptyList(),
     val isRefreshing: Boolean = false,
+    val isHistoryRefreshing: Boolean = false,
     val activeTab: ActiveTab = ActiveTab.Pickups,
     val auditLogEntries:List<AuditLogEntry> = emptyList(),
     val isBiometricEnabled: Boolean = false,

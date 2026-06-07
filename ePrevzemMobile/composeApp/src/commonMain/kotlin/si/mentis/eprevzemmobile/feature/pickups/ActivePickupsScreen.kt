@@ -96,7 +96,9 @@ fun ActivePickupsScreen(
                     onEvent=onEvent
                 )
                 ActiveTab.History -> AuditLogScreen(
-                    entries=state.auditLogEntries
+                    entries = state.auditLogEntries,
+                    isRefreshing = state.isHistoryRefreshing,
+                    onRefresh = { onEvent(ActivePickupsEvent.RefreshHistory) },
                 )
 
                 ActiveTab.Profile->ProfileSettingsContent(
@@ -175,6 +177,16 @@ fun ActivePickupsRoute(
                     state = state.copy(isRefreshing = true)
                     scope.launch {
                         state = state.copy(pickups = repository.getActivePickups(), isRefreshing = false)
+                    }
+                }
+                ActivePickupsEvent.RefreshHistory -> {
+                    if (!state.isHistoryRefreshing) {
+                        state = state.copy(isHistoryRefreshing = true)
+                        scope.launch {
+                            val entries = logEventRepository.getLogEventsForCurrentUser()
+                                .map { it.toAuditLogEntry() }
+                            state = state.copy(auditLogEntries = entries, isHistoryRefreshing = false)
+                        }
                     }
                 }
                 is ActivePickupsEvent.PickupClicked -> onPickupClicked(event.id)
