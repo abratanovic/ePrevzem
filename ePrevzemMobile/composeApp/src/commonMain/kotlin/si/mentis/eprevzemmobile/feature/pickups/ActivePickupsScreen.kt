@@ -119,6 +119,7 @@ fun ActivePickupsScreen(
 fun ActivePickupsRoute(
     user: AppUser,
     onPickupClicked: (String) -> Unit,
+    onAddAccount: () -> Unit = {},
     onUserUpdated: (AppUser) -> Unit = {},
     repository: PickupRepository = AppContainer.pickupRepository,
     logEventRepository: LogEventRepository = AppContainer.logEventRepository,
@@ -177,6 +178,7 @@ fun ActivePickupsRoute(
                     }
                 }
                 is ActivePickupsEvent.PickupClicked -> onPickupClicked(event.id)
+                ActivePickupsEvent.AddAccountClicked -> onAddAccount()
                 is ActivePickupsEvent.TabSelected -> state = state.copy(activeTab = event.tab)
                 is ActivePickupsEvent.BiometricToggleRequested -> {
                     if (event.enabled) {
@@ -475,6 +477,14 @@ private fun ProfileSettingsContent(
                 description = "Zamenjajte 6-mestni PIN, ki ga uporabljate kot rezervno potrditev identitete.",
                 enabled = !state.isUpdatingSettings && !state.isChangingPin,
                 onClick = { onEvent(ActivePickupsEvent.ChangePinClicked) },
+            )
+            EDetailsDivider()
+            SettingsActionRow(
+                icon = EPrevzemIcons.profile(),
+                title = "Dodaj račun",
+                description = "Registrirajte dodaten račun na tej napravi z registracijsko kodo.",
+                enabled = true,
+                onClick = { onEvent(ActivePickupsEvent.AddAccountClicked) },
             )
         }
     }

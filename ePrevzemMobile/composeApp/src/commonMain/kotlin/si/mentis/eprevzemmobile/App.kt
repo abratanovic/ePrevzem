@@ -176,11 +176,15 @@ fun App() {
                 )
                 AppDestination.RegistrationCode -> RegistrationCodeRoute(
                     onBack = {
-                        val profiles = AppContainer.sessionStore.profiles.value
-                        destination = if (profiles.isEmpty()) {
-                            AppDestination.Welcome
+                        val current = session
+                        destination = if (current is AuthSession.Authenticated) {
+                            when (current.user) {
+                                is AppUser.RegularUser -> AppDestination.ActivePickups
+                                is AppUser.Employee -> AppDestination.OperatorHome
+                            }
                         } else {
-                            AppDestination.AccountPicker
+                            val profiles = AppContainer.sessionStore.profiles.value
+                            if (profiles.isEmpty()) AppDestination.Welcome else AppDestination.AccountPicker
                         }
                     },
                     onCodeAccepted = { code -> destination = AppDestination.ConfirmAccount(code) },
@@ -196,6 +200,7 @@ fun App() {
                         ActivePickupsRoute(
                             user = user,
                             onPickupClicked = { id -> destination = AppDestination.PickupDetails(id) },
+                            onAddAccount = { destination = AppDestination.RegistrationCode },
                             onUserUpdated = { updatedUser ->
                                 scope.launch { AppContainer.sessionStore.addProfile(updatedUser) }
                             },
