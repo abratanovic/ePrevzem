@@ -95,6 +95,7 @@ public sealed class RefreshDeviceTokenCommandHandler
                 citizen.LastName,
                 citizen.Email,
                 citizen.PhoneNumber,
+                citizen.Emso,
                 null,
                 null,
                 Array.Empty<string>());
@@ -132,6 +133,7 @@ public sealed class RefreshDeviceTokenCommandHandler
                 employee.FirstName,
                 employee.LastName,
                 employee.Email,
+                null,
                 null,
                 employee.OrganizationId.Value,
                 org?.Name,

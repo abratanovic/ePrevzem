@@ -11,6 +11,7 @@ public sealed record DeviceSessionResponse(
     string LastName,
     string? Email,
     string? PhoneNumber,
+    string? Emso,
     Guid? OrganizationId,
     string? OrganizationName,
     IReadOnlyList<string> Roles);

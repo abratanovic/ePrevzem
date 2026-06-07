@@ -13,6 +13,7 @@ public sealed record OnboardingPreview(
     string LastName,
     string? Email,
     string? PhoneNumber,
+    string? Emso,
     string? OrganizationName,
     IReadOnlyList<string> Roles,
     DateTimeOffset ExpiresAt);
@@ -63,6 +64,7 @@ public sealed class PeekOnboardingCodeQueryHandler
                 LastName: citizenUser.LastName,
                 Email: citizenUser.Email,
                 PhoneNumber: citizenUser.PhoneNumber,
+                Emso: citizenUser.Emso,
                 OrganizationName: null,
                 Roles: new List<string>(),
                 ExpiresAt: citizenCode.ExpiresAt);
@@ -84,6 +86,7 @@ public sealed class PeekOnboardingCodeQueryHandler
                 LastName: provisioningCode.PreFilledInfo.LastName,
                 Email: provisioningCode.PreFilledInfo.Email,
                 PhoneNumber: null,
+                Emso: null,
                 OrganizationName: organizationName,
                 Roles: provisioningCode.Roles.Select(r => r.ToString()).ToList(),
                 ExpiresAt: provisioningCode.ExpiresAt);

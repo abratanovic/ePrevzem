@@ -68,5 +68,19 @@ services:
     depends_on:
       - backend
 
+  cv-identity:
+    image: edvbec/eprevzem-cv-identity:latest
+    build:
+      context: cv-identity
+      dockerfile: Dockerfile
+    ports:
+      - 8000:8000
+    environment:
+      CV_IDENTITY_MODELS_DIR: /app/models
+      CV_IDENTITY_CAPTURES_DIR: /app/captures
+    volumes:
+      - ./cv-identity/app/models:/app/models:ro
+      - ./cv-identity/captures:/app/captures
+
 volumes:
   pgdata:

@@ -91,6 +91,7 @@ class HttpRegistrationRepository(
                 organizationType = "",
                 organizationLocation = "",
                 roles = roles.mapNotNull { runCatching { EmployeeRole.valueOf(it) }.getOrNull() },
+                emso = emso,
             )
         } else {
             AppUser.RegularUser(
@@ -98,6 +99,7 @@ class HttpRegistrationRepository(
                 fullName = "$firstName $lastName",
                 email = email ?: "",
                 phone = phoneNumber ?: "",
+                emso = emso,
             )
         }
     }
@@ -107,8 +109,8 @@ class HttpRegistrationRepository(
             AppUser.Employee(
                 id = deviceId,
                 fullName = "$firstName $lastName",
-                email = email ?: "",
-                phone = phoneNumber ?: "",
+                email = "",
+                phone = "",
                 status = "Aktiven",
                 validUntil = "",
                 organizationId = organizationId ?: "",
@@ -116,13 +118,15 @@ class HttpRegistrationRepository(
                 organizationType = "",
                 organizationLocation = "",
                 roles = roles.mapNotNull { runCatching { EmployeeRole.valueOf(it) }.getOrNull() },
+                emso = emso,
             )
         } else {
             AppUser.RegularUser(
                 id = deviceId,
                 fullName = "$firstName $lastName",
-                email = email ?: "",
-                phone = phoneNumber ?: "",
+                email = "",
+                phone = "",
+                emso = emso,
             )
         }
     }

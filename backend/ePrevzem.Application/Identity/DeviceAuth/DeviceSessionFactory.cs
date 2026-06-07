@@ -29,6 +29,7 @@ internal static class DeviceSessionFactory
             refresh.ExpiresAt,
             citizen.FirstName,
             citizen.LastName,
+            citizen.Emso,
             citizen.Email,
             citizen.PhoneNumber,
             null,

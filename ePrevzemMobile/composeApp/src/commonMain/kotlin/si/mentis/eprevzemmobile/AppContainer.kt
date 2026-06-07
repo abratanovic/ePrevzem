@@ -17,6 +17,8 @@ import si.mentis.eprevzemmobile.data.locker.HttpLockerRepository
 import si.mentis.eprevzemmobile.data.locker.LockerRepository
 import si.mentis.eprevzemmobile.data.pickups.HttpPickupRepository
 import si.mentis.eprevzemmobile.data.pickups.PickupRepository
+import si.mentis.eprevzemmobile.data.identity.HttpIdentityVerificationRepository
+import si.mentis.eprevzemmobile.data.identity.IdentityVerificationRepository
 import si.mentis.eprevzemmobile.data.registration.HttpRegistrationRepository
 import si.mentis.eprevzemmobile.data.registration.RegistrationRepository
 import si.mentis.eprevzemmobile.data.security.AuthRepository
@@ -44,4 +46,6 @@ object AppContainer {
     val authRepository: AuthRepository = HttpAuthRepository(apiClient, deviceSessionStore)
     val lockerRepository: LockerRepository = HttpLockerRepository(apiClient)
     val insertionRepository: InsertionRepository = HttpInsertionRepository(apiClient)
+    val identityVerificationRepository: IdentityVerificationRepository =
+        HttpIdentityVerificationRepository(apiClient)
 }

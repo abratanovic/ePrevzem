@@ -41,7 +41,6 @@ private object ConfirmAccountStrings {
     const val Description = "Preverite, ali so podatki pravilni."
     const val AccountSection = "Račun"
     const val FullNameLabel = "Polno ime"
-    const val EmailLabel = "E-pošta"
     const val PhoneLabel = "Telefon"
     const val ValidUntilLabel = "Veljavnost registracije"
     const val OrganizationSection = "Organizacija"
@@ -147,9 +146,10 @@ private fun AccountDetailsCard(account: ConfirmAccountData) {
             EDetailsDivider()
             EDetailsRow(
                 icon = EPrevzemIcons.inbox(),
-                label = ConfirmAccountStrings.EmailLabel,
-                value = account.email,
+                label = account.identityLabel,
+                value = account.identityValue,
                 tint = EIconTint.Teal,
+                mono = account.emso?.isNotBlank() == true,
             )
 //            EDetailsDivider()
 //            EDetailsRow(

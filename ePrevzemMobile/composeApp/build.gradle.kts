@@ -21,6 +21,17 @@ val eprevzemApiBaseUrl: String = run {
     props.getProperty("eprevzem.api.base.url", "http://10.0.2.2:5080")
 }
 
+// cv-identity face matching API base URL
+// Developer can override via local.properties: cv.identity.base.url=http://10.0.2.2:8000
+val cvIdentityBaseUrl: String = run {
+    val props = Properties()
+    val localPropsFile = rootProject.file("local.properties")
+    if (localPropsFile.exists()) {
+        localPropsFile.inputStream().use { props.load(it) }
+    }
+    props.getProperty("cv.identity.base.url", "http://10.0.2.2:8000")
+}
+
 kotlin {
     androidTarget {
         compilerOptions {
@@ -92,6 +103,7 @@ android {
         versionCode = 1
         versionName = "1.0"
         buildConfigField("String", "EPREVZEM_API_BASE_URL", "\"$eprevzemApiBaseUrl\"")
+        buildConfigField("String", "CV_IDENTITY_BASE_URL", "\"$cvIdentityBaseUrl\"")
     }
     buildFeatures {
         buildConfig = true
