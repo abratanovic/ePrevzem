@@ -155,6 +155,10 @@ public class AuditLogRepositoryTests
         result[0].ActorKind.Should().Be(nameof(AuditActorKind.Employee));
         result[0].ActorDisplayName.Should().BeNull();
         result[0].ActorEmail.Should().BeNull();
+
+    }
+
+    [Fact]
     public async Task GetForCitizenAsync_returns_own_actor_events_and_events_about_their_packages_only()
     {
         await using var db = CreateContext();
