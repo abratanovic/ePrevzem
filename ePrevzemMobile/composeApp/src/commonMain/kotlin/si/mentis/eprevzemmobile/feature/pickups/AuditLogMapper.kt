@@ -20,16 +20,24 @@ fun LogEvent.toAuditLogEntry(): AuditLogEntry {
 }
 
 private fun LogAction.toAuditLogBadge(): AuditLogBadge = when (this) {
-    LogAction.PackagePickedUpByCitizen,
-    LogAction.PackageMarkedPickedUpManually,
-    LogAction.DelegationUsedAtPickup,
-    -> AuditLogBadge(label = "Prevzeto", tone = AuditLogBadgeTone.Success)
+    LogAction.PackageCreated,
+    -> AuditLogBadge(label = "Ustvarjeno", tone = AuditLogBadgeTone.Info)
 
     LogAction.PackagePlaced,
-    -> AuditLogBadge(label = "Vloženo", tone = AuditLogBadgeTone.Info)
+    -> AuditLogBadge(label = "Vstavljeno", tone = AuditLogBadgeTone.Info)
+
+    LogAction.PackagePickedUpByCitizen,
+    LogAction.PackageMarkedPickedUpManually,
+    -> AuditLogBadge(label = "Prevzeto", tone = AuditLogBadgeTone.Success)
+
+    LogAction.DelegationUsedAtPickup,
+    -> AuditLogBadge(label = "Prevzeto s pooblastilom", tone = AuditLogBadgeTone.Success)
 
     LogAction.PackageRemovedByEmployee,
-    -> AuditLogBadge(label = "Odstranjeno", tone = AuditLogBadgeTone.Warning)
+    -> AuditLogBadge(label = "Odstranjeno iz paketomata", tone = AuditLogBadgeTone.Warning)
+
+    LogAction.PackageRetrievedAfterExpiry,
+    -> AuditLogBadge(label = "Umaknjeno po poteku", tone = AuditLogBadgeTone.Warning)
 
     LogAction.PackageExpired,
     -> AuditLogBadge(label = "Poteklo", tone = AuditLogBadgeTone.Warning)
@@ -37,17 +45,17 @@ private fun LogAction.toAuditLogBadge(): AuditLogBadge = when (this) {
     LogAction.PackageCancelled,
     -> AuditLogBadge(label = "Preklicano", tone = AuditLogBadgeTone.Error)
 
+    LogAction.PackageDeleted,
+    -> AuditLogBadge(label = "Izbrisano", tone = AuditLogBadgeTone.Error)
+
+    LogAction.DelegationCreated,
+    -> AuditLogBadge(label = "Pooblastilo ustvarjeno", tone = AuditLogBadgeTone.Info)
+
+    LogAction.DelegationRevoked,
+    -> AuditLogBadge(label = "Pooblastilo preklicano", tone = AuditLogBadgeTone.Warning)
+
     LogAction.LockerOpened,
     -> AuditLogBadge(label = "Odprto", tone = AuditLogBadgeTone.Info)
-
-    LogAction.ProvisioningCodeIssued,
-    -> AuditLogBadge(label = "Koda izdana", tone = AuditLogBadgeTone.Info)
-
-    LogAction.ProvisioningCodeRedeemed,
-    -> AuditLogBadge(label = "Koda uporabljena", tone = AuditLogBadgeTone.Success)
-
-    LogAction.CitizenOnboarded,
-    -> AuditLogBadge(label = "Registrirano", tone = AuditLogBadgeTone.Success)
 
     else -> AuditLogBadge(label = "Zabeleženo", tone = AuditLogBadgeTone.Info)
 }
