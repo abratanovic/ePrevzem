@@ -14,6 +14,7 @@ import si.mentis.eprevzemmobile.AppContainer
 import si.mentis.eprevzemmobile.core.audio.TokenAudioPlayer
 import si.mentis.eprevzemmobile.core.camera.CameraPermissionStatus
 import si.mentis.eprevzemmobile.core.camera.QrScannerView
+import si.mentis.eprevzemmobile.core.camera.parseLockerId
 import si.mentis.eprevzemmobile.core.camera.rememberCameraPermissionState
 import si.mentis.eprevzemmobile.data.insertion.InsertionRepository
 import si.mentis.eprevzemmobile.data.locker.LockerRepository
@@ -116,7 +117,7 @@ fun InsertionRoute(
         if (permission.status == CameraPermissionStatus.Granted) {
             QrScannerView(
                 modifier = Modifier.fillMaxSize(),
-                onQrDetected = { raw -> handleEvent(InsertionEvent.StationScanned(raw)) },
+                onQrDetected = { raw -> handleEvent(InsertionEvent.StationScanned(parseLockerId(raw))) },
             )
         }
     }
