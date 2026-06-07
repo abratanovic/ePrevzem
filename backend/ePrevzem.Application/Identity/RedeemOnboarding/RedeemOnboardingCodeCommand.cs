@@ -98,6 +98,7 @@ public sealed class RedeemOnboardingCodeCommandHandler
                 throw new OnboardingCodeExpiredException();
 
             EmployeeAccount employee;
+            bool isNewAccount = false;
 
             // Resolve or create employee account
             if (provisioningCode.IsReprovisioningOfEmployeeAccountId is not null)
@@ -107,16 +108,27 @@ public sealed class RedeemOnboardingCodeCommandHandler
             }
             else
             {
-                employee = EmployeeAccount.Create(
-                    EmployeeAccountId.New(),
-                    provisioningCode.OrganizationId,
-                    provisioningCode.PreFilledInfo.FirstName,
-                    provisioningCode.PreFilledInfo.LastName,
-                    provisioningCode.PreFilledInfo.Email,
-                    provisioningCode.Roles.ToList(),
-                    new List<PickupStationId>(),
-                    provisioningCode.Id,
-                    now);
+                // Flow #1 (AddEmployeeMember): the account was already created and bound to this code.
+                var existing = await _employeeRepo.GetByProvisioningCodeIdAsync(provisioningCode.Id, cancellationToken);
+                if (existing is not null)
+                {
+                    employee = existing;
+                }
+                else
+                {
+                    // Flow #2 (standalone IssueProvisioningCode): create the account now.
+                    employee = EmployeeAccount.Create(
+                        EmployeeAccountId.New(),
+                        provisioningCode.OrganizationId,
+                        provisioningCode.PreFilledInfo.FirstName,
+                        provisioningCode.PreFilledInfo.LastName,
+                        provisioningCode.PreFilledInfo.Email,
+                        provisioningCode.Roles.ToList(),
+                        new List<PickupStationId>(),
+                        provisioningCode.Id,
+                        now);
+                    isNewAccount = true;
+                }
             }
 
             var device = employee.RegisterDevice(
@@ -129,7 +141,7 @@ public sealed class RedeemOnboardingCodeCommandHandler
             provisioningCode.Redeem(now, employee.Id);
             await _provisioningCodeRepo.AddAsync(provisioningCode, cancellationToken);
 
-            if (provisioningCode.IsReprovisioningOfEmployeeAccountId is null)
+            if (isNewAccount)
             {
                 await _employeeRepo.AddAsync(employee, cancellationToken);
             }

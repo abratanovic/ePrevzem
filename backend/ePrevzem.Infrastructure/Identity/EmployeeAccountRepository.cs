@@ -28,6 +28,10 @@ public sealed class EmployeeAccountRepository : IEmployeeAccountRepository
             .Include(x => x.Devices)
             .FirstOrDefaultAsync(a => a.Devices.Any(d => d.Id == deviceId), cancellationToken);
 
+    public Task<EmployeeAccount?> GetByProvisioningCodeIdAsync(ProvisioningCodeId provisioningCodeId, CancellationToken cancellationToken = default)
+        => _dbContext.EmployeeAccounts
+            .FirstOrDefaultAsync(e => e.CreatedFromProvisioningCodeId == provisioningCodeId, cancellationToken);
+
     public Task AddAsync(EmployeeAccount account, CancellationToken cancellationToken = default)
         => _dbContext.EmployeeAccounts.AddAsync(account, cancellationToken).AsTask();
 

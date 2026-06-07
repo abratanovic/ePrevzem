@@ -167,6 +167,8 @@ public sealed class TestEmployeeRepository(EmployeeAccount? employee) : IEmploye
         => Task.FromResult(employee?.Id == id ? employee : null);
     public Task<EmployeeAccount?> GetByEmployeeDeviceIdAsync(EmployeeDeviceId deviceId, CancellationToken cancellationToken = default)
         => Task.FromResult(employee?.Devices.Any(d => d.Id == deviceId) == true ? employee : null);
+    public Task<EmployeeAccount?> GetByProvisioningCodeIdAsync(ProvisioningCodeId provisioningCodeId, CancellationToken cancellationToken = default)
+        => Task.FromResult(employee?.CreatedFromProvisioningCodeId == provisioningCodeId ? employee : null);
     public Task AddAsync(EmployeeAccount account, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<IReadOnlyList<EmployeeAccount>> GetByOrganisationIdAsync(OrganizationId organisationId, CancellationToken cancellationToken = default)
         => Task.FromResult<IReadOnlyList<EmployeeAccount>>([]);

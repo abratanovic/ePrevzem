@@ -281,6 +281,58 @@ public class RedeemOnboardingHandlerTests
 
         await act.Should().ThrowAsync<OnboardingCodeExpiredException>();
     }
+
+    [Fact]
+    public async Task Handle_with_existing_account_from_add_member_flow_does_not_duplicate()
+    {
+        const string code = "ADDMEMBER123";
+        const string publicKeyPem = "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE...\n-----END PUBLIC KEY-----";
+        const string fingerprint = "device-fingerprint";
+
+        var provisioningCodeId = ProvisioningCodeId.New();
+        var existingEmployee = EmployeeAccount.Create(
+            EmployeeAccountId.New(),
+            OrgId,
+            "Marko", "Marković", "marko@example.com",
+            new[] { EmployeeAccountRole.RecordManager, EmployeeAccountRole.Operator },
+            Array.Empty<PickupStationId>(),
+            provisioningCodeId,
+            Now);
+
+        var provisioningCodeRepo = new TestProvisioningCodeRepoForRedeem();
+        var provisioningCode = ProvisioningCode.Issue(
+            provisioningCodeId,
+            OrgId,
+            code,
+            PersonalInfo.Create("Marko", "Marković", "marko@example.com"),
+            new[] { EmployeeAccountRole.RecordManager, EmployeeAccountRole.Operator },
+            OrganizationAdminAccountId.New(),
+            Now,
+            Now.AddHours(72),
+            isReprovisioningOf: null);
+        provisioningCodeRepo.Add(provisioningCode);
+
+        var employeeRepo = new TestEmployeeAccountRepoForRedeem();
+        employeeRepo.Add(existingEmployee);
+
+        var refreshTokenRepo = new TestRefreshTokenRepositoryForRedeem();
+        var handler = BuildHandler(
+            provisioningCodeRepo: provisioningCodeRepo,
+            employeeRepo: employeeRepo,
+            refreshTokenRepo: refreshTokenRepo);
+
+        var result = await handler.Handle(
+            new RedeemOnboardingCodeCommand(code, publicKeyPem, fingerprint, "Mobile"),
+            CancellationToken.None);
+
+        result.Role.Should().Be("Employee");
+        result.FirstName.Should().Be("Marko");
+        result.LastName.Should().Be("Marković");
+        employeeRepo.Items.Should().HaveCount(1);
+        employeeRepo.Items[0].Id.Should().Be(existingEmployee.Id);
+        refreshTokenRepo.Items.Should().HaveCount(1);
+        refreshTokenRepo.Items[0].EmployeeAccountId.Should().NotBeNull();
+    }
 }
 
 public sealed class TestCitizenActivationCodeRepoForRedeem : ICitizenActivationCodeRepository
@@ -353,6 +405,9 @@ public sealed class TestEmployeeAccountRepoForRedeem : IEmployeeAccountRepositor
 
     public Task<EmployeeAccount?> GetByEmployeeDeviceIdAsync(EmployeeDeviceId deviceId, CancellationToken cancellationToken = default)
         => Task.FromResult(_items.FirstOrDefault(x => x.Devices.Any(d => d.Id == deviceId)));
+
+    public Task<EmployeeAccount?> GetByProvisioningCodeIdAsync(ProvisioningCodeId provisioningCodeId, CancellationToken cancellationToken = default)
+        => Task.FromResult(_items.FirstOrDefault(x => x.CreatedFromProvisioningCodeId == provisioningCodeId));
 
     public Task AddAsync(EmployeeAccount account, CancellationToken cancellationToken = default)
     {
