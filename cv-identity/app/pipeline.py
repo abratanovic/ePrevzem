@@ -91,14 +91,22 @@ class VerificationPipeline:
             if not value
         ]
         if missing:
-            return {"verified": False, "reasons": missing}
+            res = {"verified": False, "reasons": missing}
+            print(f"[DEBUG] Verification failed. Reasons: {missing}")
+            return res
 
-        return {
+        res = {
             "verified": True,
             "first_name": document.name,
+            "firstName": document.name,
             "last_name": document.surname,
+            "lastName": document.surname,
             "emso": document.emso,
+            "EMSO": document.emso,
         }
+        import json
+        print(f"[DEBUG] Verification success! Final JSON: {json.dumps(res, ensure_ascii=False)}")
+        return res
 
     def _rank_selfie_frames(
         self,

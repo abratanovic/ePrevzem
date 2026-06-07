@@ -23,8 +23,8 @@ _FIELD_NUM_RE = re.compile(r"^\d{1,2}[a-dA-D]?[.,:]?$")
 _EMSO_PATTERN = re.compile(r"(?<!\d)(\d{13})(?!\d)")
 
 # EU driving licence: field 1 = surname, field 2 = given name
-_DL_SURNAME_RE = re.compile(r"^1\s+(.+)")
-_DL_NAME_RE = re.compile(r"^2\s+(.+)")
+_DL_SURNAME_RE = re.compile(r"^[1I][.,]?\s+(.+)")
+_DL_NAME_RE = re.compile(r"^[2Z][.,]?\s+(.+)")
 
 # ID card structural fallback: a clean all-uppercase name line (letters, hyphens, spaces; ≥3 chars)
 _ID_NAME_LINE_RE = re.compile(r"^[A-ZČŠŽĆĐÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛ\-]{2}[A-ZČŠŽĆĐÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛ\s\-]*$")
@@ -36,16 +36,44 @@ def extract_document_info_general(
     image_bgr: np.ndarray,
     variant: str = "driving_licence",
 ) -> DocumentInfo | None:
-    """Extract all visible text from a document image using Tesseract.
+    """Extract all visible text from a document image using Tesseract."""
+    print(f"[DEBUG] Starting OCR Pass 1 (Blackhat)...")
+    document = _extract_with_pass(image_bgr, variant, force_simple_threshold=False)
+    
+    if document:
+        print(f"[DEBUG] Pass 1 results: Name={document.name}, Surname={document.surname}, EMSO={document.emso}")
 
-    variant: "driving_licence" (default) or "id_card"
-    Returns text fields sorted top-to-bottom, left-to-right so callers can
-    map indices to semantic fields (name, number, expiry…) by position.
-    Returns None only if Tesseract finds no text at all.
-    """
-    lines = _ocr_lines_sorted(image_bgr, variant)
+    # Pass 2: If critical fields are missing, try a simpler thresholding pass (better for some lighting)
+    if not document or not (document.name and document.surname and document.emso):
+        print(f"[DEBUG] Critical fields missing. Starting OCR Pass 2 (Simple Threshold)...")
+        retry_doc = _extract_with_pass(image_bgr, variant, force_simple_threshold=True)
+        if retry_doc:
+            print(f"[DEBUG] Pass 2 results: Name={retry_doc.name}, Surname={retry_doc.surname}, EMSO={retry_doc.emso}")
+            # Merge results: take the best available fields from both passes
+            name = document.name if document and document.name else retry_doc.name
+            surname = document.surname if document and document.surname else retry_doc.surname
+            emso = document.emso if document and document.emso else retry_doc.emso
+            doc_num = document.document_number if document and document.document_number else retry_doc.document_number
+            valid = document.valid_until if document and document.valid_until else retry_doc.valid_until
+            
+            document = DocumentInfo(
+                name=name, surname=surname, document_number=doc_num,
+                valid_until=valid, emso=emso, 
+                raw_ocr_fields=(document.raw_ocr_fields if document else ()) + retry_doc.raw_ocr_fields
+            )
+            print(f"[DEBUG] Merged results: Name={name}, Surname={surname}, EMSO={emso}")
+            
+    return document
+
+
+def _extract_with_pass(image_bgr: np.ndarray, variant: str, force_simple_threshold: bool) -> DocumentInfo | None:
+    lines = _ocr_lines_sorted(image_bgr, variant, force_simple_threshold=force_simple_threshold)
     if not lines:
         return None
+
+    print(f"[DEBUG] Pass lines ({len(lines)}):")
+    for ln in lines:
+        print(f"  > {ln}")
 
     valid_until = _find_expiry(lines)
     document_number = _find_document_number(lines)
@@ -53,8 +81,17 @@ def extract_document_info_general(
 
     if variant == "driving_licence":
         name, surname = _find_name_surname_dl(lines)
+        if not name or not surname:
+            # Fallback to label-based (ID card style) as Slovenian DLs also have labels
+            f_name, f_surname = _find_name_surname_id_by_labels(lines)
+            name = name or f_name
+            surname = surname or f_surname
     else:
         name, surname = _find_name_surname_id(lines)
+
+    # Clean up OCR artifacts from names (e.g. "[", "|", etc)
+    if name: name = _clean_ocr_artifacts(name)
+    if surname: surname = _clean_ocr_artifacts(surname)
 
     return DocumentInfo(
         name=name,
@@ -66,31 +103,53 @@ def extract_document_info_general(
     )
 
 
+def _clean_ocr_artifacts(s: str) -> str:
+    """Strip common OCR noise characters from names."""
+    return re.sub(r"[|\[\](){}<>\"'_]", "", s).strip()
+
+
 # Face photo occupies different fractions depending on document layout.
 _FACE_ZONE = {"driving_licence": 0.15, "id_card": 0.38}
 
 
-def _ocr_lines_sorted(image_bgr: np.ndarray, variant: str) -> list[str]:
+def _ocr_lines_sorted(image_bgr: np.ndarray, variant: str, force_simple_threshold: bool = False) -> list[str]:
     """Crop the document, preprocess, run Tesseract, return spatially sorted lines."""
     try:
         import pytesseract
     except ImportError as exc:
         raise RuntimeError("pytesseract is required for general OCR") from exc
 
+    # Resize very large images before processing to speed up and reduce noise
+    h, w = image_bgr.shape[:2]
+    max_dim = 2048
+    if max(h, w) > max_dim:
+        scale = max_dim / max(h, w)
+        image_bgr = cv2.resize(image_bgr, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+
     cropped = _crop_document(image_bgr)
+    # If we found the card, the crop should be landscape-ish.
+    # If not, use the original image but avoid blind rotation.
     card = cropped if cropped is not None else image_bgr
-    card = _ensure_landscape(card)
+
+    if cropped is not None:
+        # Ensure the card itself is landscape
+        ch, cw = card.shape[:2]
+        if ch > cw:
+            card = cv2.rotate(card, cv2.ROTATE_90_CLOCKWISE)
+    # Note: we no longer blindly rotate the original image if crop fails,
+    # as phone photos are usually already upright via EXIF.
 
     face_pct = _FACE_ZONE.get(variant, 0.15)
     face_zone = int(card.shape[1] * face_pct)
     text_card = card[:, face_zone:]
 
     if variant == "id_card":
-        preprocessed = _preprocess_id_card(text_card)
+        preprocessed = _preprocess_id_card(text_card, force_simple_threshold=force_simple_threshold)
     else:
-        preprocessed = _preprocess_for_ocr(text_card)
+        preprocessed = _preprocess_for_ocr(text_card, force_simple_threshold=force_simple_threshold)
 
     lang = _available_lang(["hrv+slv+srp_latn+eng", "slv+hrv+eng", "slv+eng", "slv", "eng"])
+
 
     if variant == "id_card":
         # Split into left (labels+values) and right (dates/EMSO) columns.
@@ -160,9 +219,9 @@ def _ocr_lines_sorted(image_bgr: np.ndarray, variant: str) -> list[str]:
         output_type=pytesseract.Output.DICT,
     )
 
-    # Filter leftmost 10% (card-border noise) and rightmost 20%.
-    noise_edge = int(text_w * 0.10)
-    right_edge = int(text_w * 0.80)
+    # Filter leftmost 2% (card-border noise) and rightmost 2%.
+    noise_edge = int(text_w * 0.02)
+    right_edge = int(text_w * 0.98)
 
     # Group tokens by y-bands rather than Tesseract block identity.
     # PSM 11 assigns field labels and their values to separate blocks even when
@@ -205,15 +264,23 @@ def _is_meaningful_line(line: str) -> bool:
     return alnum >= 1
 
 
-def _preprocess_for_ocr(card_bgr: np.ndarray) -> np.ndarray:
+def _preprocess_for_ocr(card_bgr: np.ndarray, force_simple_threshold: bool = False) -> np.ndarray:
     """Convert card image to a clean binary image suited for Tesseract."""
     h, w = card_bgr.shape[:2]
-    scale = max(1.0, 1600 / max(h, w))
-    if scale > 1.0:
+    # Target a height of ~1000px for consistent OCR results
+    scale = 1000 / h
+    if abs(scale - 1.0) > 0.1:
         card_bgr = cv2.resize(card_bgr, None, fx=scale, fy=scale,
-                              interpolation=cv2.INTER_CUBIC)
+                              interpolation=cv2.INTER_CUBIC if scale > 1.0 else cv2.INTER_AREA)
 
     gray = cv2.cvtColor(card_bgr, cv2.COLOR_BGR2GRAY)
+
+    if force_simple_threshold:
+        # Simple Gaussian blur + Otsu threshold (better if card has high contrast/even light)
+        gray = cv2.GaussianBlur(gray, (5, 5), 0)
+        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        return binary
+
     gray = cv2.fastNlMeansDenoising(gray, h=10)
 
     # Different areas of the card have slightly different text sizes, so a single
@@ -267,7 +334,7 @@ def _normalize_id_value(s: str) -> str:
     return s
 
 
-def _preprocess_id_card(card_bgr: np.ndarray) -> np.ndarray:
+def _preprocess_id_card(card_bgr: np.ndarray, force_simple_threshold: bool = False) -> np.ndarray:
     """Preprocess a colour-background ID card (e.g. Slovenian osebna izkaznica).
 
     The ID card has a teal/blue guilloche gradient that BLACKHAT cannot suppress
@@ -276,12 +343,17 @@ def _preprocess_id_card(card_bgr: np.ndarray) -> np.ndarray:
     Returns black text on white background — no inversion needed.
     """
     h, w = card_bgr.shape[:2]
-    scale = max(1.0, 1600 / max(h, w))
-    if scale > 1.0:
+    # Target a height of ~1000px for consistent OCR results
+    scale = 1000 / h
+    if abs(scale - 1.0) > 0.1:
         card_bgr = cv2.resize(card_bgr, None, fx=scale, fy=scale,
-                              interpolation=cv2.INTER_CUBIC)
+                              interpolation=cv2.INTER_CUBIC if scale > 1.0 else cv2.INTER_AREA)
 
     gray = cv2.cvtColor(card_bgr, cv2.COLOR_BGR2GRAY)
+    
+    if force_simple_threshold:
+        gray = cv2.GaussianBlur(gray, (3, 3), 0)
+
     gray = cv2.fastNlMeansDenoising(gray, h=10)
 
     sat = cv2.cvtColor(card_bgr, cv2.COLOR_BGR2HSV)[:, :, 1].astype(np.float32) / 255.0
@@ -305,7 +377,7 @@ def _crop_document(image_bgr: np.ndarray) -> np.ndarray | None:
         return None
 
     img_area = image_bgr.shape[0] * image_bgr.shape[1]
-    large = [c for c in contours if cv2.contourArea(c) > img_area * 0.15]
+    large = [c for c in contours if cv2.contourArea(c) > img_area * 0.05]
     if not large:
         return None
 
@@ -313,13 +385,6 @@ def _crop_document(image_bgr: np.ndarray) -> np.ndarray | None:
     rect = cv2.minAreaRect(largest)
     box = cv2.boxPoints(rect).astype(np.float32)
     return _four_point_transform(image_bgr, box)
-
-
-def _ensure_landscape(image_bgr: np.ndarray) -> np.ndarray:
-    h, w = image_bgr.shape[:2]
-    if h > w:
-        return cv2.rotate(image_bgr, cv2.ROTATE_90_CLOCKWISE)
-    return image_bgr
 
 
 def _four_point_transform(image: np.ndarray, pts: np.ndarray) -> np.ndarray:
@@ -395,6 +460,12 @@ def _find_emso(lines: list[str]) -> str | None:
         m = _EMSO_PATTERN.search(line)
         if m:
             return m.group(1)
+
+    # Fallback: search for 13 digits ignoring spaces/punctuation within a SINGLE line
+    for line in lines:
+        cleaned = "".join(c for c in line if c.isdigit())
+        if len(cleaned) == 13:
+            return cleaned
     return None
 
 
@@ -402,14 +473,62 @@ def _find_name_surname_dl(lines: list[str]) -> tuple[str | None, str | None]:
     """Extract name and surname from EU driving licence fields 1 and 2."""
     name: str | None = None
     surname: str | None = None
+    
+    # 1. Try standard prefix-based matching
     for line in lines:
-        m = _DL_SURNAME_RE.match(line)
-        if m:
-            surname = m.group(1).strip()
-            continue
-        m = _DL_NAME_RE.match(line)
-        if m:
-            name = m.group(1).strip()
+        # Standard: "^1 SURNAME" or "^1. SURNAME"
+        m1 = _DL_SURNAME_RE.match(line)
+        if m1:
+            surname = m1.group(1).strip()
+        
+        # Standard: "^2 NAME" or "^2. NAME"
+        m2 = _DL_NAME_RE.match(line)
+        if m2:
+            name = m2.group(1).strip()
+
+    # 2. Try suffix-based matching (Tesseract often puts field numbers at the end)
+    if not surname:
+        for line in lines:
+            m = re.match(r"^(.+)\s+[1I][.,]?$", line)
+            if m:
+                surname = m.group(1).strip()
+                break
+    
+    if not name:
+        for line in lines:
+            m = re.match(r"^(.+)\s+[2Z][.,]?$", line)
+            if m:
+                name = m.group(1).strip()
+                break
+
+    # 3. Structural Fallback: Surname is usually on line 2 (first line after header)
+    # Header is "VOZNIŠKO DOVOLJENJE..." (Line 0)
+    # Line 1 (Index 1) is often the surname if it's a single clean word
+    if not surname and len(lines) > 1:
+        line1 = lines[1].strip()
+        if len(line1.split()) == 1 and line1[0].isupper():
+            surname = line1
+
+    # 4. Pattern Fallback: Name is often on the same line as the birth date (field 3)
+    # "10.10.2005 EDVIN ..." or "EDVIN 10.10.2005 ..."
+    if not name:
+        for line in lines:
+            # Case A: Date followed by Name ("10.10.2005 EDVIN")
+            m_after = re.match(r"^\d{2}[.\-/]\d{2}[.\-/]\d{4}\s+([A-ZČŠŽĆĐÁÉÍÓÚ\s\-]+)", line, re.IGNORECASE)
+            if m_after:
+                potential_name = m_after.group(1).split()[0]
+                if len(potential_name) >= 2:
+                    name = potential_name
+                    break
+            
+            # Case B: Name followed by Date ("EDVIN 10.10.2005")
+            m_before = re.match(r"^([A-ZČŠŽĆĐÁÉÍÓÚ\s\-]+)\s+\d{2}[.\-/]\d{2}[.\-/]\d{4}", line, re.IGNORECASE)
+            if m_before:
+                potential_name = m_before.group(1).split()[-1] # Take last word before date
+                if len(potential_name) >= 2:
+                    name = potential_name
+                    break
+
     return name, surname
 
 

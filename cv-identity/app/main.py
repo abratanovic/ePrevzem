@@ -1,5 +1,6 @@
 """FastAPI entrypoint for CV identity verification."""
 import os
+import time
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -14,6 +15,7 @@ from app.pipeline import TesseractDocumentReader, VerificationPipeline
 
 APP_DIR = Path(__file__).resolve().parent
 MODELS_DIR = APP_DIR / "models"
+CAPTURES_DIR = APP_DIR.parent / "captures"
 LIVENESS_MODEL_PATH = MODELS_DIR / "liveness_model.keras"
 LIVENESS_THRESHOLD_PATH = MODELS_DIR / "threshold.txt"
 FACE_MATCH_CONFIG_PATH = MODELS_DIR / "face_match_config.txt"
@@ -37,6 +39,7 @@ def create_pipeline() -> VerificationPipeline:
 @app.on_event("startup")
 async def startup() -> None:
     app.state.pipeline = create_pipeline()
+    CAPTURES_DIR.mkdir(exist_ok=True)
 
 
 @app.get("/health")
@@ -61,9 +64,26 @@ async def verify(
             status_code=422,
             detail="At least one selfie frame is required.",
         )
-    id_front_bgr = load_upload_image(await id_front.read())
+
+    # --- Debug Logging ---
+    ts = int(time.time())
+    id_bytes = await id_front.read()
+    with open(CAPTURES_DIR / f"{ts}_id_front.jpg", "wb") as f:
+        f.write(id_bytes)
+    
+    selfies_data = []
+    for i, selfie in enumerate(selfie_uploads):
+        s_bytes = await selfie.read()
+        with open(CAPTURES_DIR / f"{ts}_selfie_{i}.jpg", "wb") as f:
+            f.write(s_bytes)
+        selfies_data.append(s_bytes)
+    
+    print(f"[DEBUG] Received verify request. Variant: {variant}, ID size: {len(id_bytes)}")
+    # ---------------------
+
+    id_front_bgr = load_upload_image(id_bytes)
     selfies_bgr = [
-        load_upload_image(await selfie.read())
-        for selfie in selfie_uploads
+        load_upload_image(s_bytes)
+        for s_bytes in selfies_data
     ]
     return pipeline.verify(id_front_bgr, selfies_bgr, variant=variant)
