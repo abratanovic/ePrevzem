@@ -25,7 +25,7 @@ jobs:
           cache-dependency-path: sitrust-mock/frontend/package-lock.json
       - if: steps.changes.outputs.frontend == 'true'
         working-directory: sitrust-mock/frontend
-        run: npm ci
+        run: npm install --no-audit --no-fund
       - if: steps.changes.outputs.frontend == 'true'
         working-directory: sitrust-mock/frontend
         run: npm run lint
