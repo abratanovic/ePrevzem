@@ -2,6 +2,7 @@ using System.Text.Json;
 using ePrevzem.Application.Audit.Dtos;
 using ePrevzem.Application.Common.Abstractions;
 using ePrevzem.Domain.Audit;
+using ePrevzem.Domain.Identity;
 using ePrevzem.Domain.Organizations;
 using ePrevzem.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -39,6 +40,23 @@ public sealed class AuditLogRepository : IAuditLogRepository
             filter.Limit,
             cancellationToken);
 
+    public async Task<IReadOnlyList<AuditLogEntryResponse>> GetForCitizenAsync(
+        CitizenUserId citizenUserId,
+        AuditLogQueryFilter filter,
+        CancellationToken cancellationToken = default)
+    {
+        var ownPackageIds = _dbContext.Packages
+            .AsNoTracking()
+            .Where(p => p.RecipientCitizenUserId == citizenUserId)
+            .Select(p => p.Id.Value);
+
+        var query = ApplyFilter(_dbContext.AuditLogEntries.AsNoTracking(), filter)
+            .Where(x => x.ActorCitizenUserId == citizenUserId
+                || (x.TargetKind == AuditTargetKind.Package && ownPackageIds.Contains(x.TargetId)));
+
+        return await ProjectAsync(query, filter.Limit, cancellationToken);
+    }
+
     private static IQueryable<AuditLogEntry> ApplyFilter(
         IQueryable<AuditLogEntry> query,
         AuditLogQueryFilter filter)
@@ -53,6 +71,10 @@ public sealed class AuditLogRepository : IAuditLogRepository
             query = query.Where(x => x.Action == filter.Action.Value);
         if (filter.TargetKind is not null)
             query = query.Where(x => x.TargetKind == filter.TargetKind.Value);
+        if (filter.ActorEmployeeAccountId is not null)
+            query = query.Where(x => x.ActorEmployeeAccountId == filter.ActorEmployeeAccountId.Value);
+        if (filter.ActionsIn is { Count: > 0 })
+            query = query.Where(x => filter.ActionsIn.Contains(x.Action));
 
         return query;
     }
