@@ -31,12 +31,18 @@ public sealed class OrgAuditLogController : ControllerBase
         [FromQuery] DateTimeOffset? to = null,
         [FromQuery] string? action = null,
         [FromQuery] string? targetKind = null,
+        [FromQuery] string? actorKind = null,
+        [FromQuery] Guid? actorId = null,
         CancellationToken cancellationToken = default)
     {
         if (!TryParseEnum(action, out AuditAction? parsedAction, out var actionProblem))
             return BadRequest(actionProblem);
         if (!TryParseEnum(targetKind, out AuditTargetKind? parsedTargetKind, out var targetKindProblem))
             return BadRequest(targetKindProblem);
+        if (!TryParseEnum(actorKind, out AuditActorKind? parsedActorKind, out var actorKindProblem))
+            return BadRequest(actorKindProblem);
+        if (!ValidateActorFilter(parsedActorKind, actorId, out var actorFilterProblem))
+            return BadRequest(actorFilterProblem);
 
         return Ok(await _mediator.Send(
             new GetOrganizationAuditLogQuery(
@@ -45,9 +51,18 @@ public sealed class OrgAuditLogController : ControllerBase
                 from,
                 to,
                 parsedAction,
-                parsedTargetKind),
+                parsedTargetKind,
+                parsedActorKind,
+                actorId),
             cancellationToken));
     }
+
+    [HttpGet("actors")]
+    [ProducesResponseType<IReadOnlyList<AuditActorOptionResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetActors(CancellationToken cancellationToken = default)
+        => Ok(await _mediator.Send(
+            new GetOrganizationAuditActorsQuery(GetOrganizationId()),
+            cancellationToken));
 
     private Guid GetOrganizationId()
         => _currentUser.OrganizationId
@@ -76,5 +91,36 @@ public sealed class OrgAuditLogController : ControllerBase
             [typeof(TEnum).Name] = [$"Invalid value '{value}'."]
         });
         return false;
+    }
+
+    private static bool ValidateActorFilter(
+        AuditActorKind? actorKind,
+        Guid? actorId,
+        out ValidationProblemDetails? problem)
+    {
+        problem = null;
+
+        if (actorKind is null && actorId is null)
+            return true;
+
+        if (actorKind is null || actorId is null)
+        {
+            problem = new ValidationProblemDetails(new Dictionary<string, string[]>
+            {
+                ["ActorFilter"] = ["actorKind and actorId must be provided together."]
+            });
+            return false;
+        }
+
+        if (actorKind == AuditActorKind.System)
+        {
+            problem = new ValidationProblemDetails(new Dictionary<string, string[]>
+            {
+                ["ActorKind"] = ["System actor cannot be filtered by actorId."]
+            });
+            return false;
+        }
+
+        return true;
     }
 }

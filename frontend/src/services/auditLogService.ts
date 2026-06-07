@@ -1,4 +1,4 @@
-import type { AuditLogEntry, AuditLogFilters } from "../types/auditLog";
+import type { AuditActorOption, AuditLogEntry, AuditLogFilters } from "../types/auditLog";
 
 const API_BASE = `${import.meta.env.VITE_API_URL ?? ""}/api/org/audit-log`;
 
@@ -18,6 +18,10 @@ function buildQuery(filters: AuditLogFilters): string {
   if (filters.to) params.set("to", filters.to);
   if (filters.action) params.set("action", filters.action);
   if (filters.targetKind) params.set("targetKind", filters.targetKind);
+  if (filters.actorKind && filters.actorId) {
+    params.set("actorKind", filters.actorKind);
+    params.set("actorId", filters.actorId);
+  }
 
   const query = params.toString();
   return query ? `?${query}` : "";
@@ -25,6 +29,15 @@ function buildQuery(filters: AuditLogFilters): string {
 
 export async function getAuditLog(filters: AuditLogFilters = {}): Promise<AuditLogEntry[]> {
   const response = await fetch(`${API_BASE}${buildQuery(filters)}`, {
+    headers: authHeaders(),
+  });
+
+  if (!response.ok) throw response;
+  return response.json();
+}
+
+export async function getAuditActors(): Promise<AuditActorOption[]> {
+  const response = await fetch(`${API_BASE}/actors`, {
     headers: authHeaders(),
   });
 

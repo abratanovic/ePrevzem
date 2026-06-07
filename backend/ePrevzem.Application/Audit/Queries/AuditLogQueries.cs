@@ -13,7 +13,12 @@ public sealed record GetOrganizationAuditLogQuery(
     DateTimeOffset? From,
     DateTimeOffset? To,
     AuditAction? Action,
-    AuditTargetKind? TargetKind) : IRequest<IReadOnlyList<AuditLogEntryResponse>>;
+    AuditTargetKind? TargetKind,
+    AuditActorKind? ActorKind = null,
+    Guid? ActorId = null) : IRequest<IReadOnlyList<AuditLogEntryResponse>>;
+
+public sealed record GetOrganizationAuditActorsQuery(
+    Guid OrganizationId) : IRequest<IReadOnlyList<AuditActorOptionResponse>>;
 
 public sealed record GetAdminAuditLogQuery(
     int Limit,
@@ -57,7 +62,27 @@ public sealed class GetOrganizationAuditLogQueryHandler
                 request.To,
                 OrganizationId: null,
                 request.Action,
-                request.TargetKind),
+                request.TargetKind,
+                ActorKind: request.ActorKind,
+                ActorId: request.ActorId),
+            cancellationToken);
+}
+
+public sealed class GetOrganizationAuditActorsQueryHandler
+    : IRequestHandler<GetOrganizationAuditActorsQuery, IReadOnlyList<AuditActorOptionResponse>>
+{
+    private readonly IAuditLogRepository _repository;
+
+    public GetOrganizationAuditActorsQueryHandler(IAuditLogRepository repository)
+    {
+        _repository = repository;
+    }
+
+    public Task<IReadOnlyList<AuditActorOptionResponse>> Handle(
+        GetOrganizationAuditActorsQuery request,
+        CancellationToken cancellationToken)
+        => _repository.GetActorOptionsForOrganizationAsync(
+            new OrganizationId(request.OrganizationId),
             cancellationToken);
 }
 

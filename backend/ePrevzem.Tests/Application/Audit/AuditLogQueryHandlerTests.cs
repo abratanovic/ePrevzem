@@ -45,6 +45,31 @@ public class AuditLogQueryHandlerTests
         repo.Filter.ActionsIn.Should().BeEquivalentTo(AuditVisibility.OperatorActions);
     }
 
+    [Fact]
+    public async Task Organization_handler_passes_actor_filter()
+    {
+        var repo = new CapturingAuditLogRepository();
+        var handler = new GetOrganizationAuditLogQueryHandler(repo);
+        var orgId = Guid.NewGuid();
+        var actorId = Guid.NewGuid();
+
+        await handler.Handle(
+            new GetOrganizationAuditLogQuery(
+                orgId,
+                50,
+                null,
+                null,
+                null,
+                null,
+                AuditActorKind.OrganizationAdmin,
+                actorId),
+            CancellationToken.None);
+
+        repo.OrganizationId.Should().Be(new OrganizationId(orgId));
+        repo.Filter!.ActorKind.Should().Be(AuditActorKind.OrganizationAdmin);
+        repo.Filter.ActorId.Should().Be(actorId);
+    }
+
     private sealed class CapturingAuditLogRepository : IAuditLogRepository
     {
         public CitizenUserId? CitizenUserId { get; private set; }
@@ -67,6 +92,13 @@ public class AuditLogQueryHandlerTests
         {
             Filter = filter;
             return Empty();
+        }
+
+        public Task<IReadOnlyList<AuditActorOptionResponse>> GetActorOptionsForOrganizationAsync(
+            OrganizationId organizationId, CancellationToken cancellationToken = default)
+        {
+            OrganizationId = organizationId;
+            return Task.FromResult<IReadOnlyList<AuditActorOptionResponse>>([]);
         }
 
         public Task<IReadOnlyList<AuditLogEntryResponse>> GetForCitizenAsync(
