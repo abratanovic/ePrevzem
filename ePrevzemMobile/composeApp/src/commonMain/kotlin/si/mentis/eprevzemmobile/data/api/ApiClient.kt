@@ -24,6 +24,7 @@ import si.mentis.eprevzemmobile.data.auth.DeviceSessionStore
 class ApiClient(
     val baseUrl: String = PlatformConfig.eprevzemApiBaseUrl,
     private val sessionStore: DeviceSessionStore? = null,
+    private val activeAccountId: () -> String? = { null },
     httpClient: HttpClient? = null,
 ) {
     val client: HttpClient = httpClient ?: HttpClient {
@@ -72,13 +73,15 @@ class ApiClient(
     ): HttpResponse {
         val url = "$baseUrl$path"
         val store = sessionStore
+        val accountId = activeAccountId()
+        val token = if (store != null && accountId != null) store.accessToken(accountId) else null
         var response = client.request(url) {
             this.method = method
-            bearer(store?.accessToken())
+            bearer(token)
             block()
         }
-        if (response.status == HttpStatusCode.Unauthorized && store != null) {
-            val refreshed = tryRefresh(store)
+        if (response.status == HttpStatusCode.Unauthorized && store != null && accountId != null) {
+            val refreshed = tryRefresh(store, accountId)
             if (refreshed != null) {
                 response = client.request(url) {
                     this.method = method
@@ -90,8 +93,8 @@ class ApiClient(
         return response
     }
 
-    private suspend fun tryRefresh(store: DeviceSessionStore): String? {
-        val refreshToken = store.refreshToken() ?: return null
+    private suspend fun tryRefresh(store: DeviceSessionStore, accountId: String): String? {
+        val refreshToken = store.refreshToken(accountId) ?: return null
         return try {
             val response = client.post("$baseUrl/api/auth/device/refresh") {
                 setBody(RefreshRequestDto(refreshToken))
@@ -101,6 +104,7 @@ class ApiClient(
             }
             val dto = response.body<DeviceSessionDto>()
             store.updateTokens(
+                accountId = accountId,
                 accessToken = dto.accessToken,
                 accessExpiresAt = dto.accessTokenExpiresAt,
                 refreshToken = dto.refreshToken,

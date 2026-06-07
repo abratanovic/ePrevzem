@@ -1,6 +1,7 @@
 package si.mentis.eprevzemmobile
 
 import si.mentis.eprevzemmobile.data.api.ApiClient
+import si.mentis.eprevzemmobile.data.auth.AuthSession
 import si.mentis.eprevzemmobile.data.auth.DeviceSessionStore
 import si.mentis.eprevzemmobile.data.auth.PersistedSessionStore
 import si.mentis.eprevzemmobile.data.auth.SessionStore
@@ -25,7 +26,11 @@ import si.mentis.eprevzemmobile.data.settings.UserSettingsRepository
 
 object AppContainer {
     val deviceSessionStore = DeviceSessionStore()
-    private val apiClient = ApiClient(sessionStore = deviceSessionStore)
+    val sessionStore: SessionStore = PersistedSessionStore()
+    private val apiClient = ApiClient(
+        sessionStore = deviceSessionStore,
+        activeAccountId = { (sessionStore.session.value as? AuthSession.Authenticated)?.user?.id },
+    )
     val registrationRepository: RegistrationRepository = HttpRegistrationRepository(apiClient, deviceSessionStore)
     val pickupRepository: PickupRepository = HttpPickupRepository(apiClient)
     val delegationRepository: DelegationRepository = FakeDelegationRepository()
@@ -35,5 +40,4 @@ object AppContainer {
     val authRepository: AuthRepository = HttpAuthRepository(apiClient, deviceSessionStore)
     val lockerRepository: LockerRepository = HttpLockerRepository(apiClient)
     val insertionRepository: InsertionRepository = HttpInsertionRepository(apiClient)
-    val sessionStore: SessionStore = PersistedSessionStore()
 }
