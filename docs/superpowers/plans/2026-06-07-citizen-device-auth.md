@@ -518,7 +518,9 @@ class DeviceSessionStore(private val storage: SecureStorage = SecureStorage()) {
 
 ### Task M3: Shared API client
 **Files:** Create `composeApp/src/commonMain/kotlin/si/mentis/eprevzemmobile/data/api/ApiClient.kt`. Depends M1, M2.
-- [ ] Build an `HttpClient` (mirror `Direct4MeLockerRepository.kt:25-44`): `ContentNegotiation` json (`ignoreUnknownKeys`, `explicitNulls=false`), `HttpTimeout`. Add a `defaultRequest` that sets the base URL. Add bearer injection reading `DeviceSessionStore.accessToken()`, and an `Auth`/response-validator path that, on 401, calls `POST /api/auth/device/refresh` with the stored refresh token once, persists the new session, and retries. Expose the configured `HttpClient` + `baseUrl`. Compile check. Commit.
+- [ ] Build an `HttpClient` (mirror `Direct4MeLockerRepository.kt:25-44`): `ContentNegotiation` json (`ignoreUnknownKeys`, `explicitNulls=false`), `HttpTimeout`. Add a `defaultRequest` that sets the base URL. Expose the configured `HttpClient` + `baseUrl`. Compile check. Commit.
+
+> **Scope note (2026-06-07):** Bearer-token injection + refresh-on-401 are **deferred to sub-project B**. Every endpoint in sub-project A is `AllowAnonymous`, and the app re-authenticates via the anonymous challenge/verify flow, so no authenticated request exists yet to attach a token to or to refresh. M3 here is the minimal client; the `Auth`/refresh interceptor lands when the first authenticated citizen endpoint does.
 
 ## Wave M-III — HTTP repositories (parallel)
 
