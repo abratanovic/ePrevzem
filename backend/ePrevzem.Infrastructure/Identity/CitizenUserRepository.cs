@@ -14,6 +14,9 @@ public sealed class CitizenUserRepository : ICitizenUserRepository
         _dbContext = dbContext;
     }
 
+    public Task<CitizenUser?> GetByIdAsync(CitizenUserId id, CancellationToken cancellationToken = default)
+        => _dbContext.CitizenUsers.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+
     public Task<CitizenUser?> GetByEmsoAsync(string emso, CancellationToken cancellationToken = default)
         => _dbContext.CitizenUsers.SingleOrDefaultAsync(x => x.Emso == emso, cancellationToken);
 

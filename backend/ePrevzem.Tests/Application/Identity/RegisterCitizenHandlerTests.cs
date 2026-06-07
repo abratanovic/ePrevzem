@@ -125,6 +125,9 @@ public sealed class FakeCitizenUserRepo : ICitizenUserRepository
 
     public FakeCitizenUserRepo(CitizenUser? existing = null) => _existing = existing;
 
+    public Task<CitizenUser?> GetByIdAsync(CitizenUserId id, CancellationToken cancellationToken = default)
+        => Task.FromResult(_existing?.Id == id ? _existing : null);
+
     public Task<CitizenUser?> GetByEmsoAsync(string emso, CancellationToken cancellationToken = default)
         => Task.FromResult(_existing?.Emso == emso ? _existing : null);
 

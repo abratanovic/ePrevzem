@@ -129,6 +129,8 @@ public class CreatePickupHandlerTests
 
 public sealed class TestCitizenRepository(CitizenUser? citizen) : ICitizenUserRepository
 {
+    public Task<CitizenUser?> GetByIdAsync(CitizenUserId id, CancellationToken cancellationToken = default)
+        => Task.FromResult(citizen?.Id == id ? citizen : null);
     public Task<CitizenUser?> GetByEmsoAsync(string emso, CancellationToken cancellationToken = default)
         => Task.FromResult(citizen?.Emso == emso ? citizen : null);
     public Task<CitizenUser?> GetByCitizenDeviceIdAsync(CitizenDeviceId deviceId, CancellationToken cancellationToken = default)
