@@ -1,5 +1,5 @@
 namespace ePrevzem.Domain.Audit;
-
+// komentar za resolvanje merge konflikta
 public enum AuditAction
 {
     // Packages & placements

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Permits cleartext (HTTP) traffic to ALL hosts. Android's network security
+  config has no CIDR/wildcard support, so individual LAN subnets cannot be
+  expressed; base-config is the only way to allow any LAN host (10.x, 172.16-31.x,
+  192.168.x, etc.) without enumerating every IP.
+
+  WARNING: this allows cleartext to every host, not just the LAN. It is fine for
+  development but must NOT ship in a release build. Prefer moving this file to
+  src/debug/res/xml/ so release stays HTTPS-only.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

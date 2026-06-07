@@ -147,7 +147,6 @@ private fun ScanPanel(
     ESummaryCard(
         title = null,
         subtitle = null,
-        icon = EPrevzemIcons.qrCode(),
         tint = EIconTint.Green,
         modifier = modifier.clickable(onClick = onClick),
     ) {

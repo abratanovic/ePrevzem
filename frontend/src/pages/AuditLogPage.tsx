@@ -45,28 +45,20 @@ const TARGET_OPTIONS: Array<{ value: AuditTargetKind; label: string }> = [
   { value: "Package", label: "Prevzem" },
   { value: "ProvisioningCode", label: "Provisioning koda" },
   { value: "EmployeeAccount", label: "Zaposleni" },
-  { value: "OrganizationAdminAccount", label: "Skrbnik organizacije" },
+  { value: "OrganizationAdminAccount", label: "Skrbnik" },
   { value: "Locker", label: "Predalček" },
   { value: "PickupStation", label: "Paketomat" },
-  { value: "StationClaim", label: "Dodelitev paketomata" },
+  { value: "StationClaim", label: "Paketomat" },
   { value: "Organization", label: "Organizacija" },
   { value: "Delegation", label: "Pooblastilo" },
 ];
-
-const ACTOR_LABELS: Record<string, string> = {
-  Citizen: "Državljan",
-  Employee: "Zaposleni",
-  OrganizationAdmin: "Skrbnik organizacije",
-  SystemAdmin: "Sistemski skrbnik",
-  System: "Sistem",
-};
 
 const TARGET_LABELS: Record<string, string> = {
   Package: "Prevzem",
   Placement: "Vložitev",
   Delegation: "Pooblastilo",
   EmployeeAccount: "Zaposleni",
-  OrganizationAdminAccount: "Skrbnik organizacije",
+  OrganizationAdminAccount: "Skrbnik",
   SystemAdmin: "Sistemski skrbnik",
   EmployeeDevice: "Naprava zaposlenega",
   CitizenUser: "Državljan",
@@ -76,7 +68,7 @@ const TARGET_LABELS: Record<string, string> = {
   Locker: "Predalček",
   Organization: "Organizacija",
   PickupStation: "Paketomat",
-  StationClaim: "Dodelitev paketomata",
+  StationClaim: "Paketomat",
   ProvisioningCode: "Provisioning koda",
 };
 
@@ -188,6 +180,47 @@ function labelFor(value: string, labels: Record<string, string>): string {
   return labels[value] ?? value;
 }
 
+function shortId(id: string): string {
+  return id.length > 8 ? `${id.slice(0, 8)}...` : id;
+}
+
+function actorIdFor(entry: AuditLogEntry): string | null {
+  switch (entry.actorKind) {
+    case "Citizen":
+      return entry.actorCitizenUserId;
+    case "Employee":
+      return entry.actorEmployeeAccountId;
+    case "OrganizationAdmin":
+      return entry.actorOrganizationAdminAccountId;
+    case "SystemAdmin":
+      return entry.actorSystemAdminId;
+    default:
+      return entry.actorCitizenUserId
+        ?? entry.actorEmployeeAccountId
+        ?? entry.actorOrganizationAdminAccountId
+        ?? entry.actorSystemAdminId;
+  }
+}
+
+function contextualTargetFor(entry: AuditLogEntry): { label: string; id: string | null } {
+  switch (entry.action) {
+    case "EmployeeAccountLoggedIn":
+    case "OrganizationAdminLoggedIn":
+    case "SystemAdminLoggedIn":
+    case "SystemAdminLoginFailed":
+      return { label: "Portal", id: null };
+    case "EmployeePasswordChanged":
+    case "OrganizationAdminPasswordChanged":
+    case "SystemAdminPasswordChanged":
+      return { label: "Račun", id: null };
+    case "RefreshTokenRotated":
+    case "RefreshTokenChainRevoked":
+      return { label: "Varnostna seja", id: null };
+    default:
+      return { label: labelFor(entry.targetKind, TARGET_LABELS), id: entry.targetId };
+  }
+}
+
 function DetailLine({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
     <span className="inline-flex min-w-0 items-center gap-1.5 text-slate-500">
@@ -219,14 +252,54 @@ function DetailsCell({ details }: { details: AuditLogDetails | null }) {
   );
 }
 
+function ActorCell({ entry }: { entry: AuditLogEntry }) {
+  const displayName = entry.actorDisplayName?.trim();
+  const email = entry.actorEmail?.trim();
+  const actorId = actorIdFor(entry);
+  const fallbackIdentity = actorId ? shortId(actorId) : null;
+  const identity = displayName || fallbackIdentity || "Sistem";
+  const identityTitle = displayName || actorId || identity;
+
+  return (
+    <div className="max-w-[210px]">
+      <div className="truncate font-medium text-slate-700" title={identityTitle}>
+        {identity}
+      </div>
+      {email && (
+        <div className="mt-0.5 truncate text-xs text-slate-400" title={email}>
+          {email}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TargetCell({ entry }: { entry: AuditLogEntry }) {
+  const target = contextualTargetFor(entry);
+
+  return (
+    <div>
+      <div className="font-medium text-slate-700">{target.label}</div>
+      {target.id && (
+        <div className="mt-0.5 max-w-[150px] truncate text-xs text-slate-400" title={target.id}>
+          {target.id}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TableSkeleton() {
   return (
     <div className="animate-pulse space-y-3 p-5">
       {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="grid grid-cols-[150px_190px_160px_150px_1fr] gap-4 border-b border-slate-100 pb-3">
+        <div key={i} className="grid grid-cols-[150px_190px_210px_150px_1fr] gap-4 border-b border-slate-100 pb-3">
           <div className="h-4 rounded bg-slate-200" />
           <div className="h-6 rounded-full bg-slate-200" />
-          <div className="h-4 rounded bg-slate-200" />
+          <div className="space-y-1">
+            <div className="h-4 rounded bg-slate-200" />
+            <div className="h-3 w-3/4 rounded bg-slate-200" />
+          </div>
           <div className="h-4 rounded bg-slate-200" />
           <div className="h-4 rounded bg-slate-200" />
         </div>
@@ -437,14 +510,11 @@ export default function AuditLogPage() {
                         {labelFor(entry.action, ACTION_LABELS)}
                       </span>
                     </td>
-                    <td className="whitespace-nowrap px-5 py-4 text-slate-600">
-                      {labelFor(entry.actorKind, ACTOR_LABELS)}
+                    <td className="px-5 py-4">
+                      <ActorCell entry={entry} />
                     </td>
                     <td className="px-5 py-4">
-                      <div className="font-medium text-slate-700">{labelFor(entry.targetKind, TARGET_LABELS)}</div>
-                      <div className="mt-0.5 max-w-[150px] truncate text-xs text-slate-400" title={entry.targetId}>
-                        {entry.targetId}
-                      </div>
+                      <TargetCell entry={entry} />
                     </td>
                     <td className="px-5 py-4">
                       <DetailsCell details={entry.details} />

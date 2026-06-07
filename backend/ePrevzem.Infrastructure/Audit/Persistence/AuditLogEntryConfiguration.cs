@@ -49,7 +49,7 @@ public sealed class AuditLogEntryConfiguration : IEntityTypeConfiguration<AuditL
                     AND actor_organization_admin_account_id IS NULL
                     AND actor_system_admin_id IS NOT NULL
                 )
-                """));
+                """.ReplaceLineEndings("\n")));
 
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id)

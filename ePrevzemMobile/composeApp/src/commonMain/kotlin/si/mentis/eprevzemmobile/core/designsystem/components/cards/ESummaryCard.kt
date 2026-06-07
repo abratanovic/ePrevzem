@@ -15,7 +15,7 @@ import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
 @Composable
 fun ESummaryCard(
     title: String? = null,
-    icon: Painter,
+    icon: Painter? = null,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     tint: EIconTint = EIconTint.Green,
@@ -33,7 +33,9 @@ fun ESummaryCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(spacing.sm),
         ) {
-            EIconChip(painter = icon, tint = tint)
+            if (icon != null) {
+                EIconChip(painter = icon, tint = tint)
+            }
             Column(modifier = Modifier.weight(1f)) {
                 if (title != null) {
                     Text(text = title, style = typo.cardTitle, color = colors.textPrimary)
