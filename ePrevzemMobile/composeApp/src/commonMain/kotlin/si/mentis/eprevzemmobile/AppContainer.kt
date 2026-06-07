@@ -10,7 +10,7 @@ import si.mentis.eprevzemmobile.data.logevent.FakeLogEventRepository
 import si.mentis.eprevzemmobile.data.logevent.LogEventRepository
 import si.mentis.eprevzemmobile.data.locker.Direct4MeLockerRepository
 import si.mentis.eprevzemmobile.data.locker.LockerRepository
-import si.mentis.eprevzemmobile.data.pickups.FakePickupRepository
+import si.mentis.eprevzemmobile.data.pickups.HttpPickupRepository
 import si.mentis.eprevzemmobile.data.pickups.PickupRepository
 import si.mentis.eprevzemmobile.data.registration.HttpRegistrationRepository
 import si.mentis.eprevzemmobile.data.registration.RegistrationRepository
@@ -22,10 +22,10 @@ import si.mentis.eprevzemmobile.data.settings.LocalUserSettingsRepository
 import si.mentis.eprevzemmobile.data.settings.UserSettingsRepository
 
 object AppContainer {
-    private val apiClient = ApiClient()
     val deviceSessionStore = DeviceSessionStore()
+    private val apiClient = ApiClient(sessionStore = deviceSessionStore)
     val registrationRepository: RegistrationRepository = HttpRegistrationRepository(apiClient, deviceSessionStore)
-    val pickupRepository: PickupRepository = FakePickupRepository()
+    val pickupRepository: PickupRepository = HttpPickupRepository(apiClient)
     val delegationRepository: DelegationRepository = FakeDelegationRepository()
     val logEventRepository: LogEventRepository = FakeLogEventRepository()
     val securityRepository: SecurityRepository = LocalSecurityRepository()
