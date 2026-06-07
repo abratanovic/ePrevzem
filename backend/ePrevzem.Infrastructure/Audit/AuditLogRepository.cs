@@ -45,14 +45,19 @@ public sealed class AuditLogRepository : IAuditLogRepository
         AuditLogQueryFilter filter,
         CancellationToken cancellationToken = default)
     {
-        var ownPackageIds = _dbContext.Packages
+        // Materialise the citizen's package ids first. EF Core cannot translate a value-object
+        // key projection (p.Id.Value) inside a Contains subquery against TargetId, so we pull the
+        // ids into memory and use a translatable List<Guid>.Contains (rendered as SQL = ANY).
+        var ownPackageIds = await _dbContext.Packages
             .AsNoTracking()
             .Where(p => p.RecipientCitizenUserId == citizenUserId)
-            .Select(p => p.Id.Value);
+            .Select(p => p.Id)
+            .ToListAsync(cancellationToken);
+        var ownPackageGuids = ownPackageIds.Select(id => id.Value).ToList();
 
         var query = ApplyFilter(_dbContext.AuditLogEntries.AsNoTracking(), filter)
             .Where(x => x.ActorCitizenUserId == citizenUserId
-                || (x.TargetKind == AuditTargetKind.Package && ownPackageIds.Contains(x.TargetId)));
+                || (x.TargetKind == AuditTargetKind.Package && ownPackageGuids.Contains(x.TargetId)));
 
         return await ProjectAsync(query, filter.Limit, cancellationToken);
     }
