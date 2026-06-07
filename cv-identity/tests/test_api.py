@@ -19,24 +19,14 @@ def test_verify_route_accepts_spec_multipart_contract(monkeypatch):
     from app.main import app
 
     class FakePipeline:
-        def verify(self, id_front_bgr, id_back_bgr, selfie_frames_bgr):
+        def verify(self, id_front_bgr, selfie_frames_bgr, variant="driving_licence"):
             assert id_front_bgr.shape[2] == 3
-            assert id_back_bgr.shape[2] == 3
             assert len(selfie_frames_bgr) == 2
             return {
                 "verified": True,
-                "name": "JANEZ",
-                "surname": "NOVAK",
-                "document_number": "ABC123456",
-                "valid_until": "2030-01-01",
-                "document_valid": True,
-                "liveness_ok": True,
-                "liveness_score_spoof": 0.01,
-                "liveness_threshold": 0.05,
-                "face_match_ok": True,
-                "match_score": 0.31,
-                "match_threshold": 0.2,
-                "reasons": [],
+                "first_name": "JANEZ",
+                "last_name": "NOVAK",
+                "emso": "1010005500426",
             }
 
     monkeypatch.setattr(app.state, "pipeline", FakePipeline(), raising=False)
@@ -47,7 +37,6 @@ def test_verify_route_accepts_spec_multipart_contract(monkeypatch):
         "/verify",
         files=[
             ("id_front", ("front.jpg", img, "image/jpeg")),
-            ("id_back", ("back.jpg", img, "image/jpeg")),
             ("selfie_frames", ("selfie1.jpg", img, "image/jpeg")),
             ("selfie_frames", ("selfie2.jpg", img, "image/jpeg")),
         ],

@@ -15,6 +15,7 @@ class DocumentInfo:
     surname: str | None
     document_number: str | None
     valid_until: date | None
+    emso: str | None = None
     raw_ocr_fields: tuple[str, ...] = field(default_factory=tuple)
 
     @property

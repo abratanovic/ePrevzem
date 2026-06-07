@@ -19,6 +19,18 @@ _DOC_NUMBER_PATTERN = re.compile(r"\b([A-Z]{1,3}\d{5,9}|\d{7,9})\b")
 # Field numbers like "1", "1.", "4b.", "4c.", "5,"
 _FIELD_NUM_RE = re.compile(r"^\d{1,2}[a-dA-D]?[.,:]?$")
 
+# EMSO is always exactly 13 consecutive digits
+_EMSO_PATTERN = re.compile(r"(?<!\d)(\d{13})(?!\d)")
+
+# EU driving licence: field 1 = surname, field 2 = given name
+_DL_SURNAME_RE = re.compile(r"^1\s+(.+)")
+_DL_NAME_RE = re.compile(r"^2\s+(.+)")
+
+# ID card structural fallback: a clean all-uppercase name line (letters, hyphens, spaces; ≥3 chars)
+_ID_NAME_LINE_RE = re.compile(r"^[A-ZČŠŽĆĐÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛ\-]{2}[A-ZČŠŽĆĐÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛ\s\-]*$")
+# Words that identify header / card-type lines to skip
+_ID_HEADER_WORDS = {"OSEBNA", "IZKAZNICA", "REPUBLIKA", "SLOVENIJA", "IDENTITY", "CARD", "REPUBLIC"}
+
 
 def extract_document_info_general(
     image_bgr: np.ndarray,
@@ -37,12 +49,19 @@ def extract_document_info_general(
 
     valid_until = _find_expiry(lines)
     document_number = _find_document_number(lines)
+    emso = _find_emso(lines)
+
+    if variant == "driving_licence":
+        name, surname = _find_name_surname_dl(lines)
+    else:
+        name, surname = _find_name_surname_id(lines)
 
     return DocumentInfo(
-        name=None,
-        surname=None,
+        name=name,
+        surname=surname,
         document_number=document_number,
         valid_until=valid_until,
+        emso=emso,
         raw_ocr_fields=tuple(lines),
     )
 
@@ -368,3 +387,86 @@ def _find_document_number(lines: list[str]) -> str | None:
             if best is None or len(candidate) > len(best):
                 best = candidate
     return best
+
+
+def _find_emso(lines: list[str]) -> str | None:
+    """Return the first 13-digit sequence found — the Slovenian EMSO."""
+    for line in lines:
+        m = _EMSO_PATTERN.search(line)
+        if m:
+            return m.group(1)
+    return None
+
+
+def _find_name_surname_dl(lines: list[str]) -> tuple[str | None, str | None]:
+    """Extract name and surname from EU driving licence fields 1 and 2."""
+    name: str | None = None
+    surname: str | None = None
+    for line in lines:
+        m = _DL_SURNAME_RE.match(line)
+        if m:
+            surname = m.group(1).strip()
+            continue
+        m = _DL_NAME_RE.match(line)
+        if m:
+            name = m.group(1).strip()
+    return name, surname
+
+
+def _find_name_surname_id(lines: list[str]) -> tuple[str | None, str | None]:
+    """Extract name and surname from Slovenian ID card OCR lines.
+
+    Tries two strategies in order:
+    1. Label-based: looks for 'Priimek' / 'Ime' label lines and grabs the
+       following value (works when Tesseract reads the small label text).
+    2. Structural fallback: when labels are too small to OCR, the first two
+       clean all-uppercase alphabetic lines after the card header are the
+       surname and name respectively.
+    """
+    name, surname = _find_name_surname_id_by_labels(lines)
+    if name and surname:
+        return name, surname
+    return _find_name_surname_id_structural(lines)
+
+
+def _find_name_surname_id_by_labels(lines: list[str]) -> tuple[str | None, str | None]:
+    name: str | None = None
+    surname: str | None = None
+    next_is_surname = False
+    next_is_name = False
+    for line in lines:
+        ll = line.lower()
+        if "priimek" in ll:
+            next_is_surname = True
+            next_is_name = False
+            continue
+        if "given name" in ll or (ll.startswith("ime") and "/" in ll):
+            next_is_name = True
+            next_is_surname = False
+            continue
+        if next_is_surname and "/" not in line:
+            surname = line.strip()
+            next_is_surname = False
+            continue
+        if next_is_name and "/" not in line:
+            name = line.strip()
+            next_is_name = False
+    return name, surname
+
+
+def _find_name_surname_id_structural(lines: list[str]) -> tuple[str | None, str | None]:
+    """Fallback: first two clean all-caps alphabetic lines = surname, name."""
+    candidates: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if not _ID_NAME_LINE_RE.match(stripped):
+            continue
+        words = stripped.split()
+        if any(w in _ID_HEADER_WORDS for w in words):
+            continue
+        candidates.append(stripped)
+        if len(candidates) == 2:
+            break
+    surname = candidates[0] if len(candidates) > 0 else None
+    name = candidates[1] if len(candidates) > 1 else None
+    return name, surname

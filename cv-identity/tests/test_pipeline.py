@@ -31,7 +31,7 @@ class FakeReader:
     def __init__(self, document):
         self.document = document
 
-    def extract(self, image_bgr):
+    def extract(self, image_bgr, variant="driving_licence"):
         return self.document
 
 
@@ -48,6 +48,7 @@ def _document(valid=True):
         surname="NOVAK",
         document_number="ABC123456",
         valid_until=valid_until,
+        emso="1010005500426",
     )
 
 
@@ -62,12 +63,12 @@ def test_verify_passes_when_document_liveness_and_match_pass(monkeypatch):
         match_threshold=0.2,
     )
 
-    result = pipeline.verify(_img(1), _img(7), [_img(9), _img(2)])
+    result = pipeline.verify(_img(1), [_img(9), _img(2)])
 
     assert result["verified"] is True
-    assert result["liveness_score_spoof"] == 0.01
-    assert result["face_match_ok"] is True
-    assert result["reasons"] == []
+    assert result["first_name"] == "JANEZ"
+    assert result["last_name"] == "NOVAK"
+    assert result["emso"] == "1010005500426"
     assert int(embedder.faces[1][0, 0, 0]) == 2
 
 
@@ -81,7 +82,7 @@ def test_verify_rejects_when_ocr_fails(monkeypatch):
         match_threshold=0.2,
     )
 
-    result = pipeline.verify(_img(1), _img(7), [_img(2)])
+    result = pipeline.verify(_img(1), [_img(2)])
 
     assert result["verified"] is False
     assert "document_ocr_failed" in result["reasons"]
@@ -97,7 +98,7 @@ def test_verify_rejects_expired_document(monkeypatch):
         match_threshold=0.2,
     )
 
-    result = pipeline.verify(_img(1), _img(7), [_img(2)])
+    result = pipeline.verify(_img(1), [_img(2)])
 
     assert result["verified"] is False
     assert "document_expired" in result["reasons"]
@@ -116,7 +117,7 @@ def test_verify_rejects_missing_selfie_face(monkeypatch):
         match_threshold=0.2,
     )
 
-    result = pipeline.verify(_img(1), _img(7), [_img(2)])
+    result = pipeline.verify(_img(1), [_img(2)])
 
     assert result["verified"] is False
     assert "no_face_in_selfie" in result["reasons"]
@@ -132,7 +133,7 @@ def test_verify_rejects_liveness_failure(monkeypatch):
         match_threshold=0.2,
     )
 
-    result = pipeline.verify(_img(1), _img(7), [_img(2)])
+    result = pipeline.verify(_img(1), [_img(2)])
 
     assert result["verified"] is False
     assert "liveness_failed" in result["reasons"]
@@ -148,7 +149,7 @@ def test_verify_rejects_face_mismatch(monkeypatch):
         match_threshold=0.2,
     )
 
-    result = pipeline.verify(_img(1), _img(7), [_img(9)])
+    result = pipeline.verify(_img(1), [_img(9)])
 
     assert result["verified"] is False
     assert "face_mismatch" in result["reasons"]

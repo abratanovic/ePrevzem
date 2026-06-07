@@ -47,7 +47,6 @@ async def health() -> dict:
 @app.post("/verify")
 async def verify(
     id_front: UploadFile = File(...),
-    id_back: UploadFile = File(...),
     selfie_frames: list[UploadFile] | None = File(default=None),
     selfie_frames_bracket: list[UploadFile] | None = File(
         default=None,
@@ -63,9 +62,8 @@ async def verify(
             detail="At least one selfie frame is required.",
         )
     id_front_bgr = load_upload_image(await id_front.read())
-    id_back_bgr = load_upload_image(await id_back.read())
     selfies_bgr = [
         load_upload_image(await selfie.read())
         for selfie in selfie_uploads
     ]
-    return pipeline.verify(id_front_bgr, id_back_bgr, selfies_bgr, variant=variant)
+    return pipeline.verify(id_front_bgr, selfies_bgr, variant=variant)
