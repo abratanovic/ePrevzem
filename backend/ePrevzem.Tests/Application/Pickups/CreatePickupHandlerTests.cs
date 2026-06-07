@@ -131,6 +131,8 @@ public sealed class TestCitizenRepository(CitizenUser? citizen) : ICitizenUserRe
 {
     public Task<CitizenUser?> GetByEmsoAsync(string emso, CancellationToken cancellationToken = default)
         => Task.FromResult(citizen?.Emso == emso ? citizen : null);
+    public Task<CitizenUser?> GetByCitizenDeviceIdAsync(CitizenDeviceId deviceId, CancellationToken cancellationToken = default)
+        => Task.FromResult(citizen?.Devices.Any(d => d.Id == deviceId) == true ? citizen : null);
     public Task AddAsync(CitizenUser user, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
@@ -161,6 +163,8 @@ public sealed class TestEmployeeRepository(EmployeeAccount? employee) : IEmploye
     public Task<EmployeeAccount?> GetByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default) => Task.FromResult(employee);
     public Task<EmployeeAccount?> GetByIdAsync(EmployeeAccountId id, CancellationToken cancellationToken = default)
         => Task.FromResult(employee?.Id == id ? employee : null);
+    public Task<EmployeeAccount?> GetByEmployeeDeviceIdAsync(EmployeeDeviceId deviceId, CancellationToken cancellationToken = default)
+        => Task.FromResult(employee?.Devices.Any(d => d.Id == deviceId) == true ? employee : null);
     public Task AddAsync(EmployeeAccount account, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<IReadOnlyList<EmployeeAccount>> GetByOrganisationIdAsync(OrganizationId organisationId, CancellationToken cancellationToken = default)
         => Task.FromResult<IReadOnlyList<EmployeeAccount>>([]);

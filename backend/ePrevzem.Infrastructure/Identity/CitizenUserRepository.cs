@@ -17,6 +17,11 @@ public sealed class CitizenUserRepository : ICitizenUserRepository
     public Task<CitizenUser?> GetByEmsoAsync(string emso, CancellationToken cancellationToken = default)
         => _dbContext.CitizenUsers.SingleOrDefaultAsync(x => x.Emso == emso, cancellationToken);
 
+    public Task<CitizenUser?> GetByCitizenDeviceIdAsync(CitizenDeviceId deviceId, CancellationToken cancellationToken = default)
+        => _dbContext.CitizenUsers
+            .Include(x => x.Devices)
+            .FirstOrDefaultAsync(u => u.Devices.Any(d => d.Id == deviceId), cancellationToken);
+
     public Task AddAsync(CitizenUser user, CancellationToken cancellationToken = default)
         => _dbContext.CitizenUsers.AddAsync(user, cancellationToken).AsTask();
 }
