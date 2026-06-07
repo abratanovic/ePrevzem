@@ -15,15 +15,27 @@ class FakeSecurityKeyStore : SecurityKeyStore {
     }
 }
 
-/** Deterministic crypto so staging→commit plumbing is verifiable without real crypto. */
+/**
+ * Deterministic crypto so staging→commit plumbing is verifiable without real crypto.
+ * Models AES-GCM's key binding: decryption fails (throws) when the AES key used to
+ * decrypt differs from the one used to encrypt — i.e. when the wrong PIN was entered.
+ */
 class FakeSecurityCrypto : SecurityCryptoPort {
     override fun generateEcdsaKeyPair(): EcdsaKeyPair =
         EcdsaKeyPair(publicKeyPem = "PUB", privateKeyBytes = "PRIV".encodeToByteArray())
     override fun randomBytes(size: Int): ByteArray = ByteArray(size) { 1 }
     override fun deriveAesKey(pin: String, salt: ByteArray): ByteArray = ("AES:$pin").encodeToByteArray()
+
+    // Prepend the AES key to the ciphertext so decrypt can verify it (stand-in for the auth tag).
     override fun encryptAesGcm(key: ByteArray, plaintext: ByteArray): EncryptedPayload =
-        EncryptedPayload(ciphertext = plaintext, nonce = "NONCE".encodeToByteArray())
-    override fun decryptAesGcm(key: ByteArray, payload: EncryptedPayload): ByteArray = payload.ciphertext
+        EncryptedPayload(ciphertext = key + plaintext, nonce = "NONCE".encodeToByteArray())
+
+    override fun decryptAesGcm(key: ByteArray, payload: EncryptedPayload): ByteArray {
+        val prefix = payload.ciphertext.copyOfRange(0, key.size)
+        require(prefix.contentEquals(key)) { "AES-GCM auth failure: wrong key" }
+        return payload.ciphertext.copyOfRange(key.size, payload.ciphertext.size)
+    }
+
     override fun signEcdsa(privateKey: ByteArray, challenge: ByteArray): ByteArray =
         ("SIG:" + challenge.decodeToString()).encodeToByteArray()
 }
