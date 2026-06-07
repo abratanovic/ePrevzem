@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Lock, History, KeyRound, ShieldCheck } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, Eye, EyeOff, Lock, History, KeyRound, ShieldCheck } from "lucide-react";
 import AuthLayout from "../components/auth/AuthLayout";
 import { useAuth } from "../contexts/useAuth";
 import { changePassword } from "../services/authService";
@@ -65,7 +65,7 @@ function Requirement({ met, label }: { met: boolean; label: string }) {
 
 export default function ChangePasswordPage() {
   const navigate = useNavigate();
-  const { clearMustChangePassword } = useAuth();
+  const { clearMustChangePassword, user } = useAuth();
 
   const [current, setCurrent] = useState("");
   const [newPw, setNewPw] = useState("");
@@ -114,6 +114,16 @@ export default function ChangePasswordPage() {
       ]}
     >
       <div className="space-y-8">
+        {!user?.mustChangePassword && (
+          <Link
+            to="/profil"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            aria-label="Nazaj na profil"
+          >
+            <ArrowLeft size={18} />
+          </Link>
+        )}
+
         <div className="space-y-1">
           <h2 className="text-2xl font-bold text-slate-900">Nastavite novo geslo</h2>
           <p className="text-sm text-slate-500">Iz varnostnih razlogov morate pred prvo uporabo zamenjati začetno geslo.</p>

@@ -15,6 +15,9 @@ public interface IAuditLogRepository
     Task<IReadOnlyList<AuditLogEntryResponse>> GetForAdminAsync(
         AuditLogQueryFilter filter,
         CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<AuditActorOptionResponse>> GetActorOptionsForOrganizationAsync(
+        OrganizationId organizationId,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Returns audit entries visible to a single citizen: events the citizen performed
@@ -35,4 +38,6 @@ public sealed record AuditLogQueryFilter(
     AuditAction? Action,
     AuditTargetKind? TargetKind,
     EmployeeAccountId? ActorEmployeeAccountId = null,
+    AuditActorKind? ActorKind = null,
+    Guid? ActorId = null,
     IReadOnlyCollection<AuditAction>? ActionsIn = null);

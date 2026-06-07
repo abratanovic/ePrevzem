@@ -16,11 +16,13 @@ import {
 import sloveniaLogo from "../assets/slovenia-badge.png";
 import sloveniaLogoWhite from "../assets/slovenia-badge-white.png";
 import sitrustLogo from "../assets/sitrust-logo.png";
+import { useAuth } from "../contexts/useAuth";
 
 function LoginDropdown({ variant }: { variant: "navbar" | "hero" }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
     function handleOutside(e: MouseEvent) {
@@ -32,11 +34,22 @@ function LoginDropdown({ variant }: { variant: "navbar" | "hero" }) {
   }, []);
 
   const isNavbar = variant === "navbar";
+  const portalPath = user?.mustChangePassword ? "/sprememba-gesla" : "/dashboard";
+
+  const handleLoginClick = () => {
+    if (user) {
+      navigate(portalPath);
+      setOpen(false);
+      return;
+    }
+
+    setOpen((v) => !v);
+  };
 
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={handleLoginClick}
         className={
           isNavbar
             ? "flex items-center gap-2 rounded-xl border border-[#1a3d2b] px-4 py-2.5 text-sm font-semibold text-[#1a3d2b] transition hover:bg-[#1a3d2b]/5"
@@ -44,14 +57,16 @@ function LoginDropdown({ variant }: { variant: "navbar" | "hero" }) {
         }
       >
         <Building2 size={15} />
-        Prijava za organizacije
-        <ChevronDown
-          size={14}
-          className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-        />
+        {user ? "Nazaj na portal" : "Prijava za organizacije"}
+        {!user && (
+          <ChevronDown
+            size={14}
+            className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          />
+        )}
       </button>
 
-      {open && (
+      {open && !user && (
         <div className="absolute right-0 top-full z-50 mt-2 w-60 overflow-hidden rounded-xl border border-slate-100 bg-white shadow-xl">
           <button
             onClick={() => {

@@ -21,18 +21,27 @@ function isTokenExpired(token: string): boolean {
   }
 }
 
+function clearStoredAuth(): void {
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("auth_user");
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>(() => {
     const token = localStorage.getItem("access_token");
     const userJson = localStorage.getItem("auth_user");
-    if (token && userJson && !isTokenExpired(token)) {
-      try {
-        return { token, user: JSON.parse(userJson) };
-      } catch {
-        /* fall through */
-      }
+
+    if (!token || !userJson || isTokenExpired(token)) {
+      clearStoredAuth();
+      return { token: null, user: null };
     }
-    return { token: null, user: null };
+
+    try {
+      return { token, user: JSON.parse(userJson) };
+    } catch {
+      clearStoredAuth();
+      return { token: null, user: null };
+    }
   });
 
   const login = async (email: string, password: string): Promise<{ mustChangePassword: boolean }> => {

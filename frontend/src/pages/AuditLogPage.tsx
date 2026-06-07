@@ -10,9 +10,10 @@ import {
   RefreshCw,
   ShieldCheck,
 } from "lucide-react";
-import { getAuditLog } from "../services/auditLogService";
+import { getAuditActors, getAuditLog } from "../services/auditLogService";
 import type {
   AuditAction,
+  AuditActorOption,
   AuditLogDetails,
   AuditLogEntry,
   AuditLogFilters,
@@ -184,6 +185,16 @@ function shortId(id: string): string {
   return id.length > 8 ? `${id.slice(0, 8)}...` : id;
 }
 
+function actorOptionLabel(actor: AuditActorOption): string {
+  const displayName = actor.displayName?.trim();
+  const email = actor.email?.trim();
+
+  if (displayName && email) return `${displayName} (${email})`;
+  if (displayName) return displayName;
+  if (email) return email;
+  return `${actor.actorKind} ${shortId(actor.actorId)}`;
+}
+
 function actorIdFor(entry: AuditLogEntry): string | null {
   switch (entry.actorKind) {
     case "Citizen":
@@ -200,6 +211,41 @@ function actorIdFor(entry: AuditLogEntry): string | null {
         ?? entry.actorOrganizationAdminAccountId
         ?? entry.actorSystemAdminId;
   }
+}
+
+function actorOptionFromEntry(entry: AuditLogEntry): AuditActorOption | null {
+  const actorId = actorIdFor(entry);
+  if (!actorId || entry.actorKind === "System") {
+    return null;
+  }
+
+  return {
+    actorKind: entry.actorKind,
+    actorId,
+    displayName: entry.actorDisplayName,
+    email: entry.actorEmail,
+  };
+}
+
+function mergeActorOptions(
+  primary: AuditActorOption[],
+  fallbackEntries: AuditLogEntry[] | null,
+): AuditActorOption[] {
+  const byKey = new Map<string, AuditActorOption>();
+
+  const add = (actor: AuditActorOption) => {
+    byKey.set(`${actor.actorKind}:${actor.actorId}`, actor);
+  };
+
+  primary.forEach(add);
+  fallbackEntries
+    ?.map(actorOptionFromEntry)
+    .filter((actor): actor is AuditActorOption => actor !== null)
+    .forEach(add);
+
+  return [...byKey.values()].sort((a, b) =>
+    actorOptionLabel(a).localeCompare(actorOptionLabel(b), "sl"),
+  );
 }
 
 function contextualTargetFor(entry: AuditLogEntry): { label: string; id: string | null } {
@@ -310,6 +356,7 @@ function TableSkeleton() {
 
 export default function AuditLogPage() {
   const [entries, setEntries] = useState<AuditLogEntry[] | null>(null);
+  const [actors, setActors] = useState<AuditActorOption[]>([]);
   const [loadError, setLoadError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
@@ -318,6 +365,8 @@ export default function AuditLogPage() {
     to: "",
     action: "",
     targetKind: "",
+    actorKind: "",
+    actorId: "",
   });
 
   const queryFilters: AuditLogFilters = useMemo(() => ({
@@ -326,7 +375,22 @@ export default function AuditLogPage() {
     to: toEndOfDay(filters.to),
     action: filters.action as AuditAction | "",
     targetKind: filters.targetKind as AuditTargetKind | "",
-  }), [filters]);
+  }), [filters.action, filters.from, filters.limit, filters.targetKind, filters.to]);
+
+  const actorOptions = useMemo(
+    () => mergeActorOptions(actors, entries),
+    [actors, entries],
+  );
+
+  const displayedEntries = useMemo(() => {
+    if (!filters.actorKind || !filters.actorId) {
+      return entries;
+    }
+
+    return entries?.filter((entry) =>
+      entry.actorKind === filters.actorKind && actorIdFor(entry) === filters.actorId,
+    ) ?? null;
+  }, [entries, filters.actorId, filters.actorKind]);
 
   const loadEntries = useCallback(async () => {
     try {
@@ -346,10 +410,16 @@ export default function AuditLogPage() {
     return () => window.clearTimeout(timer);
   }, [loadEntries]);
 
+  useEffect(() => {
+    getAuditActors()
+      .then(setActors)
+      .catch(() => setActors([]));
+  }, []);
+
   const resetFilters = () => {
     setLoading(true);
     setLoadError(false);
-    setFilters({ limit: "50", from: "", to: "", action: "", targetKind: "" });
+    setFilters({ limit: "50", from: "", to: "", action: "", targetKind: "", actorKind: "", actorId: "" });
   };
 
   return (
@@ -380,7 +450,7 @@ export default function AuditLogPage() {
           </button>
         </div>
 
-        <div className="mt-5 grid grid-cols-[1.15fr_1fr_150px_150px_110px_auto] items-end gap-3">
+        <div className="mt-5 grid grid-cols-1 items-end gap-3 md:grid-cols-2 xl:grid-cols-[1.05fr_1fr_1fr_150px_150px_110px_auto]">
           <label className="space-y-1">
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Dejanje</span>
             <select
@@ -413,6 +483,29 @@ export default function AuditLogPage() {
               <option value="">Vse tarče</option>
               {TARGET_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="space-y-1">
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Akter</span>
+            <select
+              value={filters.actorKind && filters.actorId ? `${filters.actorKind}:${filters.actorId}` : ""}
+              onChange={(e) => {
+                const [actorKind = "", actorId = ""] = e.target.value.split(":");
+                setLoadError(false);
+                setFilters((current) => ({ ...current, actorKind, actorId }));
+              }}
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-accent focus:ring-2 focus:ring-accent/10"
+            >
+              <option value="">Vsi akterji</option>
+              {actorOptions.map((actor) => (
+                <option
+                  key={`${actor.actorKind}:${actor.actorId}`}
+                  value={`${actor.actorKind}:${actor.actorId}`}
+                >
+                  {actorOptionLabel(actor)}
+                </option>
               ))}
             </select>
           </label>
@@ -481,7 +574,7 @@ export default function AuditLogPage() {
           </div>
         ) : loading && entries === null ? (
           <TableSkeleton />
-        ) : entries === null || entries.length === 0 ? (
+        ) : displayedEntries === null || displayedEntries.length === 0 ? (
           <div className="flex flex-col items-center px-5 py-16 text-center">
             <CalendarDays size={34} className="mb-3 text-slate-300" />
             <p className="text-sm font-semibold text-slate-700">Ni zapisov za izbrane filtre.</p>
@@ -500,7 +593,7 @@ export default function AuditLogPage() {
                 </tr>
               </thead>
               <tbody>
-                {entries.map((entry) => (
+                {displayedEntries.map((entry) => (
                   <tr key={entry.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
                     <td className="whitespace-nowrap px-5 py-4 font-medium text-slate-700">
                       {formatDate(entry.occurredAt)}

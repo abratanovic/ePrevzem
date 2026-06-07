@@ -1,4 +1,5 @@
-import { Building2, Mail, ShieldCheck, User, KeyRound } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowLeft, Building2, Mail, ShieldCheck, User, KeyRound } from "lucide-react";
 import { useAuth } from "../contexts/useAuth";
 
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | null | undefined }) {
@@ -34,6 +35,14 @@ export default function ProfilePage() {
   return (
     <div className="flex min-h-full justify-center p-6">
       <div className="w-full max-w-2xl space-y-5">
+        <Link
+          to="/dashboard"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+          aria-label="Nazaj na nadzorno ploščo"
+        >
+          <ArrowLeft size={18} />
+        </Link>
+
         {/* Header card */}
         <div className="rounded-2xl bg-[#1a3d2b] px-8 py-8 text-white">
           <div className="flex items-center gap-5">

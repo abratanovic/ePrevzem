@@ -21,3 +21,9 @@ public sealed record AuditLogDetailsResponse(
     string? OrganizationName = null,
     string? LockerLabel = null,
     string? Location = null);
+
+public sealed record AuditActorOptionResponse(
+    string ActorKind,
+    Guid ActorId,
+    string? DisplayName,
+    string? Email);

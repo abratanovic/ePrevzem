@@ -40,6 +40,42 @@ public sealed class AuditLogRepository : IAuditLogRepository
             filter.Limit,
             cancellationToken);
 
+    public async Task<IReadOnlyList<AuditActorOptionResponse>> GetActorOptionsForOrganizationAsync(
+        OrganizationId organizationId,
+        CancellationToken cancellationToken = default)
+    {
+        var rows = await _dbContext.AuditLogEntries
+            .AsNoTracking()
+            .Where(x => x.OrganizationId == organizationId)
+            .Where(x => x.ActorKind != AuditActorKind.System)
+            .Select(x => new ActorRow(
+                x.ActorKind,
+                x.ActorCitizenUserId,
+                x.ActorEmployeeAccountId,
+                x.ActorOrganizationAdminAccountId,
+                x.ActorSystemAdminId))
+            .ToListAsync(cancellationToken);
+
+        var actors = rows
+            .Distinct()
+            .Where(x => ActorIdFor(x) is not null)
+            .ToList();
+        var actorDisplays = await LoadActorDisplaysAsync(actors, cancellationToken);
+
+        return actors
+            .Select(x =>
+            {
+                var actorDisplay = GetActorDisplay(x, actorDisplays);
+                return new AuditActorOptionResponse(
+                    x.ActorKind.ToString(),
+                    ActorIdFor(x)!.Value,
+                    actorDisplay.DisplayName,
+                    actorDisplay.Email);
+            })
+            .OrderBy(x => x.DisplayName ?? x.Email ?? x.ActorId.ToString())
+            .ToList();
+    }
+
     public async Task<IReadOnlyList<AuditLogEntryResponse>> GetForCitizenAsync(
         CitizenUserId citizenUserId,
         AuditLogQueryFilter filter,
@@ -78,6 +114,18 @@ public sealed class AuditLogRepository : IAuditLogRepository
             query = query.Where(x => x.TargetKind == filter.TargetKind.Value);
         if (filter.ActorEmployeeAccountId is not null)
             query = query.Where(x => x.ActorEmployeeAccountId == filter.ActorEmployeeAccountId.Value);
+        if (filter.ActorKind is not null && filter.ActorId is not null)
+        {
+            var actorId = filter.ActorId.Value;
+            query = filter.ActorKind.Value switch
+            {
+                AuditActorKind.Citizen => query.Where(x => x.ActorCitizenUserId != null && x.ActorCitizenUserId.Value.Value == actorId),
+                AuditActorKind.Employee => query.Where(x => x.ActorEmployeeAccountId != null && x.ActorEmployeeAccountId.Value.Value == actorId),
+                AuditActorKind.OrganizationAdmin => query.Where(x => x.ActorOrganizationAdminAccountId != null && x.ActorOrganizationAdminAccountId.Value.Value == actorId),
+                AuditActorKind.SystemAdmin => query.Where(x => x.ActorSystemAdminId != null && x.ActorSystemAdminId.Value.Value == actorId),
+                _ => query
+            };
+        }
         if (filter.ActionsIn is { Count: > 0 })
             query = query.Where(x => filter.ActionsIn.Contains(x.Action));
 
@@ -190,6 +238,78 @@ public sealed class AuditLogRepository : IAuditLogRepository
         return new ActorDisplays(citizens, employees, organizationAdmins, systemAdmins);
     }
 
+    private async Task<ActorDisplays> LoadActorDisplaysAsync(
+        IReadOnlyCollection<ActorRow> rows,
+        CancellationToken cancellationToken)
+    {
+        var citizenIds = rows
+            .Select(x => x.ActorCitizenUserId)
+            .OfType<CitizenUserId>()
+            .Distinct()
+            .ToList();
+        var employeeIds = rows
+            .Select(x => x.ActorEmployeeAccountId)
+            .OfType<EmployeeAccountId>()
+            .Distinct()
+            .ToList();
+        var organizationAdminIds = rows
+            .Select(x => x.ActorOrganizationAdminAccountId)
+            .OfType<OrganizationAdminAccountId>()
+            .Distinct()
+            .ToList();
+        var systemAdminIds = rows
+            .Select(x => x.ActorSystemAdminId)
+            .OfType<SystemAdminId>()
+            .Distinct()
+            .ToList();
+
+        var citizens = citizenIds.Count == 0
+            ? new Dictionary<CitizenUserId, ActorDisplay>()
+            : await _dbContext.CitizenUsers
+                .AsNoTracking()
+                .Where(x => citizenIds.Contains(x.Id))
+                .Select(x => new { x.Id, x.FirstName, x.LastName, x.Email })
+                .ToDictionaryAsync(
+                    x => x.Id,
+                    x => new ActorDisplay(FullName(x.FirstName, x.LastName), x.Email),
+                    cancellationToken);
+
+        var employees = employeeIds.Count == 0
+            ? new Dictionary<EmployeeAccountId, ActorDisplay>()
+            : await _dbContext.EmployeeAccounts
+                .AsNoTracking()
+                .Where(x => employeeIds.Contains(x.Id))
+                .Select(x => new { x.Id, x.FirstName, x.LastName, x.Email })
+                .ToDictionaryAsync(
+                    x => x.Id,
+                    x => new ActorDisplay(FullName(x.FirstName, x.LastName), x.Email),
+                    cancellationToken);
+
+        var organizationAdmins = organizationAdminIds.Count == 0
+            ? new Dictionary<OrganizationAdminAccountId, ActorDisplay>()
+            : await _dbContext.OrganizationAdminAccounts
+                .AsNoTracking()
+                .Where(x => organizationAdminIds.Contains(x.Id))
+                .Select(x => new { x.Id, x.FirstName, x.LastName, x.Email })
+                .ToDictionaryAsync(
+                    x => x.Id,
+                    x => new ActorDisplay(FullName(x.FirstName, x.LastName), x.Email),
+                    cancellationToken);
+
+        var systemAdmins = systemAdminIds.Count == 0
+            ? new Dictionary<SystemAdminId, ActorDisplay>()
+            : await _dbContext.SystemAdmins
+                .AsNoTracking()
+                .Where(x => systemAdminIds.Contains(x.Id))
+                .Select(x => new { x.Id, x.Username })
+                .ToDictionaryAsync(
+                    x => x.Id,
+                    x => new ActorDisplay(x.Username, Email: null),
+                    cancellationToken);
+
+        return new ActorDisplays(citizens, employees, organizationAdmins, systemAdmins);
+    }
+
     private static ActorDisplay GetActorDisplay(AuditLogEntry entry, ActorDisplays actorDisplays)
     {
         return entry.ActorKind switch
@@ -204,6 +324,34 @@ public sealed class AuditLogRepository : IAuditLogRepository
                 => actorDisplays.SystemAdmins.GetValueOrDefault(entry.ActorSystemAdminId.Value) ?? ActorDisplay.Empty,
             AuditActorKind.System => new ActorDisplay("Sistem", Email: null),
             _ => ActorDisplay.Empty
+        };
+    }
+
+    private static ActorDisplay GetActorDisplay(ActorRow row, ActorDisplays actorDisplays)
+    {
+        return row.ActorKind switch
+        {
+            AuditActorKind.Citizen when row.ActorCitizenUserId is not null
+                => actorDisplays.Citizens.GetValueOrDefault(row.ActorCitizenUserId.Value) ?? ActorDisplay.Empty,
+            AuditActorKind.Employee when row.ActorEmployeeAccountId is not null
+                => actorDisplays.Employees.GetValueOrDefault(row.ActorEmployeeAccountId.Value) ?? ActorDisplay.Empty,
+            AuditActorKind.OrganizationAdmin when row.ActorOrganizationAdminAccountId is not null
+                => actorDisplays.OrganizationAdmins.GetValueOrDefault(row.ActorOrganizationAdminAccountId.Value) ?? ActorDisplay.Empty,
+            AuditActorKind.SystemAdmin when row.ActorSystemAdminId is not null
+                => actorDisplays.SystemAdmins.GetValueOrDefault(row.ActorSystemAdminId.Value) ?? ActorDisplay.Empty,
+            _ => ActorDisplay.Empty
+        };
+    }
+
+    private static Guid? ActorIdFor(ActorRow row)
+    {
+        return row.ActorKind switch
+        {
+            AuditActorKind.Citizen => row.ActorCitizenUserId?.Value,
+            AuditActorKind.Employee => row.ActorEmployeeAccountId?.Value,
+            AuditActorKind.OrganizationAdmin => row.ActorOrganizationAdminAccountId?.Value,
+            AuditActorKind.SystemAdmin => row.ActorSystemAdminId?.Value,
+            _ => null
         };
     }
 
@@ -225,4 +373,11 @@ public sealed class AuditLogRepository : IAuditLogRepository
         IReadOnlyDictionary<EmployeeAccountId, ActorDisplay> Employees,
         IReadOnlyDictionary<OrganizationAdminAccountId, ActorDisplay> OrganizationAdmins,
         IReadOnlyDictionary<SystemAdminId, ActorDisplay> SystemAdmins);
+
+    private sealed record ActorRow(
+        AuditActorKind ActorKind,
+        CitizenUserId? ActorCitizenUserId,
+        EmployeeAccountId? ActorEmployeeAccountId,
+        OrganizationAdminAccountId? ActorOrganizationAdminAccountId,
+        SystemAdminId? ActorSystemAdminId);
 }

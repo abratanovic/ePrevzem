@@ -98,10 +98,19 @@ export interface AuditLogEntry {
   details: AuditLogDetails | null;
 }
 
+export interface AuditActorOption {
+  actorKind: AuditActorKind;
+  actorId: string;
+  displayName?: string | null;
+  email?: string | null;
+}
+
 export interface AuditLogFilters {
   limit?: number;
   from?: string;
   to?: string;
   action?: AuditAction | "";
   targetKind?: AuditTargetKind | "";
+  actorKind?: AuditActorKind | "";
+  actorId?: string;
 }

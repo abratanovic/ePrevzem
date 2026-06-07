@@ -1,6 +1,6 @@
 import { ClipboardList, LayoutDashboard, LogOut, Package, Users, type LucideIcon } from "lucide-react";
 import sloveniaBadge from "../assets/slovenia-badge.png";
-import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/useAuth";
 import { useState, useRef, useEffect } from "react";
 
@@ -69,10 +69,14 @@ export default function Sidebar() {
   return (
     <aside className="fixed inset-y-0 left-0 flex w-20 flex-col items-center border-r border-slate-200 bg-white">
       {/* logo */}
-      <div className="flex h-18 w-full shrink-0 flex-col items-center justify-center gap-0.5">
+      <Link
+        to="/"
+        className="flex h-18 w-full shrink-0 flex-col items-center justify-center gap-0.5 transition hover:bg-slate-50"
+        aria-label="Nazaj na začetno stran"
+      >
         <img src={sloveniaBadge} alt="Slovenija" className="h-7 w-7 object-contain" />
         <span className="text-[9px] font-bold tracking-tight text-accent">ePrevzem</span>
-      </div>
+      </Link>
 
       {/* nav */}
       <nav className="mt-1 flex flex-1 flex-col items-center gap-2">

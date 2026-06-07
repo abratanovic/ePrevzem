@@ -11,14 +11,14 @@ plugins {
 }
 
 // ePrevzem backend base URL config
-// Developer can override via local.properties: eprevzem.api.base.url=http://10.0.2.2:5080
+// Developer can override via local.properties: eprevzem.api.base.url=http://116.202.15.208:8080
 val eprevzemApiBaseUrl: String = run {
     val props = Properties()
     val localPropsFile = rootProject.file("local.properties")
     if (localPropsFile.exists()) {
         localPropsFile.inputStream().use { props.load(it) }
     }
-    props.getProperty("eprevzem.api.base.url", "http://10.0.2.2:5080")
+    props.getProperty("eprevzem.api.base.url", "http://116.202.15.208:8080")
 }
 
 // cv-identity face matching API base URL
