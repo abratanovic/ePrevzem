@@ -61,6 +61,101 @@ public class AuditLogRepositoryTests
     }
 
     [Fact]
+    public async Task GetForOrganizationAsync_enriches_organization_admin_actor_display()
+    {
+        await using var db = CreateContext();
+        var repository = new AuditLogRepository(db);
+        var orgId = OrganizationId.New();
+        var adminId = OrganizationAdminAccountId.New();
+        var admin = OrganizationAdminAccount.Create(
+            adminId,
+            orgId,
+            "Ana",
+            "Novak",
+            "ana.novak@example.test",
+            "hash",
+            Now);
+
+        db.OrganizationAdminAccounts.Add(admin);
+        await repository.AddAsync(Entry(
+            orgId,
+            AuditActorKind.OrganizationAdmin,
+            actorOrganizationAdminAccountId: adminId,
+            action: AuditAction.OrganizationAdminLoggedIn,
+            occurredAt: Now));
+        await db.SaveChangesAsync();
+
+        var result = await repository.GetForOrganizationAsync(
+            orgId,
+            new AuditLogQueryFilter(50, null, null, null, null, null));
+
+        result.Should().ContainSingle();
+        result[0].ActorDisplayName.Should().Be("Ana Novak");
+        result[0].ActorEmail.Should().Be("ana.novak@example.test");
+    }
+
+    [Fact]
+    public async Task GetForOrganizationAsync_enriches_employee_actor_display()
+    {
+        await using var db = CreateContext();
+        var repository = new AuditLogRepository(db);
+        var orgId = OrganizationId.New();
+        var employeeId = EmployeeAccountId.New();
+        var employee = EmployeeAccount.Create(
+            employeeId,
+            orgId,
+            "Boris",
+            "Kranjc",
+            "boris.kranjc@example.test",
+            [EmployeeAccountRole.Operator],
+            [],
+            ProvisioningCodeId.New(),
+            Now);
+
+        db.EmployeeAccounts.Add(employee);
+        await repository.AddAsync(Entry(
+            orgId,
+            AuditActorKind.Employee,
+            actorEmployeeAccountId: employeeId,
+            action: AuditAction.PackageCreated,
+            occurredAt: Now));
+        await db.SaveChangesAsync();
+
+        var result = await repository.GetForOrganizationAsync(
+            orgId,
+            new AuditLogQueryFilter(50, null, null, null, null, null));
+
+        result.Should().ContainSingle();
+        result[0].ActorDisplayName.Should().Be("Boris Kranjc");
+        result[0].ActorEmail.Should().Be("boris.kranjc@example.test");
+    }
+
+    [Fact]
+    public async Task GetForOrganizationAsync_keeps_entry_when_actor_account_is_missing()
+    {
+        await using var db = CreateContext();
+        var repository = new AuditLogRepository(db);
+        var orgId = OrganizationId.New();
+
+        await repository.AddAsync(Entry(
+            orgId,
+            AuditActorKind.Employee,
+            actorEmployeeAccountId: EmployeeAccountId.New(),
+            action: AuditAction.PackageCreated,
+            occurredAt: Now));
+        await db.SaveChangesAsync();
+
+        var result = await repository.GetForOrganizationAsync(
+            orgId,
+            new AuditLogQueryFilter(50, null, null, null, null, null));
+
+        result.Should().ContainSingle();
+        result[0].ActorKind.Should().Be(nameof(AuditActorKind.Employee));
+        result[0].ActorDisplayName.Should().BeNull();
+        result[0].ActorEmail.Should().BeNull();
+    }
+
+    [Fact]
     public async Task SaveChanges_rejects_modified_audit_entries()
     {
         await using var db = CreateContext();
@@ -77,14 +172,30 @@ public class AuditLogRepositoryTests
     }
 
     private static AuditLogEntry Entry(OrganizationId organizationId, AuditAction action, DateTimeOffset occurredAt)
+        => Entry(
+            organizationId,
+            AuditActorKind.Employee,
+            actorEmployeeAccountId: EmployeeAccountId.New(),
+            action: action,
+            occurredAt: occurredAt);
+
+    private static AuditLogEntry Entry(
+        OrganizationId organizationId,
+        AuditActorKind actorKind,
+        CitizenUserId? actorCitizenUserId = null,
+        EmployeeAccountId? actorEmployeeAccountId = null,
+        OrganizationAdminAccountId? actorOrganizationAdminAccountId = null,
+        SystemAdminId? actorSystemAdminId = null,
+        AuditAction action = AuditAction.PackageCreated,
+        DateTimeOffset? occurredAt = null)
         => AuditLogEntry.Record(
             AuditLogEntryId.New(),
-            occurredAt,
-            AuditActorKind.Employee,
-            actorCitizenUserId: null,
-            actorEmployeeAccountId: EmployeeAccountId.New(),
-            actorOrganizationAdminAccountId: null,
-            actorSystemAdminId: null,
+            occurredAt ?? Now,
+            actorKind,
+            actorCitizenUserId,
+            actorEmployeeAccountId,
+            actorOrganizationAdminAccountId,
+            actorSystemAdminId,
             organizationId,
             action,
             AuditTargetKind.Package,
