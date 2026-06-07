@@ -72,23 +72,24 @@ fun ConfirmAccountRoute(
                                 .onSuccess { publicKey ->
                                     repository.confirmAccount(validatedCode, publicKey)
                                         .onSuccess { user ->
-                                            runCatching {
+                                            val committed = runCatching {
+                                                securityRepository.commitRegistration(user.id).getOrThrow()
                                                 sessionStore.addProfile(user)
                                                 sessionStore.setAuthenticated(user.id)
-                                            }.onSuccess {
-                                                state = state.copy(isLoading = false)
-                                            }.onFailure {
-                                                securityRepository.reset()
-                                                sessionStore.forgetAllIdentities()
-                                                state = state.copy(
-                                                    isLoading = false,
-                                                    error = "Registracija ni uspela. Poskusite znova.",
-                                                )
                                             }
+                                            committed
+                                                .onSuccess { state = state.copy(isLoading = false) }
+                                                .onFailure {
+                                                    securityRepository.discardStaging()
+                                                    securityRepository.reset(user.id)
+                                                    state = state.copy(
+                                                        isLoading = false,
+                                                        error = "Registracija ni uspela. Poskusite znova.",
+                                                    )
+                                                }
                                         }
                                         .onFailure {
-                                            securityRepository.reset()
-                                            sessionStore.forgetAllIdentities()
+                                            securityRepository.discardStaging()
                                             state = state.copy(
                                                 isLoading = false,
                                                 error = "Registracija ni uspela. Poskusite znova.",
@@ -96,6 +97,7 @@ fun ConfirmAccountRoute(
                                         }
                                 }
                                 .onFailure {
+                                    securityRepository.discardStaging()
                                     state = state.copy(
                                         isLoading = false,
                                         error = "Varnostna nastavitev ni uspela: ${it::class.simpleName}: ${it.message}",
