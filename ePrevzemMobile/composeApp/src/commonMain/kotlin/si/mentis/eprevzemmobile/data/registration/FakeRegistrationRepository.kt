@@ -74,3 +74,4 @@ class FakeRegistrationRepository : RegistrationRepository {
 }
 
 class InvalidCodeException : Exception("Koda ni veljavna ali je potekla")
+class NetworkException : Exception("Napaka pri povezavi s strežnikom")

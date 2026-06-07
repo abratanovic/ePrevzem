@@ -94,7 +94,7 @@ class HttpLogEventRepositoryTest {
         val sessionStore = DeviceSessionStore(FakeSessionStorage())
         sessionStore.saveSession("acc-1", "AT-1", "2026-06-07T10:15:00Z", "RT-1")
         val api = ApiClient(
-            baseUrl = "http://localhost:5080",
+            baseUrl = "http://localhost:8080",
             sessionStore = sessionStore,
             activeAccountId = { "acc-1" },
             httpClient = createMockHttpClient(engine),

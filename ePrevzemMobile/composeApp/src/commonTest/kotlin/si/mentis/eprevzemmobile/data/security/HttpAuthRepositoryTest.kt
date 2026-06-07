@@ -36,6 +36,6 @@ class HttpAuthRepositoryTest {
     }
 
     private fun createApiClient(mockClient: HttpClient): ApiClient {
-        return ApiClient(baseUrl = "http://localhost:5080", httpClient = mockClient)
+        return ApiClient(baseUrl = "http://localhost:8080", httpClient = mockClient)
     }
 }

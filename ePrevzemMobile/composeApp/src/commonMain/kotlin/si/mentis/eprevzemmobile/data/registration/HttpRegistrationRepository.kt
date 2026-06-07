@@ -24,13 +24,11 @@ class HttpRegistrationRepository(
             val response = api.client.get("${api.baseUrl}/api/onboarding/$normalized")
             if (response.status.value in 200..299) {
                 Result.success(normalized)
-            } else if (response.status.value == 404 || response.status.value == 410) {
-                Result.failure(InvalidCodeException())
             } else {
                 Result.failure(InvalidCodeException())
             }
         } catch (e: Exception) {
-            Result.failure(InvalidCodeException())
+            Result.failure(NetworkException())
         }
     }
 
@@ -43,7 +41,7 @@ class HttpRegistrationRepository(
             val dto = response.body<OnboardingPreviewDto>()
             Result.success(dto.toAppUser(validatedCode))
         } catch (e: Exception) {
-            Result.failure(InvalidCodeException())
+            Result.failure(NetworkException())
         }
     }
 
@@ -73,7 +71,7 @@ class HttpRegistrationRepository(
             )
             Result.success(dto.toAppUser())
         } catch (e: Exception) {
-            Result.failure(InvalidCodeException())
+            Result.failure(NetworkException())
         }
     }
 
