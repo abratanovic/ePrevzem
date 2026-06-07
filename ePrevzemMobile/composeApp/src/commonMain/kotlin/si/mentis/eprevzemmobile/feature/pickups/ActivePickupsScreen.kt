@@ -143,7 +143,7 @@ fun ActivePickupsRoute(
         val (pickups, logEvents, biometricEnabled, notificationsEnabled) = coroutineScope {
             val pickups = async { repository.getActivePickups() }
             val logEvents = async { logEventRepository.getLogEventsForCurrentUser() }
-            val biometricEnabled = async { securityRepository.isBiometricEnabled() }
+            val biometricEnabled = async { securityRepository.isBiometricEnabled(user.id) }
             val notificationsEnabled = async { userSettingsRepository.areNotificationsEnabled() }
             LoadedActivePickupsData(
                 pickups = pickups.await(),
@@ -189,7 +189,7 @@ fun ActivePickupsRoute(
                     } else if (!state.isUpdatingSettings) {
                         state = state.copy(isUpdatingSettings = true, settingsError = null)
                         scope.launch {
-                            securityRepository.disableBiometric()
+                            securityRepository.disableBiometric(user.id)
                                 .onSuccess {
                                     val updatedUser = user.withBiometric(false)
                                     state = state.copy(
@@ -222,7 +222,7 @@ fun ActivePickupsRoute(
                         val pin = state.biometricPin
                         state = state.copy(isUpdatingSettings = true, settingsError = null)
                         scope.launch {
-                            securityRepository.enableBiometric(pin)
+                            securityRepository.enableBiometric(user.id, pin)
                                 .onSuccess {
                                     val updatedUser = user.withBiometric(true)
                                     state = state.copy(
@@ -319,7 +319,7 @@ fun ActivePickupsRoute(
                         val newPin = state.newPin
                         state = state.copy(isChangingPin = true, pinChangeError = null)
                         scope.launch {
-                            securityRepository.changePin(currentPin, newPin)
+                            securityRepository.changePin(user.id, currentPin, newPin)
                                 .onSuccess {
                                     state = state.copy(
                                         isChangePinSheetVisible = false,

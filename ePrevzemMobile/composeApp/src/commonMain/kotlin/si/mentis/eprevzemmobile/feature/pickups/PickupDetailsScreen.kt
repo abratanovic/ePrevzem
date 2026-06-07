@@ -206,8 +206,9 @@ fun PickupDetailsRoute(
     }
 
     fun verifyBiometric() {
+        val accountId = user?.id ?: return
         scope.launch {
-            securityRepository.signChallengeWithBiometric("verify".encodeToByteArray())
+            securityRepository.signChallengeWithBiometric(accountId, "verify".encodeToByteArray())
                 .onSuccess {
                     state = state.copy(showBiometricSheet = false)
                     onIdentityVerified(state.details)
@@ -219,8 +220,9 @@ fun PickupDetailsRoute(
     }
 
     fun verifyPin(pin: String) {
+        val accountId = user?.id ?: return
         scope.launch {
-            securityRepository.signChallengeWithPin(pin, "verify".encodeToByteArray())
+            securityRepository.signChallengeWithPin(accountId, pin, "verify".encodeToByteArray())
                 .onSuccess {
                     state = state.copy(showPinSheet = false, pinValue = "")
                     onIdentityVerified(state.details)
