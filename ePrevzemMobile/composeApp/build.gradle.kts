@@ -54,6 +54,7 @@ kotlin {
             implementation(libs.androidx.biometric)
             implementation(libs.androidx.fragment)
             implementation(libs.androidx.security.crypto)
+            implementation(libs.osmdroid.android)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
