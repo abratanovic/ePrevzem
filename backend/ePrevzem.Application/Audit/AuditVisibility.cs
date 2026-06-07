@@ -9,22 +9,23 @@ namespace ePrevzem.Application.Audit;
 public static class AuditVisibility
 {
     /// <summary>
-    /// Actions a citizen may see about their own account and the documents addressed to them.
+    /// Actions a citizen may see about the documents addressed to them: the package
+    /// lifecycle plus their delegations.
     /// </summary>
     public static readonly IReadOnlyCollection<AuditAction> CitizenActions = new[]
     {
+        AuditAction.PackageCreated,
         AuditAction.PackagePlaced,
         AuditAction.PackagePickedUpByCitizen,
+        AuditAction.PackageRemovedByEmployee,
         AuditAction.PackageExpired,
         AuditAction.PackageRetrievedAfterExpiry,
         AuditAction.PackageMarkedPickedUpManually,
         AuditAction.PackageCancelled,
+        AuditAction.PackageDeleted,
         AuditAction.DelegationCreated,
         AuditAction.DelegationRevoked,
         AuditAction.DelegationUsedAtPickup,
-        AuditAction.CitizenOnboarded,
-        AuditAction.CitizenDeviceRegistered,
-        AuditAction.CitizenDeviceRevoked,
     };
 
     /// <summary>

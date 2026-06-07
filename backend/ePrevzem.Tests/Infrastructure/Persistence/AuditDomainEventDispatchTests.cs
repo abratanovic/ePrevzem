@@ -74,6 +74,14 @@ public class AuditDomainEventDispatchTests
         db.Packages.Add(createdPackage);
         await db.SaveChangesAsync();
 
+        createdPackage.Place(
+            PlacementId.New(),
+            locker.Id,
+            EmployeeAccountId.New(),
+            TimeSpan.FromDays(3),
+            Now.AddMinutes(1).AddSeconds(30));
+        await db.SaveChangesAsync();
+
         var cancelledPackage = Package.CreateByEmployee(
             PackageId.New(),
             organization.Id,
@@ -113,10 +121,16 @@ public class AuditDomainEventDispatchTests
         var entries = await db.AuditLogEntries.AsNoTracking().ToListAsync();
         entries.Select(x => x.Action).Should().Contain([
             AuditAction.PackageCreated,
+            AuditAction.PackagePlaced,
             AuditAction.PackageCancelled,
             AuditAction.PackageDeleted,
             AuditAction.LockerServiceabilityChanged
         ]);
+
+        // The locker row surfaces the pickup-station serial number, not the locker number.
+        var placedEntry = entries.Should().ContainSingle(x => x.Action == AuditAction.PackagePlaced).Subject;
+        placedEntry.Details.Should().Contain("EP-PM-001");
+        placedEntry.Details.Should().NotContain("Paketnik");
 
         var entry = entries.Should().ContainSingle(x => x.Action == AuditAction.PackageCreated).Subject;
         entry.Action.Should().Be(AuditAction.PackageCreated);

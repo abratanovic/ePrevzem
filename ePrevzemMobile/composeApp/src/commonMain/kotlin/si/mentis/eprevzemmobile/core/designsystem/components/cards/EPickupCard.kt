@@ -79,16 +79,18 @@ fun EPickupCard(
                     IconText(EPrevzemIcons.location(), location, bold = true, color = colors.textPrimary)
                     Text(text = lockerNumber, style = typo.caption, color = colors.textMuted)
                 }
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = "PREVZEM DO",
-                        style = typo.caption.copy(letterSpacing = 0.8.sp),
-                        color = colors.textMuted,
-                    )
-                    IconText(EPrevzemIcons.clock(), expires, bold = true, color = colors.textPrimary)
+                if (expires.isNotBlank()) {
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = "PREVZEM DO",
+                            style = typo.caption.copy(letterSpacing = 0.8.sp),
+                            color = colors.textMuted,
+                        )
+                        IconText(EPrevzemIcons.clock(), expires, bold = true, color = colors.textPrimary)
+                    }
                 }
             }
         }

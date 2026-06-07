@@ -19,6 +19,7 @@ public sealed record PickupResponse(
 public sealed record DashboardStatsResponse(
     int ActivePickups,
     int ActivePickupsTrend,
+    int AwaitingPlacement,
     int PendingPickups,
     int PendingExpiresToday,
     int OccupiedLockers,

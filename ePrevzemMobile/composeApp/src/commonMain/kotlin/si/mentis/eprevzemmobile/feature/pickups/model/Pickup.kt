@@ -27,6 +27,8 @@ data class PickupDetails(
     val locationName: String,
     val locationAddress: String,
     val lockerNumber: String,
+    val latitude: Double = 46.0569,
+    val longitude: Double = 14.5058,
     val unlockedAt: String? = null,
 )
 

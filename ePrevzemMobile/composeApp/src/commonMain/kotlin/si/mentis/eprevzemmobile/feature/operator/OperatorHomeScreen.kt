@@ -36,6 +36,8 @@ import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
 fun OperatorHomeScreen(
     state: OperatorHomeState,
     onEvent: (OperatorHomeEvent) -> Unit,
+    historyContent: @Composable () -> Unit,
+    profileContent: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = EPrevzemTheme.colors
@@ -90,46 +92,51 @@ fun OperatorHomeScreen(
         },
     ) {
         EScreen {
-            Column(verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
-                Text(text = "DOBRODOŠLI", style = typo.caption, color = colors.textMuted)
-                Text(
-                    text = "Pozdravljeni, ${state.userName}",
-                    style = typo.display,
-                    color = colors.textPrimary,
-                )
-            }
+            when (state.activeTab) {
+                OperatorTab.Pickups -> {
+                    Column(verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
+                        Text(
+                            text = "Pozdravljeni, ${state.userName}",
+                            style = typo.display,
+                            color = colors.textPrimary,
+                        )
+                    }
 
-            ScanPanel(
-                onClick = { onEvent(OperatorHomeEvent.ScanQrClicked) },
-                modifier = Modifier.fillMaxWidth(),
-            )
+                    ScanPanel(
+                        onClick = { onEvent(OperatorHomeEvent.ScanQrClicked) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
 
-            Column(verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
-                ESectionHeader(title = "Današnji pregled")
-                OverviewCard(
-                    title = "Za vstaviti",
-                    value = state.pendingInsertionCount.toString(),
-                    subtitle = "Dokumenti čakajo na vstavljanje",
-                    icon = EPrevzemIcons.inbox(),
-                    tint = EIconTint.Green,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OverviewCard(
-                    title = "V paketniku",
-                    value = state.inLockerCount.toString(),
-                    subtitle = "Aktivni prevzemi v predalčkih",
-                    icon = EPrevzemIcons.locker(),
-                    tint = EIconTint.Teal,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OverviewCard(
-                    title = "Zapadli",
-                    value = state.expiredCount.toString(),
-                    subtitle = "Prevzemi zahtevajo nadaljnjo obravnavo",
-                    icon = EPrevzemIcons.warning(),
-                    tint = EIconTint.Gold,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                    Column(verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                        ESectionHeader(title = "Današnji pregled")
+                        OverviewCard(
+                            title = "Za vstaviti",
+                            value = state.pendingInsertionCount.toString(),
+                            subtitle = "Dokumenti čakajo na vstavljanje",
+                            icon = EPrevzemIcons.inbox(),
+                            tint = EIconTint.Green,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        OverviewCard(
+                            title = "V paketniku",
+                            value = state.inLockerCount.toString(),
+                            subtitle = "Aktivni prevzemi v predalčkih",
+                            icon = EPrevzemIcons.locker(),
+                            tint = EIconTint.Teal,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        OverviewCard(
+                            title = "Zapadli",
+                            value = state.expiredCount.toString(),
+                            subtitle = "Prevzemi zahtevajo nadaljnjo obravnavo",
+                            icon = EPrevzemIcons.warning(),
+                            tint = EIconTint.Gold,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+                OperatorTab.History -> historyContent()
+                OperatorTab.Profile -> profileContent()
             }
         }
     }
@@ -172,13 +179,13 @@ private fun ScanPanel(
                     modifier = Modifier.size(52.dp),
                 )
             }
-            Text(
-                text = "Skeniraj QR kodo na paketniku",
-                style = typo.title,
-                color = colors.textPrimary,
-            )
+//            Text(
+//                text = "Skeniraj QR kodo na paketniku",
+//                style = typo.title,
+//                color = colors.textPrimary,
+//            )
             EPrimaryButton(
-                label = "Začni skeniranje",
+                label = "Skeniraj QR kodo na paketomatu",
                 onClick = onClick,
                 modifier = Modifier
                     .fillMaxWidth()

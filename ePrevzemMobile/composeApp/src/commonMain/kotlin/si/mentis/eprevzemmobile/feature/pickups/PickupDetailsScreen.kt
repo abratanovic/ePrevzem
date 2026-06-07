@@ -28,9 +28,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.Canvas
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -53,6 +51,7 @@ import si.mentis.eprevzemmobile.core.designsystem.components.layout.EScaffold
 import si.mentis.eprevzemmobile.core.designsystem.components.layout.EScreen
 import si.mentis.eprevzemmobile.core.designsystem.components.navigation.ETopBar
 import si.mentis.eprevzemmobile.core.designsystem.components.navigation.ETopBarVariant
+import si.mentis.eprevzemmobile.core.designsystem.components.map.EStationMap
 import si.mentis.eprevzemmobile.core.designsystem.icons.EPrevzemIcons
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
 import si.mentis.eprevzemmobile.feature.pickups.model.PickupDetails
@@ -271,12 +270,16 @@ fun PickupDetailsRoute(
                 PickupDetailsEvent.Share -> {}
                 PickupDetailsEvent.UnlockClicked -> state = state.copy(showUnlockDialog = true)
                 PickupDetailsEvent.UnlockConfirmed -> {
-                    val biometricEnabled = user?.isBiometricEnabled ?: true
-                    state = state.copy(
-                        showUnlockDialog = false,
-                        showBiometricSheet = biometricEnabled,
-                        showPinSheet = !biometricEnabled,
-                    )
+                    val accountId = user?.id
+                    state = state.copy(showUnlockDialog = false)
+                    scope.launch {
+                        val biometricEnabled =
+                            accountId?.let { securityRepository.isBiometricEnabled(it) } ?: false
+                        state = state.copy(
+                            showBiometricSheet = biometricEnabled,
+                            showPinSheet = !biometricEnabled,
+                        )
+                    }
                 }
                 PickupDetailsEvent.UnlockCancelled -> state = state.copy(
                     showUnlockDialog = false,
@@ -357,37 +360,17 @@ private fun IdlePhase(
                 variant = ETopBarVariant.Detail,
                 eyebrow = "EPREVZEM",
                 title = "Podrobnosti prevzema",
-                onBack = { onEvent(PickupDetailsEvent.Back) },
-                actionIcon = EPrevzemIcons.share(),
-                onAction = { onEvent(PickupDetailsEvent.Share) },
+                onBack = { onEvent(PickupDetailsEvent.Back) }
             )
         },
     ) { _ ->
         EScreen {
-            EStatusChip(status = state.details.status)
-
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = state.details.title,
                     style = typo.display,
                     color = colors.textPrimary,
                 )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Icon(
-                        painter = EPrevzemIcons.organization(),
-                        contentDescription = null,
-                        tint = colors.textSecondary,
-                        modifier = Modifier.size(14.dp),
-                    )
-                    Text(
-                        text = state.details.organization,
-                        style = typo.bodySmall,
-                        color = colors.textSecondary,
-                    )
-                }
             }
 
             if (state.details.isExpiringSoon) {
@@ -426,7 +409,15 @@ private fun IdlePhase(
                 icon = EPrevzemIcons.location(),
                 trailing = { LockerChip(state.details.lockerNumber) },
             ) {
-                MapPlaceholder(locationName = state.details.locationName)
+                EStationMap(
+                    latitude = state.details.latitude,
+                    longitude = state.details.longitude,
+                    label = state.details.locationName,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(160.dp)
+                        .clip(EPrevzemTheme.shapes.medium),
+                )
                 Text(
                     text = state.details.locationName,
                     style = typo.cardTitle,
@@ -597,61 +588,6 @@ private fun LockerChip(text: String) {
             text = text,
             style = typo.caption.copy(fontWeight = FontWeight.SemiBold),
             color = colors.primary,
-        )
-    }
-}
-
-@Composable
-private fun MapPlaceholder(locationName: String) {
-    val colors = EPrevzemTheme.colors
-    val typo = EPrevzemTheme.typography
-    val gridColor = colors.border
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(160.dp)
-            .clip(EPrevzemTheme.shapes.medium)
-            .background(colors.surfaceSunken),
-    ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val step = 32.dp.toPx()
-            var x = 0f
-            while (x <= size.width) {
-                drawLine(gridColor, Offset(x, 0f), Offset(x, size.height), strokeWidth = 1f)
-                x += step
-            }
-            var y = 0f
-            while (y <= size.height) {
-                drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
-                y += step
-            }
-        }
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(44.dp)
-                .align(Alignment.Center)
-                .clip(CircleShape)
-                .background(colors.primary),
-        ) {
-            Icon(
-                painter = EPrevzemIcons.location(),
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(22.dp),
-            )
-        }
-        Text(
-            text = locationName,
-            style = typo.caption.copy(fontWeight = FontWeight.Medium),
-            color = colors.textPrimary,
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(10.dp)
-                .clip(EPrevzemTheme.shapes.pill)
-                .background(Color.White)
-                .padding(horizontal = 10.dp, vertical = 5.dp),
         )
     }
 }

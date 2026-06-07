@@ -65,6 +65,7 @@ kotlin {
             implementation(libs.androidx.biometric)
             implementation(libs.androidx.fragment)
             implementation(libs.androidx.security.crypto)
+            implementation(libs.osmdroid.android)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -76,6 +77,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)

@@ -9,6 +9,8 @@ public sealed record DeviceSessionResponse(
     DateTimeOffset RefreshTokenExpiresAt,
     string FirstName,
     string LastName,
+    string? Email,
+    string? PhoneNumber,
     string? Emso,
     Guid? OrganizationId,
     string? OrganizationName,

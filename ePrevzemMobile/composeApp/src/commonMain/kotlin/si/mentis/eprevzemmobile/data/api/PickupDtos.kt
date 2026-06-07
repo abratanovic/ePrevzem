@@ -34,6 +34,8 @@ data class CitizenPickupDetailDto(
     val organizationName: String,
     val locationName: String,
     val locationAddress: String,
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
     val lockerNumber: Int? = null,
     val status: String,
     val deadlineAt: String? = null,

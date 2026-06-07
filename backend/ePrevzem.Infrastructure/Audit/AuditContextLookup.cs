@@ -43,23 +43,6 @@ public sealed class AuditContextLookup : IAuditContextLookup
             .Select(x => x.SerialNumber)
             .SingleOrDefaultAsync(cancellationToken);
 
-        var lockerId = await _dbContext.Placements.AsNoTracking()
-            .Where(x => x.PackageId == packageId)
-            .OrderByDescending(x => x.OpenedAt)
-            .Select(x => (LockerId?)x.LockerId)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        string? lockerLabel = null;
-        if (lockerId is not null)
-        {
-            var lockerNumber = await _dbContext.Lockers.AsNoTracking()
-                .Where(x => x.Id == lockerId.Value)
-                .Select(x => (int?)x.LockerNumber)
-                .SingleOrDefaultAsync(cancellationToken);
-            if (lockerNumber is not null)
-                lockerLabel = $"Paketnik #{lockerNumber.Value}";
-        }
-
         return new PackageAuditContext(
             package.Id,
             package.OrganizationId,
@@ -68,7 +51,8 @@ public sealed class AuditContextLookup : IAuditContextLookup
             package.CreatedByOrganizationAdminAccountId,
             package.Description,
             organizationName,
-            lockerLabel ?? stationSerial,
+            // Surface the pickup-station serial number rather than the locker number.
+            stationSerial,
             claim is null ? null : FormatLocation(claim.Location));
     }
 

@@ -30,6 +30,8 @@ public sealed record CitizenPickupDetailResponse(
     string OrganizationName,
     string LocationName,
     string LocationAddress,
+    decimal Latitude,
+    decimal Longitude,
     int? LockerNumber,
     string Status,
     DateTimeOffset? DeadlineAt,

@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import eprevzemmobile.composeapp.generated.resources.Res
+import eprevzemmobile.composeapp.generated.resources.ic_add
 import eprevzemmobile.composeapp.generated.resources.ic_arrow_right
 import eprevzemmobile.composeapp.generated.resources.ic_back
 import eprevzemmobile.composeapp.generated.resources.ic_biometric
@@ -17,6 +18,7 @@ import eprevzemmobile.composeapp.generated.resources.ic_close
 import eprevzemmobile.composeapp.generated.resources.ic_docs
 import eprevzemmobile.composeapp.generated.resources.ic_drafts
 import eprevzemmobile.composeapp.generated.resources.ic_error
+import eprevzemmobile.composeapp.generated.resources.ic_fullscreen
 import eprevzemmobile.composeapp.generated.resources.ic_history
 import eprevzemmobile.composeapp.generated.resources.ic_home
 import eprevzemmobile.composeapp.generated.resources.ic_inbox
@@ -32,6 +34,7 @@ import eprevzemmobile.composeapp.generated.resources.ic_qrcode
 import eprevzemmobile.composeapp.generated.resources.ic_refresh
 import eprevzemmobile.composeapp.generated.resources.ic_settings
 import eprevzemmobile.composeapp.generated.resources.ic_share
+import eprevzemmobile.composeapp.generated.resources.ic_unfold_more
 import eprevzemmobile.composeapp.generated.resources.ic_shield
 import eprevzemmobile.composeapp.generated.resources.ic_success
 import eprevzemmobile.composeapp.generated.resources.ic_unlock
@@ -82,9 +85,12 @@ object EPrevzemIcons {
     // No dedicated ic_help.svg — re-use ic_info for now.
     @Composable fun help(): Painter = painterResource(Res.drawable.ic_info)
     @Composable fun arrowRight(): Painter = painterResource(Res.drawable.ic_arrow_right)
+    @Composable fun add(): Painter = painterResource(Res.drawable.ic_add)
+    @Composable fun unfoldMore(): Painter = painterResource(Res.drawable.ic_unfold_more)
     @Composable fun key(): Painter = painterResource(Res.drawable.ic_key)
     @Composable fun visibility(): Painter = painterResource(Res.drawable.ic_visibility)
     @Composable fun visibilityOff(): Painter = painterResource(Res.drawable.ic_visibility_off)
+    @Composable fun fullscreen(): Painter = painterResource(Res.drawable.ic_fullscreen)
 }
 
 /** Standard icon sizes from the design system (16 / 20 / 24 / 36). */

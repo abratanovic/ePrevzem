@@ -225,6 +225,7 @@ fun App() {
                             user = user,
                             onPickupClicked = { id -> destination = AppDestination.PickupDetails(id) },
                             onAddAccount = { destination = AppDestination.RegistrationCode },
+                            onSwitchAccount = { id -> destination = AppDestination.Login(id) },
                             onUserUpdated = { updatedUser ->
                                 scope.launch { AppContainer.sessionStore.addProfile(updatedUser) }
                             },
@@ -239,6 +240,11 @@ fun App() {
                             user = employee,
                             onScanQrClicked = {
                                 destination = AppDestination.OperatorInsertion
+                            },
+                            onAddAccount = { destination = AppDestination.RegistrationCode },
+                            onSwitchAccount = { id -> destination = AppDestination.Login(id) },
+                            onUserUpdated = { updatedUser ->
+                                scope.launch { AppContainer.sessionStore.addProfile(updatedUser) }
                             },
                         )
                     }

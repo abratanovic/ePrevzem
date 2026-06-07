@@ -30,6 +30,8 @@ internal static class DeviceSessionFactory
             citizen.FirstName,
             citizen.LastName,
             citizen.Emso,
+            citizen.Email,
+            citizen.PhoneNumber,
             null,
             null,
             Array.Empty<string>());
@@ -59,6 +61,8 @@ internal static class DeviceSessionFactory
             refresh.ExpiresAt,
             employee.FirstName,
             employee.LastName,
+            employee.Email,
+            null,
             null,
             employee.OrganizationId.Value,
             organizationName,

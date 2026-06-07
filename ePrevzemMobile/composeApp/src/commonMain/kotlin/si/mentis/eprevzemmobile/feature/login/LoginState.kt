@@ -10,6 +10,7 @@ data class LoginState(
     val pin: String = "",
     val isLoading: Boolean = false,
     val error: String? = null,
+    val isBiometricAvailable: Boolean = true,
 ) {
     companion object {
         const val PIN_LENGTH = 6

@@ -122,6 +122,9 @@ public sealed class PickupReadRepository : IPickupReadRepository
             x => x.Status != PackageStatus.PickedUp && x.Status != PackageStatus.Cancelled,
             cancellationToken);
         var activePickupsTrend = await packages.CountAsync(x => x.CreatedAt >= thirtyDaysAgo, cancellationToken);
+        var awaitingPlacement = await packages.CountAsync(
+            x => x.Status == PackageStatus.AwaitingPlacement,
+            cancellationToken);
         var pendingPickups = await packages.CountAsync(x => x.Status == PackageStatus.InLocker, cancellationToken);
         var pendingExpiresToday = await packages.CountAsync(
             x => x.Status == PackageStatus.InLocker
@@ -146,6 +149,7 @@ public sealed class PickupReadRepository : IPickupReadRepository
         return new DashboardStatsResponse(
             activePickups,
             activePickupsTrend,
+            awaitingPlacement,
             pendingPickups,
             pendingExpiresToday,
             occupiedLockers,
@@ -242,6 +246,8 @@ public sealed class PickupReadRepository : IPickupReadRepository
             x.OrganizationName,
             x.City,
             FormatAddress(x.Address, x.HouseNumber, x.ZipCode, x.City),
+            x.Latitude,
+            x.Longitude,
             x.LatestLockerNumber,
             x.Status.ToString(),
             x.DeadlineAt,
@@ -279,6 +285,8 @@ public sealed class PickupReadRepository : IPickupReadRepository
                HouseNumber = claim.Location.HouseNumber,
                ZipCode = claim.Location.ZipCode,
                City = claim.Location.City,
+               Latitude = claim.Location.Latitude,
+               Longitude = claim.Location.Longitude,
                Status = package.Status,
                DeadlineAt = package.DeadlineAt,
                CreatedAt = package.CreatedAt,
@@ -411,6 +419,8 @@ public sealed class PickupReadRepository : IPickupReadRepository
         public required string HouseNumber { get; init; }
         public required string ZipCode { get; init; }
         public required string City { get; init; }
+        public decimal Latitude { get; init; }
+        public decimal Longitude { get; init; }
         public required PackageStatus Status { get; init; }
         public DateTimeOffset? DeadlineAt { get; init; }
         public DateTimeOffset CreatedAt { get; init; }

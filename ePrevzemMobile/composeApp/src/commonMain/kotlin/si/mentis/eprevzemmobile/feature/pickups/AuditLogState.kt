@@ -13,11 +13,11 @@ data class AuditLogBadge(
 )
 
 data class AuditLogEntry(
-    val id:String,
-    val documentTitle: String,
-    val organization:String,
-    val lockerNumber: String,
-    val location: String,
+    val id: String,
+    val documentTitle: String?,
+    val organization: String?,
+    val lockerNumber: String?,
+    val location: String?,
     val openedAt: String,
     val badge: AuditLogBadge,
 )
