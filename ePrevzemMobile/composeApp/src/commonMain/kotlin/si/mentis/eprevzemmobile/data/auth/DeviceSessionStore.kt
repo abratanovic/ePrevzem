@@ -1,5 +1,10 @@
 package si.mentis.eprevzemmobile.data.auth
 
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.random.Random
+
+@OptIn(ExperimentalEncodingApi::class)
 class DeviceSessionStore(
     private val storage: SessionStorage = SecureSessionStorage(),
 ) {
@@ -20,6 +25,16 @@ class DeviceSessionStore(
     suspend fun accessToken(): String? = storage.read(KEY_ACCESS_TOKEN)
 
     suspend fun refreshToken(): String? = storage.read(KEY_REFRESH_TOKEN)
+
+    suspend fun fingerprint(): String {
+        val existing = storage.read(KEY_FINGERPRINT)
+        if (existing != null) {
+            return existing
+        }
+        val fingerprint = Base64.encode(Random.nextBytes(16))
+        storage.write(KEY_FINGERPRINT, fingerprint)
+        return fingerprint
+    }
 
     suspend fun updateTokens(
         accessToken: String,
@@ -43,5 +58,6 @@ class DeviceSessionStore(
         const val KEY_ACCESS_TOKEN = "auth.access_token"
         const val KEY_ACCESS_EXPIRES = "auth.access_expires"
         const val KEY_REFRESH_TOKEN = "auth.refresh_token"
+        const val KEY_FINGERPRINT = "auth.device_fingerprint"
     }
 }
