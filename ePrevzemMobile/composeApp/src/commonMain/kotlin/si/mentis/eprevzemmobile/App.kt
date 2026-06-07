@@ -22,25 +22,33 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlin.time.TimeSource
 import kotlinx.coroutines.launch
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
-import si.mentis.eprevzemmobile.domain.User
+import androidx.compose.runtime.collectAsState
+import si.mentis.eprevzemmobile.data.auth.AuthSession
+import si.mentis.eprevzemmobile.domain.AppUser
+import si.mentis.eprevzemmobile.feature.accountpicker.AccountPickerRoute
 import si.mentis.eprevzemmobile.feature.delegation.DelegatePersonRoute
 import si.mentis.eprevzemmobile.feature.login.LoginRoute
 import si.mentis.eprevzemmobile.feature.onboarding.WelcomeRoute
+import si.mentis.eprevzemmobile.feature.operator.OperatorHomeRoute
 import si.mentis.eprevzemmobile.feature.pickups.ActivePickupsRoute
 import si.mentis.eprevzemmobile.feature.pickups.PickupConfirmedRoute
 import si.mentis.eprevzemmobile.feature.pickups.PickupDetailsRoute
 import si.mentis.eprevzemmobile.feature.pickups.model.PickupDetails
 import si.mentis.eprevzemmobile.feature.registration.code.RegistrationCodeRoute
 import si.mentis.eprevzemmobile.feature.registration.confirm.ConfirmAccountRoute
+import si.mentis.eprevzemmobile.feature.operator.insertion.InsertionRoute
 import si.mentis.eprevzemmobile.feature.unlock.UnlockRoute
 
 private sealed interface AppDestination {
     data object Loading : AppDestination
     data object Welcome : AppDestination
-    data object Login : AppDestination
+    data object AccountPicker : AppDestination
+    data class Login(val accountId: String) : AppDestination
     data object RegistrationCode : AppDestination
     data class ConfirmAccount(val validatedCode: String) : AppDestination
     data object ActivePickups : AppDestination
+    data object OperatorHome : AppDestination
+    data object OperatorInsertion : AppDestination
     data class PickupDetails(val pickupId: String, val unlockedAt: String? = null) : AppDestination
     data class Unlock(val pickupId: String, val lockerNumber: String) : AppDestination
     data class DelegatePerson(val pickupId: String) : AppDestination
@@ -50,10 +58,13 @@ private sealed interface AppDestination {
 private val AppDestination.depth: Int get() = when (this) {
     AppDestination.Loading -> -1
     AppDestination.Welcome -> 0
-    AppDestination.Login -> 0
+    AppDestination.AccountPicker -> 0
+    is AppDestination.Login -> 0
     AppDestination.RegistrationCode -> 1
     is AppDestination.ConfirmAccount -> 2
     AppDestination.ActivePickups -> 3
+    AppDestination.OperatorHome -> 3
+    AppDestination.OperatorInsertion -> 4
     is AppDestination.PickupDetails -> 4
     is AppDestination.Unlock -> 5
     is AppDestination.DelegatePerson -> 5
@@ -66,18 +77,44 @@ private const val BACKGROUND_LOCK_SECONDS = 120L
 @Preview
 fun App() {
     EPrevzemTheme {
+        val session by AppContainer.sessionStore.session.collectAsState()
         var destination: AppDestination by remember { mutableStateOf(AppDestination.Loading) }
-        var currentUser: User? by remember { mutableStateOf(null) }
         var confirmedDetails: PickupDetails? by remember { mutableStateOf(null) }
         val scope = rememberCoroutineScope()
         val lifecycleOwner = LocalLifecycleOwner.current
         var backgroundedAt by remember { mutableStateOf<TimeSource.Monotonic.ValueTimeMark?>(null) }
 
         LaunchedEffect(Unit) {
-            destination = if (AppContainer.securityRepository.isRegistered()) {
-                AppDestination.Login
-            } else {
-                AppDestination.Welcome
+            AppContainer.sessionStore.hydrate()
+        }
+
+        LaunchedEffect(session) {
+            destination = when (session) {
+                AuthSession.Unknown -> AppDestination.Loading
+                AuthSession.Unauthenticated -> {
+                    val profiles = AppContainer.sessionStore.profiles.value
+                    when (profiles.size) {
+                        0 -> AppDestination.Welcome
+                        1 -> AppDestination.Login(profiles.first().id)
+                        else -> AppDestination.AccountPicker
+                    }
+                }
+                is AuthSession.Authenticated -> {
+                    val authedSession = session as AuthSession.Authenticated
+                    val target = when (authedSession.user) {
+                        is AppUser.RegularUser -> AppDestination.ActivePickups
+                        is AppUser.Employee    -> AppDestination.OperatorHome
+                    }
+                    when (destination) {
+                        AppDestination.Loading,
+                        AppDestination.Welcome,
+                        AppDestination.AccountPicker,
+                        is AppDestination.Login,
+                        AppDestination.RegistrationCode,
+                        is AppDestination.ConfirmAccount -> target
+                        else -> destination
+                    }
+                }
             }
         }
 
@@ -89,10 +126,8 @@ fun App() {
                         val since = backgroundedAt
                         backgroundedAt = null
                         if (since != null && since.elapsedNow().inWholeSeconds > BACKGROUND_LOCK_SECONDS) {
-                            scope.launch {
-                                if (AppContainer.securityRepository.isRegistered()) {
-                                    destination = AppDestination.Login
-                                }
+                            if (session is AuthSession.Authenticated) {
+                                scope.launch { AppContainer.sessionStore.clear() }
                             }
                         }
                     }
@@ -121,45 +156,77 @@ fun App() {
         ) { dest ->
             when (dest) {
                 AppDestination.Loading -> Unit
-                AppDestination.Login -> LoginRoute(
-                    onAuthenticated = { user ->
-                        currentUser = user
-                        destination = AppDestination.ActivePickups
-                    },
+                is AppDestination.Login -> LoginRoute(
+                    accountId = dest.accountId,
                     onResetSecureStorage = {
-                        destination = AppDestination.Welcome
+                        val profiles = AppContainer.sessionStore.profiles.value
+                        destination = when (profiles.size) {
+                            0 -> AppDestination.Welcome
+                            1 -> AppDestination.Login(profiles.first().id)
+                            else -> AppDestination.AccountPicker
+                        }
                     },
+                )
+                AppDestination.AccountPicker -> AccountPickerRoute(
+                    onAccountSelected = { id -> destination = AppDestination.Login(id) },
+                    onAddAccount = { destination = AppDestination.RegistrationCode },
                 )
                 AppDestination.Welcome -> WelcomeRoute(
                     onRegisterDeviceClick = { destination = AppDestination.RegistrationCode },
                 )
                 AppDestination.RegistrationCode -> RegistrationCodeRoute(
-                    onBack = { destination = AppDestination.Welcome },
+                    onBack = {
+                        val current = session
+                        destination = if (current is AuthSession.Authenticated) {
+                            when (current.user) {
+                                is AppUser.RegularUser -> AppDestination.ActivePickups
+                                is AppUser.Employee -> AppDestination.OperatorHome
+                            }
+                        } else {
+                            val profiles = AppContainer.sessionStore.profiles.value
+                            if (profiles.isEmpty()) AppDestination.Welcome else AppDestination.AccountPicker
+                        }
+                    },
                     onCodeAccepted = { code -> destination = AppDestination.ConfirmAccount(code) },
                 )
                 is AppDestination.ConfirmAccount -> ConfirmAccountRoute(
                     validatedCode = dest.validatedCode,
                     onBack = { destination = AppDestination.RegistrationCode },
                     onUseAnotherCode = { destination = AppDestination.RegistrationCode },
-                    onConfirmed = { user ->
-                        currentUser = user
-                        destination = AppDestination.ActivePickups
-                    },
                 )
                 AppDestination.ActivePickups -> {
-                    val user = currentUser
+                    val user = (session as? AuthSession.Authenticated)?.user
                     if (user != null) {
                         ActivePickupsRoute(
                             user = user,
                             onPickupClicked = { id -> destination = AppDestination.PickupDetails(id) },
-                            onUserUpdated = { updatedUser -> currentUser = updatedUser },
+                            onAddAccount = { destination = AppDestination.RegistrationCode },
+                            onUserUpdated = { updatedUser ->
+                                scope.launch { AppContainer.sessionStore.addProfile(updatedUser) }
+                            },
                         )
                     }
                 }
+                AppDestination.OperatorHome -> {
+                    val authenticated = session as? AuthSession.Authenticated
+                    val employee = authenticated?.user as? AppUser.Employee
+                    if (employee != null) {
+                        OperatorHomeRoute(
+                            user = employee,
+                            onScanQrClicked = {
+                                destination = AppDestination.OperatorInsertion
+                            },
+                        )
+                    }
+                }
+                AppDestination.OperatorInsertion -> InsertionRoute(
+                    onBack = { destination = AppDestination.OperatorHome },
+                    onDone = { destination = AppDestination.OperatorHome },
+                )
                 is AppDestination.PickupDetails -> PickupDetailsRoute(
                     pickupId = dest.pickupId,
                     initialUnlockedAt = dest.unlockedAt,
-                    user = currentUser,
+                    user = (session as? AuthSession.Authenticated)?.user,
                     onBack = { destination = AppDestination.ActivePickups },
                     onIdentityVerified = { details ->
                         destination = AppDestination.Unlock(
@@ -179,11 +246,17 @@ fun App() {
                     },
                     onDelegatePerson = { destination = AppDestination.DelegatePerson(dest.pickupId) },
                 )
-                is AppDestination.DelegatePerson -> DelegatePersonRoute(
-                    pickupId = dest.pickupId,
-                    onBack = { destination = AppDestination.PickupDetails(dest.pickupId) },
-                    onDelegated = { destination = AppDestination.PickupDetails(dest.pickupId) },
-                )
+                is AppDestination.DelegatePerson -> {
+                    val accountId = (session as? AuthSession.Authenticated)?.user?.id
+                    if (accountId != null) {
+                        DelegatePersonRoute(
+                            pickupId = dest.pickupId,
+                            accountId = accountId,
+                            onBack = { destination = AppDestination.PickupDetails(dest.pickupId) },
+                            onDelegated = { destination = AppDestination.PickupDetails(dest.pickupId) },
+                        )
+                    }
+                }
                 is AppDestination.Unlock -> UnlockRoute(
                     pickupId = dest.pickupId,
                     expectedLockerNumber = dest.lockerNumber,

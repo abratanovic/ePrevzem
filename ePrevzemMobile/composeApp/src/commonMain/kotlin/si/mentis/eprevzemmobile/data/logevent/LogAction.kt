@@ -1,6 +1,8 @@
 package si.mentis.eprevzemmobile.data.logevent
 
+/** Mirrors the backend `AuditAction` enum. */
 enum class LogAction {
+    // Packages & placements
     PackageCreated,
     PackagePlaced,
     PackagePickedUpByCitizen,
@@ -9,24 +11,47 @@ enum class LogAction {
     PackageRetrievedAfterExpiry,
     PackageMarkedPickedUpManually,
     PackageCancelled,
+    PackageDeleted,
+
+    // Delegations
     DelegationCreated,
     DelegationRevoked,
     DelegationUsedAtPickup,
+
+    // Employees, devices, codes
     ProvisioningCodeIssued,
     ProvisioningCodeRedeemed,
     EmployeeAccountCreated,
     EmployeeAccountDisabled,
     EmployeeAccountReenabled,
+    EmployeeAccountLoggedIn,
+    EmployeePasswordChanged,
     EmployeeAccountRoleGranted,
     EmployeeAccountRoleRevoked,
     EmployeeStationAccessGranted,
     EmployeeStationAccessRevoked,
     EmployeeDeviceRegistered,
     EmployeeDeviceRevoked,
+    CitizenActivationCodeIssued,
     CitizenDeviceRegistered,
     CitizenDeviceRevoked,
+    OrganizationAdminAccountCreated,
+    OrganizationAdminAccountDisabled,
+    OrganizationAdminAccountReenabled,
+    OrganizationAdminLoggedIn,
+    OrganizationAdminPasswordChanged,
+
+    // Citizens
     CitizenOnboarded,
+
+    // Tenancy & infrastructure
     OrganizationCreated,
+    SystemAdminLoggedIn,
+    SystemAdminLoginFailed,
+    SystemAdminPasswordChanged,
+    RefreshTokenRotated,
+    RefreshTokenChainRevoked,
+    PickupStationCreated,
     StationClaimed,
     StationReleased,
     LockerCreated,

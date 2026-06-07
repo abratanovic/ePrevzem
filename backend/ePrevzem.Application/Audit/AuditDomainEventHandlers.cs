@@ -292,14 +292,14 @@ public sealed class AuditDomainEventHandlers :
     public Task Handle(DomainEventNotification<RefreshTokenRotated> notification, CancellationToken cancellationToken)
     {
         var ev = notification.DomainEvent;
-        return _writer.RecordAsync(ev, OwnerActor(ev.SystemAdminId, ev.OrganizationAdminAccountId, ev.EmployeeAccountId), null,
+        return _writer.RecordAsync(ev, OwnerActor(ev.SystemAdminId, ev.OrganizationAdminAccountId, ev.EmployeeAccountId, ev.CitizenUserId), null,
             AuditAction.RefreshTokenRotated, AuditTargetKind.RefreshToken, ev.OldTokenId.Value, null, cancellationToken);
     }
 
     public Task Handle(DomainEventNotification<RefreshTokenChainRevoked> notification, CancellationToken cancellationToken)
     {
         var ev = notification.DomainEvent;
-        return _writer.RecordAsync(ev, OwnerActor(ev.SystemAdminId, ev.OrganizationAdminAccountId, ev.EmployeeAccountId), null,
+        return _writer.RecordAsync(ev, OwnerActor(ev.SystemAdminId, ev.OrganizationAdminAccountId, ev.EmployeeAccountId, ev.CitizenUserId), null,
             AuditAction.RefreshTokenChainRevoked, AuditTargetKind.RefreshToken, ev.TriggerTokenId.Value, null, cancellationToken);
     }
 
@@ -426,11 +426,13 @@ public sealed class AuditDomainEventHandlers :
     private static AuditActor OwnerActor(
         ePrevzem.Domain.Identity.SystemAdminId? systemAdminId,
         ePrevzem.Domain.Identity.OrganizationAdminAccountId? organizationAdminAccountId,
-        ePrevzem.Domain.Identity.EmployeeAccountId? employeeAccountId)
+        ePrevzem.Domain.Identity.EmployeeAccountId? employeeAccountId,
+        ePrevzem.Domain.Identity.CitizenUserId? citizenUserId)
     {
         if (systemAdminId is not null) return AuditActor.SystemAdmin(systemAdminId.Value);
         if (organizationAdminAccountId is not null) return AuditActor.OrganizationAdmin(organizationAdminAccountId.Value);
         if (employeeAccountId is not null) return AuditActor.Employee(employeeAccountId.Value);
+        if (citizenUserId is not null) return AuditActor.Citizen(citizenUserId.Value);
         return AuditActor.System();
     }
 

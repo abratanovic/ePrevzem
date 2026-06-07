@@ -1,6 +1,9 @@
 using ePrevzem.Application.Common.Abstractions;
+using ePrevzem.Application.Identity.DeviceAuth;
+using ePrevzem.Application.Identity.Dtos;
 using ePrevzem.Application.Identity.IssueProvisioningCode;
 using ePrevzem.Application.Identity.PeekProvisioningCode;
+using ePrevzem.Application.Identity.RedeemOnboarding;
 using ePrevzem.Domain.Identity;
 using FluentValidation;
 using MediatR;
@@ -97,11 +100,37 @@ public sealed class OrgProvisioningController : ControllerBase
 
     [AllowAnonymous]
     [HttpPost("provisioning/{code}/redeem")]
-    [ProducesResponseType(StatusCodes.Status501NotImplemented)]
-    public Task<IActionResult> Redeem([FromRoute] string code, CancellationToken cancellationToken)
+    [ProducesResponseType<DeviceSessionResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public async Task<IActionResult> Redeem(
+        [FromRoute] string code,
+        [FromBody] RedeemProvisioningRequest request,
+        CancellationToken cancellationToken)
     {
-        // TODO: implement device provisioning — create EmployeeAccount, register device, return tokens
-        return Task.FromResult<IActionResult>(StatusCode(StatusCodes.Status501NotImplemented));
+        try
+        {
+            var response = await _mediator.Send(
+                new RedeemOnboardingCodeCommand(code, request.PublicKeyPem, request.DeviceFingerprint, request.Label),
+                cancellationToken);
+            return Ok(response);
+        }
+        catch (OnboardingCodeNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (OnboardingCodeExpiredException)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status410Gone,
+                title: "Code expired",
+                detail: "Koda za zagotavljanje je potekla.");
+        }
+        catch (ValidationException ex)
+        {
+            return ValidationProblem(CreateValidationProblemDetails(ex));
+        }
     }
 
     private static ValidationProblemDetails CreateValidationProblemDetails(ValidationException exception)
@@ -130,3 +159,8 @@ public sealed record PeekProvisioningCodeResponse(
     Guid OrganizationId,
     string OrganizationName,
     DateTimeOffset ExpiresAt);
+
+public sealed record RedeemProvisioningRequest(
+    string PublicKeyPem,
+    string DeviceFingerprint,
+    string? Label);

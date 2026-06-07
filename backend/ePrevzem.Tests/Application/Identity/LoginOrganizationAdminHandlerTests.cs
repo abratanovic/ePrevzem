@@ -168,6 +168,9 @@ public sealed class TestTokenServiceForOrgLogin : ITokenService
     public AccessTokenResult IssueAccessToken(EmployeeAccount employee)
         => new("emp_token", DateTimeOffset.UtcNow.AddMinutes(15));
 
+    public AccessTokenResult IssueAccessToken(CitizenUser citizen)
+        => new("citizen_token", DateTimeOffset.UtcNow.AddMinutes(15));
+
     public RefreshTokenResult IssueRefreshToken(DateTimeOffset now)
         => new("refresh_plain", "refresh_hash", now.AddDays(14));
 }

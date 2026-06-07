@@ -40,6 +40,28 @@ public sealed class AuditLogRepository : IAuditLogRepository
             filter.Limit,
             cancellationToken);
 
+    public async Task<IReadOnlyList<AuditLogEntryResponse>> GetForCitizenAsync(
+        CitizenUserId citizenUserId,
+        AuditLogQueryFilter filter,
+        CancellationToken cancellationToken = default)
+    {
+        // Materialise the citizen's package ids first. EF Core cannot translate a value-object
+        // key projection (p.Id.Value) inside a Contains subquery against TargetId, so we pull the
+        // ids into memory and use a translatable List<Guid>.Contains (rendered as SQL = ANY).
+        var ownPackageIds = await _dbContext.Packages
+            .AsNoTracking()
+            .Where(p => p.RecipientCitizenUserId == citizenUserId)
+            .Select(p => p.Id)
+            .ToListAsync(cancellationToken);
+        var ownPackageGuids = ownPackageIds.Select(id => id.Value).ToList();
+
+        var query = ApplyFilter(_dbContext.AuditLogEntries.AsNoTracking(), filter)
+            .Where(x => x.ActorCitizenUserId == citizenUserId
+                || (x.TargetKind == AuditTargetKind.Package && ownPackageGuids.Contains(x.TargetId)));
+
+        return await ProjectAsync(query, filter.Limit, cancellationToken);
+    }
+
     private static IQueryable<AuditLogEntry> ApplyFilter(
         IQueryable<AuditLogEntry> query,
         AuditLogQueryFilter filter)
@@ -54,6 +76,10 @@ public sealed class AuditLogRepository : IAuditLogRepository
             query = query.Where(x => x.Action == filter.Action.Value);
         if (filter.TargetKind is not null)
             query = query.Where(x => x.TargetKind == filter.TargetKind.Value);
+        if (filter.ActorEmployeeAccountId is not null)
+            query = query.Where(x => x.ActorEmployeeAccountId == filter.ActorEmployeeAccountId.Value);
+        if (filter.ActionsIn is { Count: > 0 })
+            query = query.Where(x => filter.ActionsIn.Contains(x.Action));
 
         return query;
     }
