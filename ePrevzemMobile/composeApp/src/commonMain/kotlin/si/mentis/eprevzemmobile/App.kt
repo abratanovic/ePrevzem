@@ -34,6 +34,8 @@ import si.mentis.eprevzemmobile.feature.pickups.ActivePickupsRoute
 import si.mentis.eprevzemmobile.feature.pickups.PickupConfirmedRoute
 import si.mentis.eprevzemmobile.feature.pickups.PickupDetailsRoute
 import si.mentis.eprevzemmobile.feature.pickups.model.PickupDetails
+import si.mentis.eprevzemmobile.feature.documentprovision.DocumentCaptureRoute
+import si.mentis.eprevzemmobile.feature.documentprovision.DocumentTypeSelectionRoute
 import si.mentis.eprevzemmobile.feature.registration.code.RegistrationCodeRoute
 import si.mentis.eprevzemmobile.feature.registration.confirm.ConfirmAccountRoute
 import si.mentis.eprevzemmobile.feature.operator.insertion.InsertionRoute
@@ -45,7 +47,9 @@ private sealed interface AppDestination {
     data object AccountPicker : AppDestination
     data class Login(val accountId: String) : AppDestination
     data object RegistrationCode : AppDestination
-    data class ConfirmAccount(val validatedCode: String) : AppDestination
+    data object DocumentTypeSelection : AppDestination
+    data class DocumentCapture(val variant: String) : AppDestination
+    data class ConfirmAccount(val validatedCode: String, val documentEmso: String? = null) : AppDestination
     data object ActivePickups : AppDestination
     data object OperatorHome : AppDestination
     data object OperatorInsertion : AppDestination
@@ -61,6 +65,8 @@ private val AppDestination.depth: Int get() = when (this) {
     AppDestination.AccountPicker -> 0
     is AppDestination.Login -> 0
     AppDestination.RegistrationCode -> 1
+    AppDestination.DocumentTypeSelection -> 1
+    is AppDestination.DocumentCapture -> 2
     is AppDestination.ConfirmAccount -> 2
     AppDestination.ActivePickups -> 3
     AppDestination.OperatorHome -> 3
@@ -111,6 +117,8 @@ fun App() {
                         AppDestination.AccountPicker,
                         is AppDestination.Login,
                         AppDestination.RegistrationCode,
+                        AppDestination.DocumentTypeSelection,
+                        is AppDestination.DocumentCapture,
                         is AppDestination.ConfirmAccount -> target
                         else -> destination
                     }
@@ -173,6 +181,21 @@ fun App() {
                 )
                 AppDestination.Welcome -> WelcomeRoute(
                     onRegisterDeviceClick = { destination = AppDestination.RegistrationCode },
+                    onDocumentProvisionClick = { destination = AppDestination.DocumentTypeSelection },
+                )
+                AppDestination.DocumentTypeSelection -> DocumentTypeSelectionRoute(
+                    onVariantSelected = { variant -> destination = AppDestination.DocumentCapture(variant) },
+                    onBack = { destination = AppDestination.Welcome },
+                )
+                is AppDestination.DocumentCapture -> DocumentCaptureRoute(
+                    variant = dest.variant,
+                    onCodeObtained = { code, emso ->
+                        destination = AppDestination.ConfirmAccount(
+                            validatedCode = code,
+                            documentEmso = emso,
+                        )
+                    },
+                    onBack = { destination = AppDestination.DocumentTypeSelection },
                 )
                 AppDestination.RegistrationCode -> RegistrationCodeRoute(
                     onBack = {
@@ -191,6 +214,7 @@ fun App() {
                 )
                 is AppDestination.ConfirmAccount -> ConfirmAccountRoute(
                     validatedCode = dest.validatedCode,
+                    documentEmso = dest.documentEmso,
                     onBack = { destination = AppDestination.RegistrationCode },
                     onUseAnotherCode = { destination = AppDestination.RegistrationCode },
                 )

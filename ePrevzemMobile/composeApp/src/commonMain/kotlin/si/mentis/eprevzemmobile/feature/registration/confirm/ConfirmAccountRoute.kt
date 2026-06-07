@@ -18,6 +18,7 @@ import si.mentis.eprevzemmobile.domain.AppUser
 @Composable
 fun ConfirmAccountRoute(
     validatedCode: String,
+    documentEmso: String? = null,
     onBack: () -> Unit,
     onUseAnotherCode: () -> Unit,
     repository: RegistrationRepository = AppContainer.registrationRepository,
@@ -36,6 +37,7 @@ fun ConfirmAccountRoute(
                         account = ConfirmAccountData(
                             fullName = user.fullName,
                             email = user.email,
+                            emso = user.emso ?: documentEmso,
                             phone = user.phone,
                             status = user.status,
                             validUntil = user.validUntil,
@@ -50,6 +52,7 @@ fun ConfirmAccountRoute(
                         account = ConfirmAccountData(
                             fullName = user.fullName,
                             email = user.email,
+                            emso = user.emso ?: documentEmso,
                             phone = user.phone,
                         ),
                     )

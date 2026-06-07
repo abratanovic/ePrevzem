@@ -4,5 +4,7 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>ePrevzem potrebuje dostop do kamere za fotografiranje osebnega dokumenta in obraza.</string>
 </dict>
 </plist>

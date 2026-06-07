@@ -29,6 +29,7 @@ internal static class DeviceSessionFactory
             refresh.ExpiresAt,
             citizen.FirstName,
             citizen.LastName,
+            citizen.Emso,
             null,
             null,
             Array.Empty<string>());
@@ -58,6 +59,7 @@ internal static class DeviceSessionFactory
             refresh.ExpiresAt,
             employee.FirstName,
             employee.LastName,
+            null,
             employee.OrganizationId.Value,
             organizationName,
             employee.Roles.Select(r => r.ToString()).ToList());

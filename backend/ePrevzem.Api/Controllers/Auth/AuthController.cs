@@ -4,6 +4,7 @@ using ePrevzem.Application.Identity.Dtos;
 using ePrevzem.Application.Identity.Login;
 using ePrevzem.Application.Identity.LoginUnified;
 using ePrevzem.Application.Identity.RegisterCitizen;
+using ePrevzem.Application.Identity.RegisterCitizenByDocument;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -113,6 +114,27 @@ public sealed class AuthController : ControllerBase
         }
     }
 
+    [AllowAnonymous]
+    [HttpPost("citizen/register-by-document")]
+    [ProducesResponseType<RegisterCitizenByDocumentResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RegisterCitizenByDocument(
+        [FromBody] RegisterCitizenByDocumentRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await _mediator.Send(
+                new RegisterCitizenByDocumentCommand(request.Emso, request.FirstName, request.LastName),
+                cancellationToken);
+            return Ok(response);
+        }
+        catch (ValidationException ex)
+        {
+            return ValidationProblem(CreateValidationProblemDetails(ex));
+        }
+    }
+
     private static ValidationProblemDetails CreateValidationProblemDetails(ValidationException exception)
     {
         var errors = exception.Errors
@@ -127,3 +149,4 @@ public sealed class AuthController : ControllerBase
 public sealed record UnifiedLoginRequest(string Email, string Password);
 public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 public sealed record RegisterCitizenRequest(string SiTrustToken);
+public sealed record RegisterCitizenByDocumentRequest(string Emso, string FirstName, string LastName);
