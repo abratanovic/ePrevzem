@@ -17,6 +17,7 @@ import si.mentis.eprevzemmobile.data.security.SecurityRepository
 
 @Composable
 fun LoginRoute(
+    accountId: String,
     onResetSecureStorage: () -> Unit,
     securityRepository: SecurityRepository = AppContainer.securityRepository,
     authRepository: AuthRepository = AppContainer.authRepository,
@@ -28,12 +29,13 @@ fun LoginRoute(
     val scope = rememberCoroutineScope()
 
     suspend fun finishAuthenticated() {
-        val active = sessionStore.activeProfile()
-        if (active != null) {
-            sessionStore.setAuthenticated(active.id)
-        } else {
-            securityRepository.reset()
-            sessionStore.forgetAllIdentities()
+        sessionStore.setAuthenticated(accountId)
+    }
+
+    fun resetThisAccount() {
+        scope.launch {
+            securityRepository.reset(accountId)
+            sessionStore.removeProfile(accountId)
             onResetSecureStorage()
         }
     }
@@ -41,18 +43,16 @@ fun LoginRoute(
     fun authWithBiometric() {
         scope.launch {
             state = state.copy(isLoading = true, error = null)
-            val deviceId = deviceSessionStore.deviceId()
+            val deviceId = deviceSessionStore.deviceId(accountId)
             if (deviceId == null) {
-                securityRepository.reset()
-                sessionStore.forgetAllIdentities()
-                onResetSecureStorage()
+                resetThisAccount()
                 return@launch
             }
             val challenge = authRepository.getChallenge(deviceId).getOrElse {
                 state = state.copy(isLoading = false, error = "Napaka pri prijavi. Poskusite znova.")
                 return@launch
             }
-            securityRepository.signChallengeWithBiometric(challenge)
+            securityRepository.signChallengeWithBiometric(accountId, challenge)
                 .onSuccess { signature ->
                     authRepository.verifySignature(deviceId, signature)
                         .onSuccess { finishAuthenticated() }
@@ -69,18 +69,16 @@ fun LoginRoute(
     fun authWithPin(pin: String) {
         scope.launch {
             state = state.copy(isLoading = true, error = null)
-            val deviceId = deviceSessionStore.deviceId()
+            val deviceId = deviceSessionStore.deviceId(accountId)
             if (deviceId == null) {
-                securityRepository.reset()
-                sessionStore.forgetAllIdentities()
-                onResetSecureStorage()
+                resetThisAccount()
                 return@launch
             }
             val challenge = authRepository.getChallenge(deviceId).getOrElse {
                 state = state.copy(isLoading = false, error = "Napaka pri prijavi. Poskusite znova.")
                 return@launch
             }
-            securityRepository.signChallengeWithPin(pin, challenge)
+            securityRepository.signChallengeWithPin(accountId, pin, challenge)
                 .onSuccess { signature ->
                     authRepository.verifySignature(deviceId, signature)
                         .onSuccess { finishAuthenticated() }
@@ -121,13 +119,7 @@ fun LoginRoute(
                         state = state.copy(pin = state.pin.dropLast(1), error = null)
                     }
                 }
-                LoginEvent.ResetSecureStorageClicked -> {
-                    scope.launch {
-                        securityRepository.reset()
-                        sessionStore.forgetAllIdentities()
-                        onResetSecureStorage()
-                    }
-                }
+                LoginEvent.ResetSecureStorageClicked -> resetThisAccount()
             }
         },
     )
