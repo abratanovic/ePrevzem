@@ -202,6 +202,25 @@ function actorIdFor(entry: AuditLogEntry): string | null {
   }
 }
 
+function contextualTargetFor(entry: AuditLogEntry): { label: string; id: string | null } {
+  switch (entry.action) {
+    case "EmployeeAccountLoggedIn":
+    case "OrganizationAdminLoggedIn":
+    case "SystemAdminLoggedIn":
+    case "SystemAdminLoginFailed":
+      return { label: "Portal", id: null };
+    case "EmployeePasswordChanged":
+    case "OrganizationAdminPasswordChanged":
+    case "SystemAdminPasswordChanged":
+      return { label: "Račun", id: null };
+    case "RefreshTokenRotated":
+    case "RefreshTokenChainRevoked":
+      return { label: "Varnostna seja", id: null };
+    default:
+      return { label: labelFor(entry.targetKind, TARGET_LABELS), id: entry.targetId };
+  }
+}
+
 function DetailLine({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
     <span className="inline-flex min-w-0 items-center gap-1.5 text-slate-500">
@@ -249,6 +268,21 @@ function ActorCell({ entry }: { entry: AuditLogEntry }) {
       {email && (
         <div className="mt-0.5 truncate text-xs text-slate-400" title={email}>
           {email}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TargetCell({ entry }: { entry: AuditLogEntry }) {
+  const target = contextualTargetFor(entry);
+
+  return (
+    <div>
+      <div className="font-medium text-slate-700">{target.label}</div>
+      {target.id && (
+        <div className="mt-0.5 max-w-[150px] truncate text-xs text-slate-400" title={target.id}>
+          {target.id}
         </div>
       )}
     </div>
@@ -480,10 +514,7 @@ export default function AuditLogPage() {
                       <ActorCell entry={entry} />
                     </td>
                     <td className="px-5 py-4">
-                      <div className="font-medium text-slate-700">{labelFor(entry.targetKind, TARGET_LABELS)}</div>
-                      <div className="mt-0.5 max-w-[150px] truncate text-xs text-slate-400" title={entry.targetId}>
-                        {entry.targetId}
-                      </div>
+                      <TargetCell entry={entry} />
                     </td>
                     <td className="px-5 py-4">
                       <DetailsCell details={entry.details} />
