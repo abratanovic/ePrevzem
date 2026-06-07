@@ -479,29 +479,46 @@ def _find_name_surname_dl(lines: list[str]) -> tuple[str | None, str | None]:
         # Standard: "^1 SURNAME" or "^1. SURNAME"
         m1 = _DL_SURNAME_RE.match(line)
         if m1:
-            surname = m1.group(1).strip()
+            candidate = _clean_dl_person_candidate(m1.group(1))
+            if candidate:
+                surname = candidate
         
         # Standard: "^2 NAME" or "^2. NAME"
         m2 = _DL_NAME_RE.match(line)
         if m2:
-            name = m2.group(1).strip()
+            candidate = _clean_dl_person_candidate(m2.group(1))
+            if candidate:
+                name = candidate
 
     # 2. Try suffix-based matching (Tesseract often puts field numbers at the end)
     if not surname:
         for line in lines:
             m = re.match(r"^(.+)\s+[1I][.,]?$", line)
             if m:
-                surname = m.group(1).strip()
-                break
+                candidate = _clean_dl_person_candidate(m.group(1))
+                if candidate:
+                    surname = candidate
+                    break
     
     if not name:
         for line in lines:
             m = re.match(r"^(.+)\s+[2Z][.,]?$", line)
             if m:
-                name = m.group(1).strip()
+                candidate = _clean_dl_person_candidate(m.group(1))
+                if candidate:
+                    name = candidate
+                    break
+
+    # 3. OCR often merges Slovenian DL fields 2 and 3 into one visual line:
+    # "3. 2. 10.10.2005 Edvin Banja Luka (BIH)" or
+    # "3 2 Edvin 10.10.2005 Banja Luka (BIH)".
+    if not name:
+        for line in lines:
+            name = _find_dl_name_from_birth_line(line)
+            if name:
                 break
 
-    # 3. Structural Fallback: Surname is usually on line 2 (first line after header)
+    # 4. Structural Fallback: Surname is usually on line 2 (first line after header)
     # Header is "VOZNIŠKO DOVOLJENJE..." (Line 0)
     # Line 1 (Index 1) is often the surname if it's a single clean word
     if not surname and len(lines) > 1:
@@ -509,7 +526,7 @@ def _find_name_surname_dl(lines: list[str]) -> tuple[str | None, str | None]:
         if len(line1.split()) == 1 and line1[0].isupper():
             surname = line1
 
-    # 4. Pattern Fallback: Name is often on the same line as the birth date (field 3)
+    # 5. Pattern Fallback: Name is often on the same line as the birth date (field 3)
     # "10.10.2005 EDVIN ..." or "EDVIN 10.10.2005 ..."
     if not name:
         for line in lines:
@@ -530,6 +547,51 @@ def _find_name_surname_dl(lines: list[str]) -> tuple[str | None, str | None]:
                     break
 
     return name, surname
+
+
+def _clean_dl_person_candidate(candidate: str) -> str | None:
+    candidate = candidate.strip(" .,:;")
+    if not candidate:
+        return None
+    if re.match(r"^(?:\d{1,2}[a-dA-D]?|[4I][a-dA-D])[.,:]?\b", candidate):
+        return None
+    if re.search(r"\d{2}[.\-/]\d{2}[.\-/]\d{4}", candidate):
+        return None
+    if _EMSO_PATTERN.search(candidate):
+        return None
+
+    words = candidate.split()
+    kept: list[str] = []
+    for word in words:
+        normalized = word.strip(".,:;()")
+        if not normalized:
+            continue
+        if any(ch.isdigit() for ch in normalized):
+            break
+        if normalized.upper() in {"UE", "MARIBOR", "LJUBLJANA", "ULICA"}:
+            break
+        if not any(ch.isalpha() for ch in normalized):
+            break
+        kept.append(normalized)
+
+    cleaned = " ".join(kept).strip()
+    return cleaned if cleaned else None
+
+
+def _find_dl_name_from_birth_line(line: str) -> str | None:
+    """Extract field 2 when OCR merges it with field 3 birth data."""
+    date_re = r"\d{2}[.\-/]\d{2}[.\-/]\d{4}"
+    name_re = r"[A-ZČŠŽĆĐÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛ][A-ZČŠŽĆĐÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛa-zčšžćđáéíóúàèìòùâêîôû\-]+"
+
+    m_after = re.search(rf"\b[23Z][.,]?\s+[2Z][.,]?\s+{date_re}\s+({name_re})\b", line)
+    if m_after:
+        return m_after.group(1)
+
+    m_before = re.search(rf"\b[23Z][.,]?\s+[2Z][.,]?\s+({name_re})\s+{date_re}\b", line)
+    if m_before:
+        return m_before.group(1)
+
+    return None
 
 
 def _find_name_surname_id(lines: list[str]) -> tuple[str | None, str | None]:

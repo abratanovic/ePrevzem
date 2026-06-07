@@ -14,8 +14,8 @@ from app.liveness.model import LivenessModel
 from app.pipeline import TesseractDocumentReader, VerificationPipeline
 
 APP_DIR = Path(__file__).resolve().parent
-MODELS_DIR = APP_DIR / "models"
-CAPTURES_DIR = APP_DIR.parent / "captures"
+MODELS_DIR = Path(os.getenv("CV_IDENTITY_MODELS_DIR", APP_DIR / "models"))
+CAPTURES_DIR = Path(os.getenv("CV_IDENTITY_CAPTURES_DIR", APP_DIR.parent / "captures"))
 LIVENESS_MODEL_PATH = MODELS_DIR / "liveness_model.keras"
 LIVENESS_THRESHOLD_PATH = MODELS_DIR / "threshold.txt"
 FACE_MATCH_CONFIG_PATH = MODELS_DIR / "face_match_config.txt"

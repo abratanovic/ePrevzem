@@ -2,7 +2,6 @@ package si.mentis.eprevzemmobile.feature.documentprovision
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -13,6 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import si.mentis.eprevzemmobile.core.designsystem.components.buttons.EPrimaryButton
 import si.mentis.eprevzemmobile.core.designsystem.components.buttons.ESecondaryButton
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.EIconTint
+import si.mentis.eprevzemmobile.core.designsystem.components.cards.EInfoCard
 import si.mentis.eprevzemmobile.core.designsystem.components.layout.EScaffold
 import si.mentis.eprevzemmobile.core.designsystem.components.layout.EScreen
 import si.mentis.eprevzemmobile.core.designsystem.components.navigation.ETopBar
@@ -22,6 +23,8 @@ import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
 
 private object DocumentTypeSelectionStrings {
     const val TopBarTitle = "Registracija z dokumentom"
+    const val InfoLabel = "Varna potrditev"
+    const val InfoText = "Podatke iz dokumenta uporabimo samo za preverjanje identitete."
     const val Heading = "Izberite vrsto dokumenta"
     const val Description =
         "Poslikajte se in svoj osebni dokument, da potrdite svojo identiteto."
@@ -74,23 +77,36 @@ fun DocumentTypeSelectionScreen(
         },
     ) { _ ->
         EScreen(verticalGap = EPrevzemTheme.spacing.xl) {
+            val spacing = EPrevzemTheme.spacing
             Column(
-                verticalArrangement = Arrangement.spacedBy(EPrevzemTheme.spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(spacing.xl),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(
-                    text = DocumentTypeSelectionStrings.Heading,
-                    style = EPrevzemTheme.typography.title,
-                    color = EPrevzemTheme.colors.textPrimary,
-                    textAlign = TextAlign.Center,
+                EInfoCard(
+                    icon = EPrevzemIcons.shield(),
+                    label = DocumentTypeSelectionStrings.InfoLabel,
+                    value = DocumentTypeSelectionStrings.InfoText,
+                    tint = EIconTint.Teal,
                 )
-                Text(
-                    text = DocumentTypeSelectionStrings.Description,
-                    style = EPrevzemTheme.typography.body,
-                    color = EPrevzemTheme.colors.textSecondary,
-                    textAlign = TextAlign.Center,
-                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(spacing.sm),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = DocumentTypeSelectionStrings.Heading,
+                        style = EPrevzemTheme.typography.title,
+                        color = EPrevzemTheme.colors.textPrimary,
+                        textAlign = TextAlign.Center,
+                    )
+                    Text(
+                        text = DocumentTypeSelectionStrings.Description,
+                        style = EPrevzemTheme.typography.body,
+                        color = EPrevzemTheme.colors.textSecondary,
+                        textAlign = TextAlign.Center,
+                    )
+                }
             }
         }
     }

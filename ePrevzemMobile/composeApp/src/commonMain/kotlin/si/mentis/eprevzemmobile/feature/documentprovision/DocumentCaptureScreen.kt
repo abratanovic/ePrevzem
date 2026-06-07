@@ -195,7 +195,7 @@ private fun CapturePrompt(
 @Composable
 fun DocumentCaptureRoute(
     variant: String,
-    onCodeObtained: (String) -> Unit,
+    onCodeObtained: (code: String, emso: String) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     repository: IdentityVerificationRepository = AppContainer.identityVerificationRepository,
@@ -227,7 +227,7 @@ fun DocumentCaptureRoute(
                     val lastName = response.lastName
                     if (emso != null && firstName != null && lastName != null) {
                         repository.registerByDocument(emso, firstName, lastName)
-                            .onSuccess { code -> onCodeObtained(code) }
+                            .onSuccess { code -> onCodeObtained(code, emso) }
                             .onFailure {
                                 state = state.copy(step = CaptureStep.ERROR, errorReasons = emptyList())
                             }

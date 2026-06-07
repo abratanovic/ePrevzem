@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+captures/
+dataset/
+docs/
+out/
+tests/
+training/
+scripts/
+app/models/

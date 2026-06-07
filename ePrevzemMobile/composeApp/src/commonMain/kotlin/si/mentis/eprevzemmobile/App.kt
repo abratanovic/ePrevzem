@@ -49,7 +49,7 @@ private sealed interface AppDestination {
     data object RegistrationCode : AppDestination
     data object DocumentTypeSelection : AppDestination
     data class DocumentCapture(val variant: String) : AppDestination
-    data class ConfirmAccount(val validatedCode: String) : AppDestination
+    data class ConfirmAccount(val validatedCode: String, val documentEmso: String? = null) : AppDestination
     data object ActivePickups : AppDestination
     data object OperatorHome : AppDestination
     data object OperatorInsertion : AppDestination
@@ -189,7 +189,12 @@ fun App() {
                 )
                 is AppDestination.DocumentCapture -> DocumentCaptureRoute(
                     variant = dest.variant,
-                    onCodeObtained = { code -> destination = AppDestination.ConfirmAccount(code) },
+                    onCodeObtained = { code, emso ->
+                        destination = AppDestination.ConfirmAccount(
+                            validatedCode = code,
+                            documentEmso = emso,
+                        )
+                    },
                     onBack = { destination = AppDestination.DocumentTypeSelection },
                 )
                 AppDestination.RegistrationCode -> RegistrationCodeRoute(
@@ -209,6 +214,7 @@ fun App() {
                 )
                 is AppDestination.ConfirmAccount -> ConfirmAccountRoute(
                     validatedCode = dest.validatedCode,
+                    documentEmso = dest.documentEmso,
                     onBack = { destination = AppDestination.RegistrationCode },
                     onUseAnotherCode = { destination = AppDestination.RegistrationCode },
                 )

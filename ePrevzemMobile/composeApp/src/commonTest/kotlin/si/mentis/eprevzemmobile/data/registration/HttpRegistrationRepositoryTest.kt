@@ -78,7 +78,7 @@ class HttpRegistrationRepositoryTest {
         val mockEngine = MockEngine { request ->
             // The mockEngine will respond to all requests with the same response
             respond(
-                content = """{"kind":"RegularUser","firstName":"John","lastName":"Doe","email":"john@example.com","phoneNumber":"+386123456","roles":[],"expiresAt":"2026-12-31"}""",
+                content = """{"kind":"RegularUser","firstName":"John","lastName":"Doe","email":"john@example.com","phoneNumber":"+386123456","emso":"0101000500001","roles":[],"expiresAt":"2026-12-31"}""",
                 status = HttpStatusCode.OK,
                 headers = headersOf("Content-Type", "application/json"),
             )
@@ -94,6 +94,7 @@ class HttpRegistrationRepositoryTest {
         assertIs<AppUser.RegularUser>(user)
         assertEquals("John Doe", user.fullName)
         assertEquals("john@example.com", user.email)
+        assertEquals("0101000500001", user.emso)
         assertEquals("+386123456", user.phone)
     }
 

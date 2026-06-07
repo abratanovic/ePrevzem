@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 sealed interface AppUser {
     val id: String
     val fullName: String
+    val emso: String?
     val isBiometricEnabled: Boolean
 
     @Serializable
@@ -14,6 +15,7 @@ sealed interface AppUser {
         override val fullName: String,
         val email: String,
         val phone: String,
+        override val emso: String? = null,
         override val isBiometricEnabled: Boolean = false,
     ) : AppUser
 
@@ -30,6 +32,7 @@ sealed interface AppUser {
         val organizationType: String,
         val organizationLocation: String,
         val roles: List<EmployeeRole>,
+        override val emso: String? = null,
         override val isBiometricEnabled: Boolean = false,
     ) : AppUser
 }

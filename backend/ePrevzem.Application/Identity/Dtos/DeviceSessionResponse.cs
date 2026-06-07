@@ -9,6 +9,7 @@ public sealed record DeviceSessionResponse(
     DateTimeOffset RefreshTokenExpiresAt,
     string FirstName,
     string LastName,
+    string? Emso,
     Guid? OrganizationId,
     string? OrganizationName,
     IReadOnlyList<string> Roles);

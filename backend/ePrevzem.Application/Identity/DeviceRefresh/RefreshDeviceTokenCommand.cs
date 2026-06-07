@@ -93,6 +93,7 @@ public sealed class RefreshDeviceTokenCommandHandler
                 refreshResult.ExpiresAt,
                 citizen.FirstName,
                 citizen.LastName,
+                citizen.Emso,
                 null,
                 null,
                 Array.Empty<string>());
@@ -129,6 +130,7 @@ public sealed class RefreshDeviceTokenCommandHandler
                 refreshResult.ExpiresAt,
                 employee.FirstName,
                 employee.LastName,
+                null,
                 employee.OrganizationId.Value,
                 org?.Name,
                 employee.Roles.Select(r => r.ToString()).ToList());

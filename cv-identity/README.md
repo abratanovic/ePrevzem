@@ -34,6 +34,40 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 The API fails fast on startup if required liveness artifacts are missing.
 
+## Docker
+
+Build and run the container from the repository root:
+
+```bash
+docker compose up -d cv-identity
+curl http://localhost:8000/health
+```
+
+The image does not contain model artifacts. Put the required files on the host
+where Compose can mount them:
+
+```text
+cv-identity/app/models/liveness_model.keras
+cv-identity/app/models/threshold.txt
+cv-identity/app/models/face_match_config.txt
+```
+
+In production, the same relative paths must exist under `/opt/eprevzem`:
+
+```text
+/opt/eprevzem/cv-identity/app/models/liveness_model.keras
+/opt/eprevzem/cv-identity/app/models/threshold.txt
+/opt/eprevzem/cv-identity/app/models/face_match_config.txt
+/opt/eprevzem/cv-identity/captures/
+```
+
+The service is exposed on port `8000`. For the current VPS, the mobile app
+should use:
+
+```properties
+cv.identity.base.url=http://116.202.15.208:8000
+```
+
 ## Verify Identity
 
 ```bash
