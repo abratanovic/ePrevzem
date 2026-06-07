@@ -118,7 +118,9 @@ fun ConfirmAccountScreen(
             }
 
             AccountDetailsCard(account = state.account)
-            OrganizationDetailsCard(organization = state.organization)
+            if (state.organization.name.isNotEmpty()) {
+                OrganizationDetailsCard(organization = state.organization)
+            }
             SecuritySection(state = state, onEvent = onEvent)
         }
     }
@@ -134,10 +136,12 @@ private fun AccountDetailsCard(account: ConfirmAccountData) {
                 label = ConfirmAccountStrings.FullNameLabel,
                 value = account.fullName,
                 trailing = {
-                    EStatusChip(
-                        status = EPickupStatus.Ready,
-                        label = account.status,
-                    )
+                    if (account.status.isNotEmpty()) {
+                        EStatusChip(
+                            status = EPickupStatus.Ready,
+                            label = account.status,
+                        )
+                    }
                 },
             )
             EDetailsDivider()
@@ -147,21 +151,21 @@ private fun AccountDetailsCard(account: ConfirmAccountData) {
                 value = account.email,
                 tint = EIconTint.Teal,
             )
-            EDetailsDivider()
-            EDetailsRow(
-                icon = EPrevzemIcons.notifications(),
-                label = ConfirmAccountStrings.PhoneLabel,
-                value = account.phone,
-                tint = EIconTint.Teal,
-                mono = true,
-            )
-            EDetailsDivider()
-            EDetailsRow(
-                icon = EPrevzemIcons.clock(),
-                label = ConfirmAccountStrings.ValidUntilLabel,
-                value = "Do ${account.validUntil}",
-                tint = EIconTint.Gold,
-            )
+//            EDetailsDivider()
+//            EDetailsRow(
+//                icon = EPrevzemIcons.notifications(),
+//                label = ConfirmAccountStrings.PhoneLabel,
+//                value = account.phone,
+//                tint = EIconTint.Teal,
+//                mono = true,
+//            )
+//            EDetailsDivider()
+//            EDetailsRow(
+//                icon = EPrevzemIcons.clock(),
+//                label = ConfirmAccountStrings.ValidUntilLabel,
+//                value = "Do ${account.validUntil}",
+//                tint = EIconTint.Gold,
+//            )
         }
     }
 }
@@ -176,20 +180,20 @@ private fun OrganizationDetailsCard(organization: ConfirmOrganizationData) {
                 label = ConfirmAccountStrings.OrganizationNameLabel,
                 value = organization.name,
             )
-            EDetailsDivider()
-            EDetailsRow(
-                icon = EPrevzemIcons.shield(),
-                label = ConfirmAccountStrings.OrganizationTypeLabel,
-                value = organization.type,
-                tint = EIconTint.Teal,
-            )
-            EDetailsDivider()
-            EDetailsRow(
-                icon = EPrevzemIcons.location(),
-                label = ConfirmAccountStrings.OrganizationLocationLabel,
-                value = organization.location,
-                tint = EIconTint.Teal,
-            )
+//            EDetailsDivider()
+//            EDetailsRow(
+//                icon = EPrevzemIcons.shield(),
+//                label = ConfirmAccountStrings.OrganizationTypeLabel,
+//                value = organization.type,
+//                tint = EIconTint.Teal,
+//            )
+//            EDetailsDivider()
+//            EDetailsRow(
+//                icon = EPrevzemIcons.location(),
+//                label = ConfirmAccountStrings.OrganizationLocationLabel,
+//                value = organization.location,
+//                tint = EIconTint.Teal,
+//            )
         }
     }
 }

@@ -11,11 +11,6 @@ data class RegistrationCodeState(
     val isHelpVisible: Boolean = false,
 ) {
     val rawCodeLength: Int get() = code.count { it != '-' }
-    val isCodeComplete: Boolean get() = rawCodeLength == CODE_LENGTH
-    val canSubmit: Boolean get() = isCodeComplete && !isLoading
+    val canSubmit: Boolean get() = rawCodeLength > 0 && !isLoading
     val hasError: Boolean get() = errorTitle != null
-
-    companion object {
-        const val CODE_LENGTH = 9
-    }
 }
