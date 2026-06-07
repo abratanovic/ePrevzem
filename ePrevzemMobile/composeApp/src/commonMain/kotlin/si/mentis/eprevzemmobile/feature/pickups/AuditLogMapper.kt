@@ -1,5 +1,8 @@
 package si.mentis.eprevzemmobile.feature.pickups
 
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import si.mentis.eprevzemmobile.data.logevent.LogAction
 import si.mentis.eprevzemmobile.data.logevent.LogEvent
 
@@ -60,13 +63,16 @@ private fun LogAction.toAuditLogBadge(): AuditLogBadge = when (this) {
     else -> AuditLogBadge(label = "Zabeleženo", tone = AuditLogBadgeTone.Info)
 }
 
-private fun String.toAuditLogDisplayTime(): String {
-    if (length < 16) return this
-
-    val year = substring(0, 4)
-    val month = substring(5, 7).trimStart('0')
-    val day = substring(8, 10).trimStart('0')
-    val time = substring(11, 16)
-
-    return "$day. $month. $year ob $time"
+/**
+ * Formats a backend ISO-8601 timestamp (UTC / with offset) as `d. M. yyyy ob HH:mm`
+ * in the device's local time zone. Falls back to the raw input if it cannot be parsed.
+ */
+internal fun String.toAuditLogDisplayTime(
+    timeZone: TimeZone = TimeZone.currentSystemDefault(),
+): String {
+    val instant = runCatching { Instant.parse(this) }.getOrNull() ?: return this
+    val local = instant.toLocalDateTime(timeZone)
+    val hour = local.hour.toString().padStart(2, '0')
+    val minute = local.minute.toString().padStart(2, '0')
+    return "${local.dayOfMonth}. ${local.monthNumber}. ${local.year} ob $hour:$minute"
 }
