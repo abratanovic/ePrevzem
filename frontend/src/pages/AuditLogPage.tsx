@@ -45,28 +45,20 @@ const TARGET_OPTIONS: Array<{ value: AuditTargetKind; label: string }> = [
   { value: "Package", label: "Prevzem" },
   { value: "ProvisioningCode", label: "Provisioning koda" },
   { value: "EmployeeAccount", label: "Zaposleni" },
-  { value: "OrganizationAdminAccount", label: "Skrbnik organizacije" },
+  { value: "OrganizationAdminAccount", label: "Skrbnik" },
   { value: "Locker", label: "Predalček" },
   { value: "PickupStation", label: "Paketomat" },
-  { value: "StationClaim", label: "Dodelitev paketomata" },
+  { value: "StationClaim", label: "Paketomat" },
   { value: "Organization", label: "Organizacija" },
   { value: "Delegation", label: "Pooblastilo" },
 ];
-
-const ACTOR_LABELS: Record<string, string> = {
-  Citizen: "Državljan",
-  Employee: "Zaposleni",
-  OrganizationAdmin: "Skrbnik organizacije",
-  SystemAdmin: "Sistemski skrbnik",
-  System: "Sistem",
-};
 
 const TARGET_LABELS: Record<string, string> = {
   Package: "Prevzem",
   Placement: "Vložitev",
   Delegation: "Pooblastilo",
   EmployeeAccount: "Zaposleni",
-  OrganizationAdminAccount: "Skrbnik organizacije",
+  OrganizationAdminAccount: "Skrbnik",
   SystemAdmin: "Sistemski skrbnik",
   EmployeeDevice: "Naprava zaposlenega",
   CitizenUser: "Državljan",
@@ -76,7 +68,7 @@ const TARGET_LABELS: Record<string, string> = {
   Locker: "Predalček",
   Organization: "Organizacija",
   PickupStation: "Paketomat",
-  StationClaim: "Dodelitev paketomata",
+  StationClaim: "Paketomat",
   ProvisioningCode: "Provisioning koda",
 };
 
@@ -242,23 +234,18 @@ function DetailsCell({ details }: { details: AuditLogDetails | null }) {
 }
 
 function ActorCell({ entry }: { entry: AuditLogEntry }) {
-  const actorLabel = labelFor(entry.actorKind, ACTOR_LABELS);
   const displayName = entry.actorDisplayName?.trim();
   const email = entry.actorEmail?.trim();
   const actorId = actorIdFor(entry);
   const fallbackIdentity = actorId ? shortId(actorId) : null;
-  const identity = displayName && displayName !== actorLabel ? displayName : fallbackIdentity;
+  const identity = displayName || fallbackIdentity || "Sistem";
+  const identityTitle = displayName || actorId || identity;
 
   return (
     <div className="max-w-[210px]">
-      <div className="truncate font-medium text-slate-700" title={actorLabel}>
-        {actorLabel}
+      <div className="truncate font-medium text-slate-700" title={identityTitle}>
+        {identity}
       </div>
-      {identity && (
-        <div className="mt-0.5 truncate text-xs text-slate-500" title={displayName || actorId || undefined}>
-          {identity}
-        </div>
-      )}
       {email && (
         <div className="mt-0.5 truncate text-xs text-slate-400" title={email}>
           {email}
