@@ -129,7 +129,7 @@ public class OrganizationPickupStationHandlerTests
     private static PickupStation SeedStation(TestPickupStationRepository repository, string serialNumber)
     {
         var station = PickupStation.Create(PickupStationId.New(), serialNumber, Now);
-        station.AddLocker(LockerId.New(), 1);
+        station.AddLocker(LockerId.New(), 1, 1001);
         repository.Items.Add(station);
         return station;
     }

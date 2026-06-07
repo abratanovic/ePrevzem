@@ -35,7 +35,7 @@ public class AuditDomainEventDispatchTests
         organization.ClearDomainEvents();
 
         var station = PickupStation.Create(PickupStationId.New(), "EP-PM-001", Now);
-        var locker = station.AddLocker(LockerId.New(), 1);
+        var locker = station.AddLocker(LockerId.New(), 1, 1001);
         station.ClearDomainEvents();
         var claim = StationClaim.Claim(
             StationClaimId.New(),

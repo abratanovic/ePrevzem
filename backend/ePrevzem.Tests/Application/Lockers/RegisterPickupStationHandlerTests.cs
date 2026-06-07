@@ -20,7 +20,8 @@ public class RegisterPickupStationHandlerTests
     private static RegisterPickupStationCommand ValidCommand(
         string serial = "SN-001",
         IReadOnlyList<int>? lockers = null)
-        => new(serial, lockers ?? new[] { 1, 2, 3 });
+        => new(serial, (lockers ?? new[] { 1, 2, 3 })
+            .Select(n => new LockerRegistration(n, n * 100L)).ToList());
 
     [Fact]
     public async Task Handle_with_valid_command_persists_station()

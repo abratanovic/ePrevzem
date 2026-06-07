@@ -25,6 +25,11 @@ public sealed class LockerConfiguration : IEntityTypeConfiguration<Locker>
             .HasColumnType("integer")
             .IsRequired();
 
+        builder.Property(x => x.BoxId)
+            .HasColumnName("box_id")
+            .HasColumnType("bigint")
+            .IsRequired();
+
         builder.Property(x => x.IsServiceable)
             .HasColumnName("is_serviceable")
             .HasColumnType("boolean")

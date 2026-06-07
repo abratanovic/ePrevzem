@@ -36,6 +36,7 @@ import si.mentis.eprevzemmobile.feature.pickups.PickupDetailsRoute
 import si.mentis.eprevzemmobile.feature.pickups.model.PickupDetails
 import si.mentis.eprevzemmobile.feature.registration.code.RegistrationCodeRoute
 import si.mentis.eprevzemmobile.feature.registration.confirm.ConfirmAccountRoute
+import si.mentis.eprevzemmobile.feature.operator.insertion.InsertionRoute
 import si.mentis.eprevzemmobile.feature.unlock.UnlockRoute
 
 private sealed interface AppDestination {
@@ -47,6 +48,7 @@ private sealed interface AppDestination {
     data class ConfirmAccount(val validatedCode: String) : AppDestination
     data object ActivePickups : AppDestination
     data object OperatorHome : AppDestination
+    data object OperatorInsertion : AppDestination
     data class PickupDetails(val pickupId: String, val unlockedAt: String? = null) : AppDestination
     data class Unlock(val pickupId: String, val lockerNumber: String) : AppDestination
     data class DelegatePerson(val pickupId: String) : AppDestination
@@ -62,6 +64,7 @@ private val AppDestination.depth: Int get() = when (this) {
     is AppDestination.ConfirmAccount -> 2
     AppDestination.ActivePickups -> 3
     AppDestination.OperatorHome -> 3
+    AppDestination.OperatorInsertion -> 4
     is AppDestination.PickupDetails -> 4
     is AppDestination.Unlock -> 5
     is AppDestination.DelegatePerson -> 5
@@ -206,11 +209,15 @@ fun App() {
                         OperatorHomeRoute(
                             user = employee,
                             onScanQrClicked = {
-                                // TODO(operator-paketnik-plan): navigate to OperatorScan
+                                destination = AppDestination.OperatorInsertion
                             },
                         )
                     }
                 }
+                AppDestination.OperatorInsertion -> InsertionRoute(
+                    onBack = { destination = AppDestination.OperatorHome },
+                    onDone = { destination = AppDestination.OperatorHome },
+                )
                 is AppDestination.PickupDetails -> PickupDetailsRoute(
                     pickupId = dest.pickupId,
                     initialUnlockedAt = dest.unlockedAt,

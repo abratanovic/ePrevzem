@@ -6,11 +6,13 @@ import si.mentis.eprevzemmobile.data.auth.PersistedSessionStore
 import si.mentis.eprevzemmobile.data.auth.SessionStore
 import si.mentis.eprevzemmobile.data.delegation.DelegationRepository
 import si.mentis.eprevzemmobile.data.delegation.FakeDelegationRepository
+import si.mentis.eprevzemmobile.data.insertion.HttpInsertionRepository
+import si.mentis.eprevzemmobile.data.insertion.InsertionRepository
 import si.mentis.eprevzemmobile.data.logevent.FakeLogEventRepository
 import si.mentis.eprevzemmobile.data.logevent.LogEventRepository
-import si.mentis.eprevzemmobile.data.locker.Direct4MeLockerRepository
+import si.mentis.eprevzemmobile.data.locker.HttpLockerRepository
 import si.mentis.eprevzemmobile.data.locker.LockerRepository
-import si.mentis.eprevzemmobile.data.pickups.FakePickupRepository
+import si.mentis.eprevzemmobile.data.pickups.HttpPickupRepository
 import si.mentis.eprevzemmobile.data.pickups.PickupRepository
 import si.mentis.eprevzemmobile.data.registration.HttpRegistrationRepository
 import si.mentis.eprevzemmobile.data.registration.RegistrationRepository
@@ -22,17 +24,16 @@ import si.mentis.eprevzemmobile.data.settings.LocalUserSettingsRepository
 import si.mentis.eprevzemmobile.data.settings.UserSettingsRepository
 
 object AppContainer {
-    private val apiClient = ApiClient()
     val deviceSessionStore = DeviceSessionStore()
+    private val apiClient = ApiClient(sessionStore = deviceSessionStore)
     val registrationRepository: RegistrationRepository = HttpRegistrationRepository(apiClient, deviceSessionStore)
-    val pickupRepository: PickupRepository = FakePickupRepository()
+    val pickupRepository: PickupRepository = HttpPickupRepository(apiClient)
     val delegationRepository: DelegationRepository = FakeDelegationRepository()
     val logEventRepository: LogEventRepository = FakeLogEventRepository()
     val securityRepository: SecurityRepository = LocalSecurityRepository()
     val userSettingsRepository: UserSettingsRepository = LocalUserSettingsRepository()
     val authRepository: AuthRepository = HttpAuthRepository(apiClient, deviceSessionStore)
-    val lockerRepository: LockerRepository = Direct4MeLockerRepository(
-        apiKey = PlatformConfig.direct4MeApiKey,
-    )
+    val lockerRepository: LockerRepository = HttpLockerRepository(apiClient)
+    val insertionRepository: InsertionRepository = HttpInsertionRepository(apiClient)
     val sessionStore: SessionStore = PersistedSessionStore()
 }

@@ -9,13 +9,15 @@ public sealed class RegisterPickupStationValidator : AbstractValidator<RegisterP
         RuleFor(x => x.SerialNumber)
             .NotEmpty();
 
-        RuleFor(x => x.LockerNumbers)
+        RuleFor(x => x.Lockers)
             .NotEmpty()
-            .Must(numbers => numbers.Distinct().Count() == numbers.Count)
+            .Must(lockers => lockers.Select(l => l.Number).Distinct().Count() == lockers.Count)
             .WithMessage("Locker numbers must be unique.");
 
-        RuleForEach(x => x.LockerNumbers)
-            .GreaterThan(0)
-            .WithMessage("Each locker number must be positive.");
+        RuleForEach(x => x.Lockers)
+            .Must(l => l.Number > 0)
+            .WithMessage("Each locker number must be positive.")
+            .Must(l => l.BoxId > 0)
+            .WithMessage("Each locker box id must be positive.");
     }
 }

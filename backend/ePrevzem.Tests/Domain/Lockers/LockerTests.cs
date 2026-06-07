@@ -9,7 +9,7 @@ public class LockerTests
     public void Locker_added_via_station_is_serviceable_by_default()
     {
         var station = NewStation();
-        var locker = station.AddLocker(LockerId.New(), lockerNumber: 1);
+        var locker = station.AddLocker(LockerId.New(), lockerNumber: 1, boxId: 1001);
 
         locker.LockerNumber.Should().Be(1);
         locker.IsServiceable.Should().BeTrue();
@@ -20,7 +20,7 @@ public class LockerTests
     public void MarkOutOfService_flips_flag_to_false()
     {
         var station = NewStation();
-        var locker = station.AddLocker(LockerId.New(), 1);
+        var locker = station.AddLocker(LockerId.New(), 1, 1001);
 
         locker.MarkOutOfService();
 
@@ -31,7 +31,7 @@ public class LockerTests
     public void MarkServiceable_flips_flag_to_true()
     {
         var station = NewStation();
-        var locker = station.AddLocker(LockerId.New(), 1);
+        var locker = station.AddLocker(LockerId.New(), 1, 1001);
         locker.MarkOutOfService();
 
         locker.MarkServiceable();

@@ -482,6 +482,10 @@ namespace ePrevzem.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<long>("BoxId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("box_id");
+
                     b.Property<bool>("IsServiceable")
                         .HasColumnType("boolean")
                         .HasColumnName("is_serviceable");

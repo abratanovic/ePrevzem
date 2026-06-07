@@ -308,7 +308,15 @@ fun PickupDetailsRoute(
                     }
                 }
                 PickupDetailsEvent.IdentityVerified -> onIdentityVerified(state.details)
-                PickupDetailsEvent.Finish -> onPickupConfirmed(state.details)
+                PickupDetailsEvent.Finish -> {
+                    val confirmed = state.details
+                    scope.launch {
+                        // Commit the pickup (→ PickedUp). Navigate regardless: the
+                        // locker is already open, so a failed confirm must not trap the user.
+                        repository.confirmPickup(confirmed.id)
+                        onPickupConfirmed(confirmed)
+                    }
+                }
                 PickupDetailsEvent.LockerDidNotOpen -> onLockerDidNotOpen(state.details)
                 PickupDetailsEvent.DelegatePersonClicked -> onDelegatePerson()
                 is PickupDetailsEvent.RemoveDelegateClicked -> state = state.copy(
@@ -395,8 +403,10 @@ private fun IdlePhase(
                 Column {
                     DetailRow(label = "Referenca", value = state.details.reference)
                     EDivider()
-                    DetailRow(label = "Vrsta", value = state.details.type)
-                    EDivider()
+                    // "Vrsta" (document type) hidden: the backend does not model a
+                    // document type, so there is no value to show here.
+                    // DetailRow(label = "Vrsta", value = state.details.type)
+                    // EDivider()
                     DetailRow(label = "Organizacija", value = state.details.organization)
                     EDivider()
                     DetailRow(label = "Na voljo od", value = state.details.availableFrom)

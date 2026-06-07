@@ -27,12 +27,12 @@ public sealed class PickupStation : AggregateRoot<PickupStationId>
         return station;
     }
 
-    public Locker AddLocker(LockerId id, int lockerNumber, DateTimeOffset? now = null)
+    public Locker AddLocker(LockerId id, int lockerNumber, long boxId, DateTimeOffset? now = null)
     {
         if (_lockers.Any(l => l.LockerNumber == lockerNumber))
             throw new InvalidOperationException($"A locker with locker number {lockerNumber} already exists in this station.");
 
-        var locker = Locker.Create(id, Id, lockerNumber);
+        var locker = Locker.Create(id, Id, lockerNumber, boxId);
         _lockers.Add(locker);
         if (now is not null)
             Raise(new LockerCreated(Id, id, lockerNumber, now.Value));

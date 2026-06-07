@@ -18,6 +18,11 @@ public sealed class PackageRepository : IPackageRepository
     public Task<bool> ExistsByReferenceAsync(string reference, CancellationToken cancellationToken = default)
         => _dbContext.Packages.AnyAsync(x => x.Reference == reference, cancellationToken);
 
+    public Task<Package?> GetByIdAsync(PackageId id, CancellationToken cancellationToken = default)
+        => _dbContext.Packages
+            .Include(x => x.Placements)
+            .SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+
     public Task<Package?> GetByIdForOrganizationAsync(
         PackageId id,
         OrganizationId organizationId,
