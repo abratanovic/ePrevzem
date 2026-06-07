@@ -18,6 +18,7 @@ import eprevzemmobile.composeapp.generated.resources.ic_close
 import eprevzemmobile.composeapp.generated.resources.ic_docs
 import eprevzemmobile.composeapp.generated.resources.ic_drafts
 import eprevzemmobile.composeapp.generated.resources.ic_error
+import eprevzemmobile.composeapp.generated.resources.ic_fullscreen
 import eprevzemmobile.composeapp.generated.resources.ic_history
 import eprevzemmobile.composeapp.generated.resources.ic_home
 import eprevzemmobile.composeapp.generated.resources.ic_inbox
@@ -89,6 +90,7 @@ object EPrevzemIcons {
     @Composable fun key(): Painter = painterResource(Res.drawable.ic_key)
     @Composable fun visibility(): Painter = painterResource(Res.drawable.ic_visibility)
     @Composable fun visibilityOff(): Painter = painterResource(Res.drawable.ic_visibility_off)
+    @Composable fun fullscreen(): Painter = painterResource(Res.drawable.ic_fullscreen)
 }
 
 /** Standard icon sizes from the design system (16 / 20 / 24 / 36). */
