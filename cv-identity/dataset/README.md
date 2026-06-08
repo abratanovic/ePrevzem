@@ -1,111 +1,106 @@
-# Dataset datasheet
+# Datasheet podatkovne zbirke
 
-## Folder layout
+## Razporeditev map
 
 ```
 dataset/
-├── raw/                     # original captures (git-ignored)
-│   ├── live/<person>/       # real live faces, multiple angles
-│   ├── spoof/<person>/      # printed-photo + screen-replay attacks
-│   └── id_cards/<person>/   # mock ID cards (no real PII)
-└── splits/{train,val,test}/ # leakage-free splits (git-ignored)
+├── raw/                     # originalni zajemi (git-ignored)
+│   ├── live/<oseba>/        # živi obrazi, več kotov
+│   └── spoof/<oseba>/       # napadi: natisnjena fotografija + zaslon
+└── splits/{train,val,test}/ # razdelitev brez prelivanja identitet (git-ignored)
 ```
 
-`build_dataset.py` preprocesses each image **on the fly** (detect + align +
-resize) while writing into `splits/` — there is no separate `processed/` stage,
-so raw images are never duplicated to disk between steps.
+`build_dataset.py` vsako sliko predobdela **sproti** (zaznava + poravnava +
+sprememba velikosti) med pisanjem v `splits/` — ločene faze `processed/` ni, zato
+se surove slike nikoli ne podvajajo na disk.
 
-## Classes
+## Razredi
 
-| Class   | Meaning                          | Used for                         |
-|---------|----------------------------------|----------------------------------|
-| live    | Real face in front of the camera | Liveness CNN positive            |
-| spoof   | Printed photo or screen replay   | Liveness CNN negative            |
-| id_cards| Mock ID card with face + name    | End-to-end demo (ID <-> selfie)  |
+| Razred | Pomen                              | Uporaba                  |
+|--------|------------------------------------|--------------------------|
+| live   | Živ obraz pred kamero              | Pozitivni primer liveness CNN |
+| spoof  | Natisnjena fotografija ali zaslon  | Negativni primer liveness CNN |
 
-## Capture protocol
+## Protokol zajema
 
 ### Live
-- ~30-50 frames per member across **moderate** angles and lighting.
-- Keep the bulk near-frontal (±30°): some left/right (±15-30°) and a little
-  up/down for natural phone-holding poses. **Avoid extreme profiles (>45°)** —
-  MediaPipe often fails to detect them, and `build_dataset.py` then silently
-  skips the image (no face → dropped). Vary lighting/distance rather than angle.
+- ~30–50 posnetkov na osebo pri **zmernih** kotih in osvetlitvi.
+- Večina naj bo blizu frontalni (±30°): nekaj levo/desno (±15–30°) in malo
+  gor/dol za naravne poze pri držanju telefona. **Izogibajte se ekstremnim
+  profilom (>45°)** — MediaPipe jih pogosto ne zazna in `build_dataset.py` tako
+  sliko tiho preskoči (ni obraza → izpuščeno). Raje variirajte osvetlitev/razdaljo
+  kot kot.
 
 ### Spoof
-- A "spoof sample" is each **capture**, not each source artifact: 2-3 printed
-  photos + 2-3 on-screen photos, each re-shot from several angles/distances and
-  lighting, yields plenty of frames (~30-50 per member).
-- Vary the **capture conditions** so the model learns real attack cues
-  (reflection, moiré, paper edges): tilt the print, change screen brightness,
-  move closer/farther.
-- Prefer **different media** (printed + phone screen + monitor, matte + glossy
-  paper) so the model doesn't latch onto one device as "spoof".
-- Re-shoot the **same angles** you used for that person's live frames, otherwise
-  the model learns "this pose = spoof" instead of genuine spoof cues.
+- "Spoof vzorec" je vsak **posnetek**, ne vsak izvorni artefakt: 2–3 natisnjene
+  fotografije + 2–3 zaslonske, vsako znova poslikano iz več kotov/razdalj in
+  osvetlitev, da nastane dovolj posnetkov (~30–50 na osebo).
+- Variirajte **pogoje zajema**, da se model nauči pravih znakov napada (odsev,
+  moiré, robovi papirja): nagnite tisk, spremenite svetlost zaslona, se
+  približajte/oddaljite.
+- Uporabite **različne medije** (tisk + zaslon telefona + monitor, mat + sijajen
+  papir), da se model ne navadi ene naprave kot "spoof".
+- Znova poslikajte **iste kote**, kot ste jih uporabili za žive posnetke iste
+  osebe, sicer se model nauči "ta poza = spoof" namesto pravih znakov ponaredka.
 
-### Device & conditions (both classes)
-- Capture **live and spoof on the same device**, in **similar lighting and
-  background** — otherwise the model learns a shortcut (e.g. brightness or
-  sensor noise) instead of liveness.
-- Ideally capture with the **same kind of device used for the demo** (phone),
-  to reduce the train/serve domain gap. `scripts/capture.py` (laptop webcam) is
-  fine for a quick pipeline test, but real training data is best shot on a
-  phone and copied into `raw/<class>/<person>/`.
+### Naprava in pogoji (oba razreda)
+- `live` in `spoof` zajemite na **isti napravi**, v **podobni osvetlitvi in
+  ozadju** — sicer se model nauči bližnjice (npr. svetlost ali senzorski šum)
+  namesto živosti.
+- Idealno zajemajte z **isto vrsto naprave kot za demo** (telefon), da zmanjšate
+  razliko med učenjem in uporabo (domain gap). `scripts/capture.py` (spletna
+  kamera na prenosniku) je primeren za hiter test cevovoda, a so prave učne slike
+  najboljše posnete s telefonom in skopirane v `raw/<razred>/<oseba>/`.
 
-### id_cards
-- One or more mock cards per member, **no real personal data**. Needed only for
-  the end-to-end ID <-> selfie demo (face matching), not for liveness training.
+## Javne zbirke (dopolnilno)
 
-## Public datasets (supplementary)
-
-Large public datasets are kept **outside the repo** (never committed) under:
+Velike javne zbirke hranimo **izven repozitorija** (nikoli commitane) pod:
 
 ```
 C:\PROJEKTI\datasets\
 ├── nuaa\raw\
-│   ├── ClientRaw\<id>\*.jpg     # real faces      -> live  (5105 imgs, 15 subjects)
-│   └── ImposterRaw\<id>\*.jpg   # photo attacks   -> spoof (7509 imgs, 15 subjects)
+│   ├── ClientRaw\<id>\*.jpg     # živi obrazi    -> live  (5105 slik, 15 oseb)
+│   └── ImposterRaw\<id>\*.jpg   # foto napadi    -> spoof (7509 slik, 15 oseb)
 └── lfw\
-    ├── lfw-deepfunneled\lfw-deepfunneled\<Name>\<Name>_NNNN.jpg
-    ├── matchpairsDevTrain.csv / matchpairsDevTest.csv      # positive pairs (same person)
-    ├── mismatchpairsDevTrain.csv / mismatchpairsDevTest.csv# negative pairs (different people)
-    └── pairs.csv                                           # all 6000 pairs combined
+    ├── lfw-deepfunneled\lfw-deepfunneled\<Ime>\<Ime>_NNNN.jpg
+    ├── matchpairsDevTrain.csv / matchpairsDevTest.csv      # pozitivni pari (ista oseba)
+    ├── mismatchpairsDevTrain.csv / mismatchpairsDevTest.csv# negativni pari (različni osebi)
+    └── pairs.csv                                           # vseh 6000 parov skupaj
 ```
 
-- **NUAA** — liveness (anti-spoofing). Chosen over CelebA-Spoof (~80 GB) for a
-  manageable size. `ClientRaw` = live, `ImposterRaw` = spoof. A subject's id is
-  identical in both folders, so each subject maps to **one** person id
-  (`nuaa_<id>`) and never leaks across splits.
-- **LFW (deepfunneled)** — face-match **threshold calibration** only (not part
-  of the liveness build). Use the match/mismatch CSVs directly:
-  - match rows: `name, imagenum1, imagenum2` (same person)
-  - mismatch rows: `name1, imagenum1, name2, imagenum2` (different people)
-  - image path: `lfw-deepfunneled\lfw-deepfunneled\<name>\<name>_{imagenum:04d}.jpg`
+- **NUAA** — liveness (anti-spoofing). Izbrana namesto CelebA-Spoof (~80 GB)
+  zaradi obvladljive velikosti. `ClientRaw` = live, `ImposterRaw` = spoof. Id
+  osebe je v obeh mapah enak, zato se vsaka oseba preslika v **eno** identiteto
+  (`nuaa_<id>`) in nikoli ne prelije med razdelitve.
+- **LFW (deepfunneled)** — samo za **kalibracijo praga** ujemanja obrazov (ni del
+  liveness gradnje). Pare uporabite neposredno iz CSV-jev:
+  - vrstice match: `name, imagenum1, imagenum2` (ista oseba)
+  - vrstice mismatch: `name1, imagenum1, name2, imagenum2` (različni osebi)
+  - pot slike: `lfw-deepfunneled\lfw-deepfunneled\<name>\<name>_{imagenum:04d}.jpg`
 
-NUAA images are already face crops, so the build skips MediaPipe detection for
-them; team images go through detection + alignment first.
+NUAA slike so že izrezani obrazi, zato gradnja zanje preskoči zaznavo MediaPipe;
+ekipne slike gredo najprej skozi zaznavo + poravnavo.
 
-## Building the dataset
+## Gradnja zbirke
 
-`scripts/build_dataset.py` turns raw data into model-ready splits using the
-project's own preprocessing / augmentation / split functions:
+`scripts/build_dataset.py` pretvori surove podatke v za model pripravljene
+razdelitve z lastnimi funkcijami za predobdelavo / augmentacijo / razdelitev:
 
 ```bash
 python scripts/build_dataset.py --raw dataset/raw \
     --nuaa C:/PROJEKTI/datasets/nuaa/raw --out dataset --augment-count 4
 ```
 
-Output: `dataset/splits/{train,val,test}/{live,spoof}/<person>__<name>.jpg`.
-Train images get `--augment-count` extra augmented variants each; val/test are
-not augmented. LFW is consumed directly by the model step via its pair CSVs.
+Izhod: `dataset/splits/{train,val,test}/{live,spoof}/<oseba>__<ime>.jpg`. Slike v
+train dobijo `--augment-count` dodatnih augmentiranih variant; val/test se ne
+augmentirata. LFW modelni korak uporabi neposredno prek svojih CSV parov.
 
-## Split policy
+## Politika razdelitve
 
-Splits are produced by `training/split.py` and partition **by person**: the
-same identity never appears in more than one split (prevents leaked, inflated
-metrics). Default ratio train/val/test = 0.6 / 0.2 / 0.2.
+Razdelitve ustvari `training/split.py` in deli **po osebi**: ista identiteta se ne
+pojavi v več kot eni razdelitvi (prepreči prelite, napihnjene metrike). Privzeto
+razmerje train/val/test = 0,6 / 0,2 / 0,2.
 
-> Note (small team): with only a few team identities, a clean 3-way split of
-> *team* data is not meaningful. The liveness CNN trains mainly on NUAA; team
-> data is best kept as a held-out real-world test set. See the spec §6.
+> Opomba (majhna ekipa): z le nekaj ekipnimi identitetami čista 3-smerna
+> razdelitev *ekipnih* podatkov ni smiselna. Liveness CNN se uči pretežno na NUAA;
+> ekipne podatke je najbolje obdržati kot ločeno realno testno množico.
