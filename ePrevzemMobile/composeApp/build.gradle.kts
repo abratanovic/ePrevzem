@@ -21,25 +21,11 @@ val eprevzemApiBaseUrl: String = run {
     props.getProperty("eprevzem.api.base.url", "http://10.0.2.2:8080")
 }
 
-// cv-identity face matching API base URL
-// Developer can override via local.properties: cv.identity.base.url=http://10.0.2.2:8000
-val cvIdentityBaseUrl: String = run {
-    val props = Properties()
-    val localPropsFile = rootProject.file("local.properties")
-    if (localPropsFile.exists()) {
-        localPropsFile.inputStream().use { props.load(it) }
-    }
-    props.getProperty("cv.identity.base.url", "http://10.0.2.2:8000")
-}
-
 val capturedEprevzemApiBaseUrl: String = eprevzemApiBaseUrl
-val capturedCvIdentityBaseUrl: String = cvIdentityBaseUrl
 
 val generateIosPlatformConfig by tasks.registering {
     val apiUrl = capturedEprevzemApiBaseUrl
-    val cvUrl = capturedCvIdentityBaseUrl
     inputs.property("eprevzemApiBaseUrl", apiUrl)
-    inputs.property("cvIdentityBaseUrl", cvUrl)
     val outputFile = layout.buildDirectory.file("generated/iosMain/kotlin/si/mentis/eprevzemmobile/PlatformConfig.ios.kt")
     outputs.file(outputFile)
     doLast {
@@ -48,7 +34,6 @@ val generateIosPlatformConfig by tasks.registering {
 
 internal actual object PlatformConfig {
     actual val eprevzemApiBaseUrl: String = "$apiUrl"
-    actual val cvIdentityBaseUrl: String = "$cvUrl"
 }
 """
         )
@@ -135,7 +120,6 @@ android {
         versionCode = 1
         versionName = "1.0"
         buildConfigField("String", "EPREVZEM_API_BASE_URL", "\"$eprevzemApiBaseUrl\"")
-        buildConfigField("String", "CV_IDENTITY_BASE_URL", "\"$cvIdentityBaseUrl\"")
     }
     buildFeatures {
         buildConfig = true

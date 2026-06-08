@@ -189,11 +189,8 @@ fun App() {
                 )
                 is AppDestination.DocumentCapture -> DocumentCaptureRoute(
                     variant = dest.variant,
-                    onCodeObtained = { code, emso ->
-                        destination = AppDestination.ConfirmAccount(
-                            validatedCode = code,
-                            documentEmso = emso,
-                        )
+                    onCodeObtained = { code ->
+                        destination = AppDestination.ConfirmAccount(validatedCode = code)
                     },
                     onBack = { destination = AppDestination.DocumentTypeSelection },
                 )

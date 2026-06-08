@@ -69,6 +69,14 @@ public static class DependencyInjection
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", options.ApiKey);
         });
 
+        services.Configure<CvIdentityOptions>(configuration.GetSection("CvIdentity"));
+        services.AddHttpClient<ICvIdentityClient, CvIdentityClient>((sp, client) =>
+        {
+            var options = sp.GetRequiredService<IOptions<CvIdentityOptions>>().Value;
+            var baseUrl = options.BaseUrl.EndsWith('/') ? options.BaseUrl : options.BaseUrl + "/";
+            client.BaseAddress = new Uri(baseUrl);
+        });
+
         return services;
     }
 }
