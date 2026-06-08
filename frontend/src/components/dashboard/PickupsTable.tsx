@@ -127,8 +127,8 @@ export default function PickupsTable({
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-baseline justify-between px-5 pt-5 pb-3">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex items-baseline justify-between border-b border-slate-100 px-5 py-4">
         <div>
           <h2 className="text-lg font-bold text-slate-900">{title}</h2>
           <p className="text-xs text-slate-400">{subtitle}</p>
@@ -151,58 +151,60 @@ export default function PickupsTable({
       ) : data.items.length === 0 ? (
         <p className="px-5 py-10 text-center text-sm text-slate-500">Organizacija še nima prevzemov.</p>
       ) : (
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-t border-slate-100">
-              {["REFERENCA", "DOKUMENT", "PREJEMNIK", "LOKACIJA", "STATUS", "ROK", "AKCIJE"].map((h) => (
-                <th key={h} className="px-5 py-2.5 text-left text-[11px] font-semibold tracking-wide text-slate-400">
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data.items.map((row: Pickup) => (
-              <tr key={row.id} className="border-t border-slate-100 hover:bg-slate-50">
-                <td className="px-5 py-3.5 text-sm text-slate-400">{row.reference}</td>
-                <td className="px-5 py-3.5 font-semibold text-slate-900">{row.documentType}</td>
-                <td className="px-5 py-3.5 text-slate-600">{row.recipientName}</td>
-                <td className="px-5 py-3.5 text-slate-600">{row.locationName}</td>
-                <td className="px-5 py-3.5">
-                  <StatusBadge status={row.status} />
-                </td>
-                <td className={`px-5 py-3.5 ${row.status === "expiring" ? "font-medium text-orange-600" : "text-slate-500"}`}>
-                  {formatDeadline(row.deadlineAt)}
-                </td>
-                <td className="px-5 py-3.5">
-                  {row.canDelete ? (
-                    <button
-                      type="button"
-                      onClick={() => void handleDelete(row)}
-                      disabled={updatingId === row.id}
-                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:cursor-wait disabled:opacity-50"
-                      title="Izbriši prevzem"
-                    >
-                      <Trash2 size={14} />
-                      {updatingId === row.id ? "Brisanje ..." : "Izbriši"}
-                    </button>
-                  ) : row.canCancel ? (
-                    <button
-                      type="button"
-                      onClick={() => void handleCancel(row)}
-                      disabled={updatingId === row.id}
-                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-orange-600 hover:bg-orange-50 disabled:cursor-wait disabled:opacity-50"
-                      title="Prekliči prevzem"
-                    >
-                      <XCircle size={14} />
-                      {updatingId === row.id ? "Preklic ..." : "Prekliči"}
-                    </button>
-                  ) : "—"}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="min-w-[920px] w-full text-sm">
+            <thead>
+              <tr className="bg-slate-50 text-left">
+                {["REFERENCA", "DOKUMENT", "PREJEMNIK", "LOKACIJA", "STATUS", "ROK", "AKCIJE"].map((h) => (
+                  <th key={h} className="px-5 py-2.5 text-left text-[11px] font-semibold tracking-wide text-slate-400">
+                    {h}
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {data.items.map((row: Pickup) => (
+                <tr key={row.id} className="border-t border-slate-100 hover:bg-slate-50">
+                  <td className="px-5 py-3.5 text-sm text-slate-400">{row.reference}</td>
+                  <td className="px-5 py-3.5 font-semibold text-slate-900">{row.documentType}</td>
+                  <td className="px-5 py-3.5 text-slate-600">{row.recipientName}</td>
+                  <td className="px-5 py-3.5 text-slate-600">{row.locationName}</td>
+                  <td className="px-5 py-3.5">
+                    <StatusBadge status={row.status} />
+                  </td>
+                  <td className={`px-5 py-3.5 ${row.status === "expiring" ? "font-medium text-orange-600" : "text-slate-500"}`}>
+                    {formatDeadline(row.deadlineAt)}
+                  </td>
+                  <td className="px-5 py-3.5">
+                    {row.canDelete ? (
+                      <button
+                        type="button"
+                        onClick={() => void handleDelete(row)}
+                        disabled={updatingId === row.id}
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:cursor-wait disabled:opacity-50"
+                        title="Izbriši prevzem"
+                      >
+                        <Trash2 size={14} />
+                        {updatingId === row.id ? "Brisanje ..." : "Izbriši"}
+                      </button>
+                    ) : row.canCancel ? (
+                      <button
+                        type="button"
+                        onClick={() => void handleCancel(row)}
+                        disabled={updatingId === row.id}
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-orange-600 hover:bg-orange-50 disabled:cursor-wait disabled:opacity-50"
+                        title="Prekliči prevzem"
+                      >
+                        <XCircle size={14} />
+                        {updatingId === row.id ? "Preklic ..." : "Prekliči"}
+                      </button>
+                    ) : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

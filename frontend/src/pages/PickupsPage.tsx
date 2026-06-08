@@ -6,8 +6,8 @@ export default function PickupsPage() {
     <div className="space-y-5 p-6">
       <PickupsTable
         loadPickups={getAllPickups}
-        title="Zgodovina prevzemov"
-        subtitle="Vsi kadarkoli ustvarjeni prevzemi"
+        title="Seznam prevzemov"
+        subtitle="Vsi ustvarjeni prevzemi"
         showAllLink={false}
       />
     </div>

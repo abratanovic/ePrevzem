@@ -36,15 +36,15 @@ export default function DashboardPage() {
   }, [loadStats]);
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="space-y-5 p-6">
       {location.state?.pickupCreated && (
         <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
           Prevzem je bil uspešno dodan in čaka na vložitev v paketomat.
         </p>
       )}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {statsError ? (
-          <p className="col-span-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+          <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 md:col-span-2 xl:col-span-4">
             Statistike nadzorne plošče ni bilo mogoče naložiti.
           </p>
         ) : stats === null ? (
@@ -83,7 +83,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-[1fr_360px] gap-4">
+      <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
         <PickupsTable onPickupChanged={loadStats} />
         <LockerOccupancyPanel />
       </div>

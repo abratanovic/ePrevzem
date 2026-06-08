@@ -128,7 +128,7 @@ export default function AddPickupPage() {
           <div className="mb-5">
             <h3 className="text-lg font-bold text-slate-900">Prejemnik</h3>
             <p className="text-sm text-slate-500">
-              Prejemnik mora biti predhodno registriran prek SI-TRUST.
+              Preverite, da je prejemnik že registriran.
             </p>
           </div>
           <div className="flex items-start gap-3">
@@ -185,8 +185,7 @@ export default function AddPickupPage() {
               Podatki o prevzemu
             </h3>
             <p className="text-sm text-slate-500">
-              Referenca bo ustvarjena samodejno. Rok začne teči ob vložitvi v
-              predalček.
+              Referenca se ustvari samodejno.
             </p>
           </div>
           <label className="space-y-1.5">
@@ -217,7 +216,7 @@ export default function AddPickupPage() {
               Ciljni paketomat
             </h3>
             <p className="text-sm text-slate-500">
-              Predalček bo določen pozneje ob fizični vložitvi prevzema.
+              Predalček se določi ob vložitvi.
             </p>
           </div>
           {stations === null ? (

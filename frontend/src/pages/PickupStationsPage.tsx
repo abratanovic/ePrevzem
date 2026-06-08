@@ -45,7 +45,7 @@ export default function PickupStationsPage() {
 
   return (
     <div className="space-y-5 p-6">
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <StatCard label="Aktivni paketomati" value={stations?.length ?? 0} icon={<Warehouse size={21} />} />
         <StatCard label="Vsi predalčki" value={totalLockers} icon={<Package size={21} />} />
         <StatCard label="Delujoči predalčki" value={serviceableLockers} icon={<Package size={21} />} />
@@ -54,7 +54,7 @@ export default function PickupStationsPage() {
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 px-5 py-4">
           <h3 className="text-lg font-bold text-slate-900">Paketomati</h3>
-          <p className="text-xs text-slate-400">Aktivne lokacije, povezane z organizacijo</p>
+          <p className="text-xs text-slate-400">Aktivne lokacije organizacije</p>
         </div>
 
         {error ? (
@@ -65,7 +65,7 @@ export default function PickupStationsPage() {
           <div className="flex flex-col items-center px-6 py-14 text-center">
             <MapPin size={32} className="mb-3 text-slate-300" />
             <h3 className="font-semibold text-slate-800">Organizacija še nima paketomatov</h3>
-            <p className="mt-1 text-sm text-slate-500">Dodajte prvi paketomat s serijsko številko in lokacijo.</p>
+            <p className="mt-1 text-sm text-slate-500">Dodajte prvi paketomat.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">

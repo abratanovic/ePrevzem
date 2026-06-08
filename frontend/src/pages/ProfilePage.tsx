@@ -37,10 +37,11 @@ export default function ProfilePage() {
       <div className="w-full max-w-2xl space-y-5">
         <Link
           to="/dashboard"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
           aria-label="Nazaj na nadzorno ploščo"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={16} />
+          Nazaj na nadzorno ploščo
         </Link>
 
         {/* Header card */}

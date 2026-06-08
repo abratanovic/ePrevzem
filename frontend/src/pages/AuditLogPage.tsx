@@ -426,9 +426,13 @@ export default function AuditLogPage() {
     <div className="space-y-5 p-6">
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
+          <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
               <ClipboardList size={21} strokeWidth={1.8} />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Filtri</h2>
+              <p className="text-sm text-slate-500">Zožite prikaz po dejanju, akterju ali obdobju.</p>
             </div>
           </div>
           <button
