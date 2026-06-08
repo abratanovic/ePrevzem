@@ -36,7 +36,7 @@ function strengthColor(score: number): string {
   if (score <= 1) return "bg-red-400";
   if (score === 2) return "bg-yellow-400";
   if (score === 3) return "bg-blue-400";
-  return "bg-[#1a3d2b]";
+  return "bg-accent";
 }
 
 function StrengthBar({ score }: { score: number }) {
@@ -55,7 +55,7 @@ function StrengthBar({ score }: { score: number }) {
 function Requirement({ met, label }: { met: boolean; label: string }) {
   return (
     <div className="flex items-center gap-1.5">
-      <span className={`flex h-4 w-4 items-center justify-center rounded-full text-xs ${met ? "bg-[#1a3d2b] text-white" : "border border-slate-300 text-transparent"}`}>
+      <span className={`flex h-4 w-4 items-center justify-center rounded-full text-xs ${met ? "bg-accent text-white" : "border border-slate-300 text-transparent"}`}>
         {met ? "✓" : "○"}
       </span>
       <span className={`text-xs ${met ? "text-slate-700" : "text-slate-400"}`}>{label}</span>
@@ -148,7 +148,7 @@ export default function ChangePasswordPage() {
                 placeholder="••••••••"
                 value={current}
                 onChange={(e) => setCurrent(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-10 text-sm text-slate-900 placeholder-slate-300 outline-none transition focus:border-[#1a3d2b] focus:ring-2 focus:ring-[#1a3d2b]/10"
+                className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-10 text-sm text-slate-900 placeholder-slate-300 outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/10"
               />
               <button type="button" onClick={() => setShowCurrent((v) => !v)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                 {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -168,7 +168,7 @@ export default function ChangePasswordPage() {
                 placeholder="••••••••"
                 value={newPw}
                 onChange={(e) => setNewPw(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-10 text-sm text-slate-900 placeholder-slate-300 outline-none transition focus:border-[#1a3d2b] focus:ring-2 focus:ring-[#1a3d2b]/10"
+                className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-10 text-sm text-slate-900 placeholder-slate-300 outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/10"
               />
               <button type="button" onClick={() => setShowNew((v) => !v)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                 {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -177,7 +177,7 @@ export default function ChangePasswordPage() {
             {newPw && (
               <div className="space-y-1">
                 <StrengthBar score={score} />
-                <p className={`text-xs font-medium ${score >= 4 ? "text-[#1a3d2b]" : "text-slate-500"}`}>{strengthLabel(score)}</p>
+                <p className={`text-xs font-medium ${score >= 4 ? "text-accent" : "text-slate-500"}`}>{strengthLabel(score)}</p>
               </div>
             )}
           </div>
@@ -194,7 +194,7 @@ export default function ChangePasswordPage() {
                 placeholder="••••••••"
                 value={repeat}
                 onChange={(e) => setRepeat(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-10 text-sm text-slate-900 placeholder-slate-300 outline-none transition focus:border-[#1a3d2b] focus:ring-2 focus:ring-[#1a3d2b]/10"
+                className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-10 text-sm text-slate-900 placeholder-slate-300 outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/10"
               />
               <button type="button" onClick={() => setShowRepeat((v) => !v)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                 {showRepeat ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -219,8 +219,7 @@ export default function ChangePasswordPage() {
           <button
             type="submit"
             disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition disabled:opacity-60"
-            style={{ backgroundColor: "#1a3d2b" }}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent py-3 text-sm font-semibold text-white transition hover:bg-accent-dark disabled:opacity-60"
           >
             {loading ? (
               <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">

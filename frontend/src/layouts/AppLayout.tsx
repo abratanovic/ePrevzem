@@ -8,7 +8,7 @@ export default function AppLayout() {
       <Sidebar />
       <div className="flex flex-1 flex-col pl-20">
         <Topbar />
-        <main className="mt-[72px] flex-1 overflow-y-auto bg-[#f5f0e8]">
+        <main className="mt-[72px] flex-1 overflow-y-auto bg-surface">
           <Outlet />
         </main>
       </div>

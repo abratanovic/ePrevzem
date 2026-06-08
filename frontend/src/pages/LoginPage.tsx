@@ -79,7 +79,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="ana.kovac@email.si"
-                className={`w-full rounded-xl border bg-white py-3 pl-10 pr-4 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:ring-2 ${emailError ? "border-red-400 focus:ring-red-200" : "border-slate-200 focus:border-[#1a3d2b] focus:ring-[#1a3d2b]/10"}`}
+                className={`w-full rounded-xl border bg-white py-3 pl-10 pr-4 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:ring-2 ${emailError ? "border-red-400 focus:ring-red-200" : "border-slate-200 focus:border-accent focus:ring-accent/10"}`}
               />
             </div>
             {emailError && <p className="text-xs text-red-500">{emailError}</p>}
@@ -89,7 +89,7 @@ export default function LoginPage() {
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label htmlFor="password" className="block text-sm font-medium text-slate-700">Geslo</label>
-              <a href="#" className="text-xs font-medium text-[#1a3d2b] hover:underline">Pozabljeno geslo?</a>
+              <a href="#" className="text-xs font-medium text-accent hover:underline">Pozabljeno geslo?</a>
             </div>
             <div className="relative">
               <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -100,7 +100,7 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className={`w-full rounded-xl border bg-white py-3 pl-10 pr-10 text-sm text-slate-900 placeholder-slate-300 outline-none transition focus:ring-2 ${passwordError ? "border-red-400 focus:ring-red-200" : "border-slate-200 focus:border-[#1a3d2b] focus:ring-[#1a3d2b]/10"}`}
+                className={`w-full rounded-xl border bg-white py-3 pl-10 pr-10 text-sm text-slate-900 placeholder-slate-300 outline-none transition focus:ring-2 ${passwordError ? "border-red-400 focus:ring-red-200" : "border-slate-200 focus:border-accent focus:ring-accent/10"}`}
               />
               <button
                 type="button"
@@ -120,8 +120,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition disabled:opacity-60"
-            style={{ backgroundColor: "#1a3d2b" }}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent py-3 text-sm font-semibold text-white transition hover:bg-accent-dark disabled:opacity-60"
           >
             {loading ? (
               <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
