@@ -427,13 +427,9 @@ export default function AuditLogPage() {
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
               <ClipboardList size={21} strokeWidth={1.8} />
             </div>
-            <h2 className="text-xl font-bold text-slate-900">Revizijska sled</h2>
-            <p className="mt-1 max-w-2xl text-sm text-slate-500">
-              Pregled zabeleženih sprememb, prevzemov, paketomatov in uporabniških dogodkov v vaši organizaciji.
-            </p>
           </div>
           <button
             type="button"

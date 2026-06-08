@@ -279,11 +279,7 @@ export default function OrganizationMembersPage() {
 
   return (
     <div className="space-y-5 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900">Organizacija</h2>
-          <p className="text-sm text-slate-500">Upravljanje zaposlenih.</p>
-        </div>
+      <div className="flex justify-end">
         <button
           onClick={openAdd}
           className="flex items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-dark"

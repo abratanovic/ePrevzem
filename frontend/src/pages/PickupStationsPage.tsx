@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Eye, MapPin, Package, Pencil, Plus, Warehouse } from "lucide-react";
+import { Eye, MapPin, Package, Pencil, Warehouse } from "lucide-react";
 import type { OrganizationPickupStation } from "../types/stations";
 import { stationService } from "../services/stations/stationService";
 import { formatCoordinates, formatStationAddress, formatStationDate } from "../components/stations/stationFormatters";
@@ -45,17 +45,6 @@ export default function PickupStationsPage() {
 
   return (
     <div className="space-y-5 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900">Upravljanje paketomatov</h2>
-          <p className="text-sm text-slate-500">Pregled lokacij in predalčkov vaše organizacije.</p>
-        </div>
-        <Link to="/paketniki/dodaj" className="flex items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-dark">
-          <Plus size={16} strokeWidth={2.5} />
-          Dodaj paketomat
-        </Link>
-      </div>
-
       <div className="grid grid-cols-3 gap-4">
         <StatCard label="Aktivni paketomati" value={stations?.length ?? 0} icon={<Warehouse size={21} />} />
         <StatCard label="Vsi predalčki" value={totalLockers} icon={<Package size={21} />} />
