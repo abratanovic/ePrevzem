@@ -153,6 +153,17 @@ export default function LandingPage() {
 
           {/* Right side */}
           <div className="flex items-center gap-3">
+            <button
+              onClick={handleRegister}
+              className="hidden items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-dark sm:flex"
+            >
+              <img
+                src={sitrustLogo}
+                alt="SI-PASS"
+                className="h-4 w-4 object-contain"
+              />
+              Registriraj se s SI-PASS
+            </button>
             <div className="hidden sm:block">
               <LoginDropdown variant="navbar" />
             </div>
@@ -205,8 +216,8 @@ export default function LandingPage() {
             </h1>
 
             <p className="mt-5 text-base leading-8 text-slate-600 sm:text-lg">
-              Organizacija odloži dokument v zaklenjeni predalček. Vi se ob
-              prevzemu identificirate s telefonom in predalček se odpre.
+              Organizacija odloži vaš dokument v zaklenjeni predalček. Ko
+              pridete, se identificirate s telefonom — predalček se odpre sam.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3">
@@ -222,6 +233,28 @@ export default function LandingPage() {
                 Registriraj se s SI-PASS
               </button>
               <LoginDropdown variant="hero" />
+            </div>
+
+            {/* Who is this for */}
+            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-accent/15 bg-white/70 px-4 py-3">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-accent">
+                  <Package size={12} /> Jaz prevzemam dokument
+                </div>
+                <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                  Čakate pogodbo, osebni dokument ali uradni dopis? Enkrat se
+                  registrirate z SI-PASS, potem je vse samodejno.
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white/70 px-4 py-3">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <Building2 size={12} /> Delam v organizaciji
+                </div>
+                <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                  Vaša organizacija prek ePrevzem dostavlja dokumente strankam?
+                  Prijavite se kot zaposleni ali skrbnik.
+                </p>
+              </div>
             </div>
 
             <div className="mt-7 flex flex-wrap gap-5">
@@ -278,13 +311,16 @@ export default function LandingPage() {
               </div>
               <div className="space-y-4 text-sm leading-relaxed text-slate-600">
                 <p>
-                  Nekateri dokumenti morajo biti izročeni osebno. ePrevzem to
-                  omogoči brez čakanja na okencu in brez omejenega delovnega
-                  časa.
+                  V Evropi — in pri nas — zakon za določene uradne dokumente
+                  zahteva osebno izročitev. Osebne izkaznice, sodna pisma,
+                  overjena potrdila in podobni dokumenti ne smejo biti poslani
+                  po navadni pošti: izročeni morajo biti točno določeni osebi.
                 </p>
                 <p>
-                  Organizacija dokument odloži v pametni paketnik, sistem pa
-                  preveri, da ga lahko odpre samo prava oseba.
+                  ePrevzem to reši. Organizacija dokument odloži v pametni
+                  paketnik, sistem pa zagotovi, da ga lahko odpre samo prava
+                  oseba — z digitalno potrjeno identiteto. Brez okenc, brez
+                  vrst, brez omejenega delovnega časa.
                 </p>
               </div>
             </div>
@@ -304,22 +340,22 @@ export default function LandingPage() {
                 {
                   num: "1",
                   title: "Organizacija odloži dokument",
-                  desc: "Uslužbenec dokument dodeli točno določenemu prejemniku.",
+                  desc: "Uslužbenec vstavi dokument v paketnik in ga dodeli točno določenemu prejemniku po imenu in priimku.",
                 },
                 {
                   num: "2",
                   title: "Registracija z uradno identiteto",
-                  desc: "Prejemnik se enkrat registrira prek SI-PASS ali eOsebne.",
+                  desc: "Prejemnik se enkrat registrira z eOsebno izkaznico ali prek SI-PASS — državno potrjenim načinom identifikacije. Sistem ve, kdo ste.",
                 },
                 {
                   num: "3",
                   title: "Aktivacija naprave",
-                  desc: "Aktivacijska koda poveže mobilno napravo z računom.",
+                  desc: "Po registraciji prejmete kodo, s katero aktivirate svojo mobilno napravo. Samo ta naprava je vezana na vaš račun — nobena druga ne more dostopati.",
                 },
                 {
                   num: "4",
                   title: "Biometrija ali PIN ob vsakem prevzemu",
-                  desc: "Pred odpiranjem predalčka aplikacija zahteva potrditev.",
+                  desc: "Ko pridete po dokument, aplikacija zahteva potrditev z prstnim odtisom, Face ID ali PIN-om. Šele nato se predalček odpre.",
                 },
               ].map(({ num, title, desc }) => (
                 <div
@@ -361,19 +397,19 @@ export default function LandingPage() {
                 icon: <LogOut size={20} className="text-accent" />,
                 num: "01",
                 title: "Prijava",
-                desc: "Prijavite se in preverite čakajoče prevzeme.",
+                desc: "Odprite ePrevzem in se prijavite s svojim računom SI-PASS. Vaši čakajoči prevzemi so takoj vidni.",
               },
               {
                 icon: <Bell size={20} className="text-accent" />,
                 num: "02",
                 title: "Obvestilo",
-                desc: "Prejmete lokacijo paketnika in rok prevzema.",
+                desc: "Ko organizacija odloži dokument, dobite sporočilo z naslovom paketnika in rokom, do kdaj ga morate prevzeti.",
               },
               {
                 icon: <Lock size={20} className="text-accent" />,
                 num: "03",
                 title: "Prevzem",
-                desc: "Na telefonu potrdite identiteto in odprete predalček.",
+                desc: "Pridete do paketnika, na telefonu potrdite svojo identiteto in predalček se odpre. Vzamete dokument — in to je to.",
               },
             ].map(({ icon, num, title, desc }) => (
               <div
