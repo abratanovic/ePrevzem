@@ -48,8 +48,8 @@ export default function LockerOccupancyPanel() {
   }, []);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="px-5 pt-5 pb-3">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-100 px-5 py-4">
         <h2 className="text-lg font-bold text-slate-900">Zasedenost paketnikov</h2>
         <p className="text-xs text-slate-400">
           {stations ? `${stations.length} lokacije · ${stations.reduce((s, l) => s + l.total, 0)} predalčkov` : " "}

@@ -18,8 +18,7 @@ export default function AuthLayout({ leftHeadline, leftSubtitle, leftBullets, ch
     <div className="flex min-h-screen">
       {/* Left panel */}
       <div
-        className="relative hidden flex-col justify-between overflow-hidden px-12 py-10 lg:flex lg:w-[44%]"
-        style={{ backgroundColor: "#1a3d2b" }}
+        className="relative hidden flex-col justify-between overflow-hidden bg-accent px-12 py-10 lg:flex lg:w-[44%]"
       >
         {/* Decorative circle */}
         <div
@@ -63,9 +62,9 @@ export default function AuthLayout({ leftHeadline, leftSubtitle, leftBullets, ch
       </div>
 
       {/* Right panel */}
-      <div className="flex flex-1 flex-col bg-[#f5f4f0]">
+      <div className="flex flex-1 flex-col bg-surface">
         {/* Mobile logo */}
-        <div className="flex items-center gap-2 px-6 py-5 lg:hidden" style={{ backgroundColor: "#1a3d2b" }}>
+        <div className="flex items-center gap-2 bg-accent px-6 py-5 lg:hidden">
           <img src={sloveniaBadge} alt="Slovenija" className="h-8 w-8 object-contain" />
           <span className="text-base font-bold text-white">ePrevzem</span>
         </div>

@@ -5,7 +5,7 @@ import { useAuth } from "../contexts/useAuth";
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | null | undefined }) {
   return (
     <div className="flex items-start gap-4 py-4 border-b border-slate-100 last:border-0">
-      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f5f0e8] text-[#1a3d2b]">
+      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface text-accent">
         {icon}
       </div>
       <div className="min-w-0">
@@ -37,14 +37,15 @@ export default function ProfilePage() {
       <div className="w-full max-w-2xl space-y-5">
         <Link
           to="/dashboard"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
           aria-label="Nazaj na nadzorno ploščo"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={16} />
+          Nazaj na nadzorno ploščo
         </Link>
 
         {/* Header card */}
-        <div className="rounded-2xl bg-[#1a3d2b] px-8 py-8 text-white">
+        <div className="rounded-2xl bg-accent px-8 py-8 text-white">
           <div className="flex items-center gap-5">
             <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white/10 text-xl font-bold text-white ring-2 ring-white/20">
               {initials}
@@ -86,7 +87,7 @@ export default function ProfilePage() {
           </p>
           <div className="flex items-center justify-between py-4">
             <div className="flex items-center gap-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f5f0e8] text-[#1a3d2b]">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface text-accent">
                 <KeyRound size={16} />
               </div>
               <div>
@@ -96,7 +97,7 @@ export default function ProfilePage() {
             </div>
             <a
               href="/sprememba-gesla"
-              className="rounded-xl border border-[#1a3d2b]/30 px-4 py-2 text-xs font-semibold text-[#1a3d2b] transition hover:bg-[#1a3d2b]/5"
+              className="rounded-xl border border-accent/30 px-4 py-2 text-xs font-semibold text-accent transition hover:bg-accent/5"
             >
               Spremenite geslo
             </a>

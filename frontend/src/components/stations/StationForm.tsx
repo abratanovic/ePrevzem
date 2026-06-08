@@ -184,7 +184,7 @@ export default function StationForm({
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-5">
           <h2 className="text-lg font-bold text-slate-900">Osnovni podatki</h2>
-          <p className="text-sm text-slate-500">Paketomat in njegovi predalčki so že registrirani. Vnesite identifikacijsko številko fizičnega paketomata, ki ga želite povezati z organizacijo.</p>
+          <p className="text-sm text-slate-500">Vnesite identifikacijsko številko paketomata.</p>
         </div>
         <Field
           id="serialNumber"
@@ -201,7 +201,7 @@ export default function StationForm({
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-bold text-slate-900">Lokacija paketomata</h2>
-            <p className="text-sm text-slate-500">Vnesite naslov in natančni koordinati lokacije.</p>
+            <p className="text-sm text-slate-500">Dodajte naslov in natančno lokacijo.</p>
           </div>
           <button
             type="button"
@@ -228,7 +228,7 @@ export default function StationForm({
         <div className="mt-5 space-y-3">
           <div>
             <h3 className="text-sm font-semibold text-slate-800">Natančna lokacija paketomata</h3>
-            <p className="text-xs text-slate-500">Kliknite na zemljevid ali premaknite marker do vhoda oziroma mesta, kjer je paketomat postavljen.</p>
+            <p className="text-xs text-slate-500">Kliknite na zemljevid ali premaknite marker.</p>
           </div>
           <StationMapPicker
             coordinates={values.latitude === "" || values.longitude === ""

@@ -75,7 +75,7 @@ export default function ProvisioningCodePage() {
     : null;
 
   return (
-    <div className="min-h-screen bg-[#f5f0e8]">
+    <div className="min-h-screen bg-surface">
       <nav className="sticky top-0 z-40 border-b border-slate-100 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <button onClick={() => navigate("/")} className="flex items-center gap-3">
@@ -84,13 +84,13 @@ export default function ProvisioningCodePage() {
               <p className="hidden text-[9px] font-semibold uppercase tracking-widest text-slate-400 sm:block">
                 Republika Slovenija
               </p>
-              <p className="text-base font-bold text-[#1a3d2b]">ePrevzem</p>
+              <p className="text-base font-bold text-accent">ePrevzem</p>
             </div>
           </button>
 
           <button
             onClick={() => navigate("/")}
-            className="flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-[#1a3d2b]"
+            className="flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-accent"
           >
             <ArrowLeft size={15} />
             Domača stran
@@ -101,7 +101,7 @@ export default function ProvisioningCodePage() {
       <section className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
         {status === "loading" && (
           <div className="flex flex-col items-center gap-4 py-24 text-center">
-            <Loader2 size={40} className="animate-spin text-[#1a3d2b]" />
+            <Loader2 size={40} className="animate-spin text-accent" />
             <p className="text-base font-medium text-slate-600">Pripravljamo vašo aktivacijsko kodo…</p>
           </div>
         )}
@@ -118,7 +118,7 @@ export default function ProvisioningCodePage() {
             <button
               type="button"
               onClick={handleRetry}
-              className="rounded-xl bg-[#1a3d2b] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#153122]"
+              className="rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent-dark"
             >
               Poskusi znova
             </button>
@@ -128,7 +128,7 @@ export default function ProvisioningCodePage() {
         {status === "success" && data && (
           <>
             <div className="mb-8 text-center">
-              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#1a3d2b]">
+              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-accent">
                 <CheckCircle size={32} className="text-white" />
               </div>
               <h1 className="text-3xl font-bold text-slate-900">Registracija uspešna!</h1>
@@ -142,7 +142,7 @@ export default function ProvisioningCodePage() {
             </div>
 
             <div className="mb-6 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-              <div className="bg-[#1a3d2b] px-6 py-4">
+              <div className="bg-accent px-6 py-4">
                 <p className="text-xs font-semibold uppercase tracking-widest text-white/60">
                   Aktivacijska koda
                 </p>
@@ -163,7 +163,7 @@ export default function ProvisioningCodePage() {
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 transition hover:bg-slate-50"
                   >
                     {copied ? (
-                      <Check size={18} className="text-[#1a3d2b]" />
+                      <Check size={18} className="text-accent" />
                     ) : (
                       <Copy size={18} className="text-slate-400" />
                     )}
@@ -183,7 +183,7 @@ export default function ProvisioningCodePage() {
               </div>
             </div>
 
-            <div className="mb-6 rounded-2xl border border-[#1a3d2b]/10 bg-white px-6 py-5">
+            <div className="mb-6 rounded-2xl border border-accent/10 bg-white px-6 py-5">
               <h2 className="text-sm font-bold text-slate-900">Kaj je aktivacijska koda?</h2>
               <p className="mt-2 text-sm leading-relaxed text-slate-600">
                 Aktivacijska koda je varnostna koda, s katero povežete svojo mobilno napravo z
@@ -195,14 +195,14 @@ export default function ProvisioningCodePage() {
 
             <div className="rounded-2xl bg-white px-6 py-6 shadow-sm ring-1 ring-slate-200">
               <div className="mb-5 flex items-center gap-2">
-                <Smartphone size={18} className="text-[#1a3d2b]" />
+                <Smartphone size={18} className="text-accent" />
                 <h2 className="text-sm font-bold text-slate-900">Kako aktivirate napravo?</h2>
               </div>
 
               <div className="space-y-5">
                 {steps.map(({ num, title, desc }) => (
                   <div key={num} className="flex gap-4">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#1a3d2b] text-xs font-bold text-white">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-white">
                       {num}
                     </div>
                     <div>
@@ -218,7 +218,7 @@ export default function ProvisioningCodePage() {
               <button
                 type="button"
                 onClick={() => navigate("/")}
-                className="rounded-xl bg-[#1a3d2b] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#153122]"
+                className="rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent-dark"
               >
                 Pojdi na domačo stran
               </button>

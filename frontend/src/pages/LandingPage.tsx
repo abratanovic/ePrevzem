@@ -52,7 +52,7 @@ function LoginDropdown({ variant }: { variant: "navbar" | "hero" }) {
         onClick={handleLoginClick}
         className={
           isNavbar
-            ? "flex items-center gap-2 rounded-xl border border-[#1a3d2b] px-4 py-2.5 text-sm font-semibold text-[#1a3d2b] transition hover:bg-[#1a3d2b]/5"
+            ? "flex items-center gap-2 rounded-xl border border-accent px-4 py-2.5 text-sm font-semibold text-accent transition hover:bg-accent/5"
             : "flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
         }
       >
@@ -119,7 +119,7 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f5f0e8] text-slate-900">
+    <div className="min-h-screen bg-surface text-slate-900">
       {/* Navbar */}
       <nav className="sticky top-0 z-40 border-b border-slate-100 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
@@ -134,7 +134,7 @@ export default function LandingPage() {
               <p className="hidden text-[9px] font-semibold uppercase tracking-widest text-slate-400 sm:block">
                 Republika Slovenija
               </p>
-              <p className="text-base font-bold text-[#1a3d2b]">ePrevzem</p>
+              <p className="text-base font-bold text-accent">ePrevzem</p>
             </div>
           </div>
 
@@ -144,7 +144,7 @@ export default function LandingPage() {
               <a
                 key={l.href}
                 href={l.href}
-                className="text-sm font-medium text-slate-600 transition hover:text-[#1a3d2b]"
+                className="text-sm font-medium text-slate-600 transition hover:text-accent"
               >
                 {l.label}
               </a>
@@ -155,7 +155,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={handleRegister}
-              className="hidden items-center gap-2 rounded-xl bg-[#1a3d2b] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#153122] sm:flex"
+              className="hidden items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-dark sm:flex"
             >
               <img
                 src={sitrustLogo}
@@ -186,7 +186,7 @@ export default function LandingPage() {
                   key={l.href}
                   href={l.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-[#1a3d2b]"
+                  className="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-accent"
                 >
                   {l.label}
                 </a>
@@ -207,7 +207,7 @@ export default function LandingPage() {
         <div className="grid gap-10 lg:grid-cols-2 lg:items-center lg:gap-12">
           {/* Left */}
           <div>
-            <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#1a3d2b]/20 bg-white px-4 py-2 text-sm font-semibold text-[#1a3d2b] shadow-sm">
+            <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-accent/20 bg-white px-4 py-2 text-sm font-semibold text-accent shadow-sm">
               <ShieldCheck size={14} /> Zanesljiv prevzem dokumentov
             </span>
 
@@ -223,7 +223,7 @@ export default function LandingPage() {
             <div className="mt-7 flex flex-wrap gap-3">
               <button
                 onClick={handleRegister}
-                className="flex items-center gap-2 rounded-xl bg-[#1a3d2b] px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-[#153122]"
+                className="flex items-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-accent-dark"
               >
                 <img
                   src={sitrustLogo}
@@ -237,8 +237,8 @@ export default function LandingPage() {
 
             {/* Who is this for */}
             <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-[#1a3d2b]/15 bg-white/70 px-4 py-3">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[#1a3d2b]">
+              <div className="rounded-xl border border-accent/15 bg-white/70 px-4 py-3">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-accent">
                   <Package size={12} /> Jaz prevzemam dokument
                 </div>
                 <p className="mt-1 text-xs leading-relaxed text-slate-500">
@@ -259,14 +259,14 @@ export default function LandingPage() {
 
             <div className="mt-7 flex flex-wrap gap-5">
               <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
-                <Lock size={14} className="text-[#1a3d2b]" /> Zanesljiva dostava
+                <Lock size={14} className="text-accent" /> Zanesljiva dostava
               </div>
               <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
-                <Shield size={14} className="text-[#1a3d2b]" /> Preverjena
+                <Shield size={14} className="text-accent" /> Preverjena
                 identiteta
               </div>
               <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
-                <Building2 size={14} className="text-[#1a3d2b]" /> Za vse
+                <Building2 size={14} className="text-accent" /> Za vse
                 organizacije
               </div>
             </div>
@@ -275,10 +275,10 @@ export default function LandingPage() {
           {/* Right — decorative, desktop only */}
           <div className="hidden lg:flex lg:justify-center">
             <div className="relative flex h-96 w-96 items-center justify-center">
-              <div className="absolute inset-0 rounded-3xl bg-[#dde9e3]" />
-              <div className="absolute h-56 w-56 rounded-full border border-[#1a3d2b]/10" />
-              <div className="absolute h-72 w-72 rounded-full border border-[#1a3d2b]/05" />
-              <div className="relative z-10 flex h-24 w-24 items-center justify-center rounded-full bg-[#1a3d2b] shadow-2xl">
+              <div className="absolute inset-0 rounded-3xl bg-accent/10" />
+              <div className="absolute h-56 w-56 rounded-full border border-accent/10" />
+              <div className="absolute h-72 w-72 rounded-full border border-accent/5" />
+              <div className="relative z-10 flex h-24 w-24 items-center justify-center rounded-full bg-accent shadow-2xl">
                 <ShieldCheck size={40} className="text-white" />
               </div>
               <div className="absolute left-8 top-10 z-10 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-lg">
@@ -298,10 +298,10 @@ export default function LandingPage() {
       {/* Why ePrevzem */}
       <section className="bg-white pb-8 pt-12">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="rounded-2xl bg-[#f5f0e8] px-6 py-8 sm:px-8 sm:py-10 md:px-12">
+          <div className="rounded-2xl bg-surface px-6 py-8 sm:px-8 sm:py-10 md:px-12">
             <div className="grid gap-6 md:grid-cols-2 md:items-center md:gap-8">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-[#1a3d2b]">
+                <p className="text-xs font-semibold uppercase tracking-widest text-accent">
                   Zakaj ePrevzem?
                 </p>
                 <h2 className="mt-3 text-xl font-bold leading-snug text-slate-900 sm:text-2xl">
@@ -328,7 +328,7 @@ export default function LandingPage() {
 
           {/* How we guarantee the right person */}
           <div className="mt-10">
-            <p className="text-xs font-semibold uppercase tracking-widest text-[#1a3d2b]">
+            <p className="text-xs font-semibold uppercase tracking-widest text-accent">
               Kako zagotovimo, da dokument dobi prava oseba?
             </p>
             <p className="mt-2 text-sm text-slate-500">
@@ -360,9 +360,9 @@ export default function LandingPage() {
               ].map(({ num, title, desc }) => (
                 <div
                   key={num}
-                  className="relative rounded-xl border border-[#1a3d2b]/10 bg-white px-5 py-5"
+                  className="relative rounded-xl border border-accent/10 bg-white px-5 py-5"
                 >
-                  <div className="mb-3 flex h-7 w-7 items-center justify-center rounded-full bg-[#1a3d2b] text-xs font-bold text-white">
+                  <div className="mb-3 flex h-7 w-7 items-center justify-center rounded-full bg-accent text-xs font-bold text-white">
                     {num}
                   </div>
                   <h3 className="text-sm font-bold text-slate-900">{title}</h3>
@@ -394,19 +394,19 @@ export default function LandingPage() {
           <div className="mt-8 grid gap-4 sm:gap-6 md:grid-cols-3">
             {[
               {
-                icon: <LogOut size={20} className="text-[#1a3d2b]" />,
+                icon: <LogOut size={20} className="text-accent" />,
                 num: "01",
                 title: "Prijava",
                 desc: "Odprite ePrevzem in se prijavite s svojim računom SI-PASS. Vaši čakajoči prevzemi so takoj vidni.",
               },
               {
-                icon: <Bell size={20} className="text-[#1a3d2b]" />,
+                icon: <Bell size={20} className="text-accent" />,
                 num: "02",
                 title: "Obvestilo",
                 desc: "Ko organizacija odloži dokument, dobite sporočilo z naslovom paketnika in rokom, do kdaj ga morate prevzeti.",
               },
               {
-                icon: <Lock size={20} className="text-[#1a3d2b]" />,
+                icon: <Lock size={20} className="text-accent" />,
                 num: "03",
                 title: "Prevzem",
                 desc: "Pridete do paketnika, na telefonu potrdite svojo identiteto in predalček se odpre. Vzamete dokument — in to je to.",
@@ -417,7 +417,7 @@ export default function LandingPage() {
                 className="rounded-2xl border border-slate-100 p-5 shadow-sm sm:p-6"
               >
                 <div className="flex items-start justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f5f0e8]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface">
                     {icon}
                   </div>
                   <span className="text-2xl font-bold text-slate-200">
@@ -437,7 +437,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer id="podpora" className="bg-[#1a3d2b] text-white">
+      <footer id="podpora" className="bg-accent text-white">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-14">
           <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4 md:gap-10">
             <div className="sm:col-span-2 md:col-span-1">

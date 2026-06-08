@@ -15,11 +15,6 @@ export default function OrganizationPage() {
 
   return (
     <div className="space-y-5 p-6">
-      <div>
-        <h2 className="text-xl font-bold text-slate-900">Organizacija</h2>
-        <p className="text-sm text-slate-500">Pregled in upravljanje vaše organizacije.</p>
-      </div>
-
       <div className="flex gap-2 border-b border-slate-200 pb-1">
         <Link
           to="/organizacija"
