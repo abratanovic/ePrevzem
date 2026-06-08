@@ -29,6 +29,9 @@ services:
       SiTrust__Secret: ${SITRUST_JWT_SECRET}
       Identity__BootstrapAdmin__Username: ${BOOTSTRAP_ADMIN_USERNAME}
       Identity__BootstrapAdmin__InitialPassword: ${BOOTSTRAP_ADMIN_PASSWORD}
+      Direct4Me__BaseUrl: ${D4ME_BASE_URL}
+      Direct4Me__ApiKey: ${D4ME_API_KEY}
+      CvIdentity__BaseUrl: http://cv-identity:8000
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -67,6 +70,20 @@ services:
       - 3000:80
     depends_on:
       - backend
+
+  cv-identity:
+    image: edvbec/eprevzem-cv-identity:latest
+    build:
+      context: cv-identity
+      dockerfile: Dockerfile
+    ports:
+      - 8000:8000
+    environment:
+      CV_IDENTITY_MODELS_DIR: /app/models
+      CV_IDENTITY_CAPTURES_DIR: /app/captures
+    volumes:
+      - ./cv-identity/app/models:/app/models:ro
+      - ./cv-identity/captures:/app/captures
 
 volumes:
   pgdata:

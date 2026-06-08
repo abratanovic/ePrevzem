@@ -55,6 +55,8 @@ class FakePickupRepository : PickupRepository {
             locationName = "BTC City, Ljubljana",
             locationAddress = "Šmartinska cesta 152, 1000 Ljubljana",
             lockerNumber = "352",
+            latitude = 46.0669,
+            longitude = 14.5419,
         ),
         "2" to PickupDetails(
             id = "2",
@@ -70,6 +72,8 @@ class FakePickupRepository : PickupRepository {
             locationName = "Kongresni trg, Ljubljana",
             locationAddress = "Kongresni trg 12, 1000 Ljubljana",
             lockerNumber = "Paketnik #7",
+            latitude = 46.0498,
+            longitude = 14.5040,
         ),
         "3" to PickupDetails(
             id = "3",
@@ -85,6 +89,8 @@ class FakePickupRepository : PickupRepository {
             locationName = "Magistrat, Ljubljana",
             locationAddress = "Mestni trg 1, 1000 Ljubljana",
             lockerNumber = "Paketnik #3",
+            latitude = 46.0511,
+            longitude = 14.5065,
         ),
     )
 
@@ -96,5 +102,10 @@ class FakePickupRepository : PickupRepository {
     override suspend fun getPickupDetails(id: String): PickupDetails? {
         delay(600)
         return details[id]
+    }
+
+    override suspend fun confirmPickup(pickupId: String): Result<Unit> {
+        delay(300)
+        return Result.success(Unit)
     }
 }

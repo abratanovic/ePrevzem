@@ -1,17 +1,28 @@
 name: sitrust-backend-build
 "on":
   pull_request:
-    paths:
-      - "sitrust-mock/backend/**"
-      - "sitrust-mock/sitrust-mock.sln"
-      - ".github/workflows/sitrust-backend.yml"
+permissions:
+  contents: read
+  pull-requests: read
 jobs:
   build:
+    name: sitrust-backend-build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            sitrust-backend:
+              - "sitrust-mock/backend/**"
+              - "sitrust-mock/sitrust-mock.sln"
+              - ".github/workflows/sitrust-backend.yml"
       - uses: actions/setup-dotnet@v4
+        if: steps.changes.outputs.sitrust-backend == 'true'
         with:
           dotnet-version: "9.0.x"
-      - run: dotnet build sitrust-mock/sitrust-mock.sln
-      - run: dotnet test sitrust-mock/backend/SiTrustMock.Tests
+      - if: steps.changes.outputs.sitrust-backend == 'true'
+        run: dotnet build sitrust-mock/sitrust-mock.sln
+      - if: steps.changes.outputs.sitrust-backend == 'true'
+        run: dotnet test sitrust-mock/backend/SiTrustMock.Tests

@@ -11,11 +11,14 @@ import androidx.compose.ui.Modifier
 import kotlinx.coroutines.launch
 import si.mentis.eprevzemmobile.AppContainer
 import si.mentis.eprevzemmobile.core.audio.TokenAudioPlayer
-import si.mentis.eprevzemmobile.core.camera.CameraPermissionStatus
-import si.mentis.eprevzemmobile.core.camera.rememberCameraPermissionState
 import si.mentis.eprevzemmobile.data.locker.LockerRepository
 import si.mentis.eprevzemmobile.data.locker.OpenBoxResult
 
+/**
+ * Citizen locker-open flow. The backend resolves the box from the pickup and
+ * returns the audio token — there is no QR scan. On entry the route opens the
+ * locker, plays the token, and reports the unlock time; failures offer a retry.
+ */
 @Composable
 fun UnlockRoute(
     pickupId: String,
@@ -32,35 +35,16 @@ fun UnlockRoute(
             UnlockState(
                 pickupId = pickupId,
                 expectedLockerNumber = expectedLockerNumber,
-                phase = UnlockPhase.RequestingPermission,
+                phase = UnlockPhase.Unlocking,
             )
         )
     }
-    val permission = rememberCameraPermissionState()
     val scope = rememberCoroutineScope()
-    var lastScannedBoxId by remember { mutableStateOf<Long?>(null) }
 
-    // Drive permission flow while the UI is in RequestingPermission.
-    LaunchedEffect(permission.status, state.phase) {
-        if (state.phase != UnlockPhase.RequestingPermission) return@LaunchedEffect
-        when (permission.status) {
-            CameraPermissionStatus.Granted -> {
-                state = state.copy(phase = UnlockPhase.Scanning)
-            }
-            CameraPermissionStatus.Denied -> {
-                state = state.copy(phase = UnlockPhase.ScanError(ScanErrorReason.CameraDenied))
-            }
-            CameraPermissionStatus.Unknown -> {
-                permission.request()
-            }
-        }
-    }
-
-    fun startUnlock(boxId: Long) {
-        lastScannedBoxId = boxId
+    fun performOpen() {
         state = state.copy(phase = UnlockPhase.Unlocking)
         scope.launch {
-            when (val result = lockerRepository.openBox(boxId)) {
+            when (val result = lockerRepository.openForPickup(pickupId)) {
                 is OpenBoxResult.Success -> {
                     try {
                         audioPlayer.play(result.tokenWavBytes)
@@ -89,6 +73,10 @@ fun UnlockRoute(
         }
     }
 
+    LaunchedEffect(pickupId) {
+        performOpen()
+    }
+
     UnlockScreen(
         state = state,
         modifier = modifier,
@@ -97,44 +85,20 @@ fun UnlockRoute(
                 UnlockEvent.Back -> {
                     if (state.phase != UnlockPhase.Unlocking) onBack()
                 }
-                UnlockEvent.RequestPermission -> permission.request()
-                UnlockEvent.PermissionGranted -> state = state.copy(phase = UnlockPhase.Scanning)
-                UnlockEvent.PermissionDenied ->
-                    state = state.copy(phase = UnlockPhase.ScanError(ScanErrorReason.CameraDenied))
-                UnlockEvent.OpenSettings -> permission.openAppSettings()
-                is UnlockEvent.QrDetected -> {
-                    if (state.phase !is UnlockPhase.Scanning) return@UnlockScreen
-                    val scanned = event.raw.trim().toLongOrNull()
-                    val expected = parseLocker(state.expectedLockerNumber)
-                    state = when {
-                        scanned == null ->
-                            state.copy(phase = UnlockPhase.ScanError(ScanErrorReason.InvalidPayload))
-                        expected != null && scanned != expected ->
-                            state.copy(phase = UnlockPhase.ScanError(ScanErrorReason.WrongLocker))
-                        else -> {
-                            startUnlock(scanned)
-                            state
-                        }
-                    }
-                }
-                UnlockEvent.DismissScanError -> {
-                    state = state.copy(phase = UnlockPhase.Scanning)
-                }
                 UnlockEvent.Retry -> {
-                    val box = lastScannedBoxId
-                    if (box != null && state.attempt < UnlockState.MAX_ATTEMPTS) {
-                        startUnlock(box)
-                    }
+                    if (state.attempt < UnlockState.MAX_ATTEMPTS) performOpen()
                 }
                 UnlockEvent.ContactSupport -> onContactSupport()
+                // Scan-related events are unused in the backend-driven flow.
+                UnlockEvent.RequestPermission,
+                UnlockEvent.PermissionGranted,
+                UnlockEvent.PermissionDenied,
+                UnlockEvent.OpenSettings,
+                UnlockEvent.DismissScanError,
+                is UnlockEvent.QrDetected -> Unit
             }
         },
     )
-}
-
-internal fun parseLocker(raw: String): Long? {
-    val digits = raw.filter { it.isDigit() }
-    return digits.toLongOrNull()
 }
 
 internal expect fun nowHhMm(): String

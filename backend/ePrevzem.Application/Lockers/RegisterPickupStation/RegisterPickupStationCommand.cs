@@ -7,7 +7,9 @@ namespace ePrevzem.Application.Lockers.RegisterPickupStation;
 
 public sealed record RegisterPickupStationCommand(
     string SerialNumber,
-    IReadOnlyList<int> LockerNumbers) : IRequest<PickupStationResponse>;
+    IReadOnlyList<LockerRegistration> Lockers) : IRequest<PickupStationResponse>;
+
+public sealed record LockerRegistration(int Number, long BoxId);
 
 public sealed class RegisterPickupStationCommandHandler
     : IRequestHandler<RegisterPickupStationCommand, PickupStationResponse>
@@ -33,10 +35,11 @@ public sealed class RegisterPickupStationCommandHandler
         if (await _stationRepository.ExistsBySerialNumberAsync(command.SerialNumber, cancellationToken))
             throw new DuplicateSerialNumberException(command.SerialNumber);
 
-        var station = PickupStation.Create(PickupStationId.New(), command.SerialNumber, _clock.UtcNow);
+        var now = _clock.UtcNow;
+        var station = PickupStation.Create(PickupStationId.New(), command.SerialNumber, now);
 
-        foreach (var number in command.LockerNumbers)
-            station.AddLocker(LockerId.New(), number);
+        foreach (var locker in command.Lockers)
+            station.AddLocker(LockerId.New(), locker.Number, locker.BoxId, now);
 
         await _stationRepository.AddAsync(station, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

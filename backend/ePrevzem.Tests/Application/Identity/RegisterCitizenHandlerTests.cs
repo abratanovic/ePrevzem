@@ -125,8 +125,14 @@ public sealed class FakeCitizenUserRepo : ICitizenUserRepository
 
     public FakeCitizenUserRepo(CitizenUser? existing = null) => _existing = existing;
 
+    public Task<CitizenUser?> GetByIdAsync(CitizenUserId id, CancellationToken cancellationToken = default)
+        => Task.FromResult(_existing?.Id == id ? _existing : null);
+
     public Task<CitizenUser?> GetByEmsoAsync(string emso, CancellationToken cancellationToken = default)
         => Task.FromResult(_existing?.Emso == emso ? _existing : null);
+
+    public Task<CitizenUser?> GetByCitizenDeviceIdAsync(CitizenDeviceId deviceId, CancellationToken cancellationToken = default)
+        => Task.FromResult(_existing?.Devices.Any(d => d.Id == deviceId) == true ? _existing : null);
 
     public Task AddAsync(CitizenUser user, CancellationToken cancellationToken = default)
     {
@@ -138,6 +144,9 @@ public sealed class FakeCitizenUserRepo : ICitizenUserRepository
 public sealed class FakeCitizenActivationCodeRepo : ICitizenActivationCodeRepository
 {
     public List<CitizenActivationCode> Added { get; } = new();
+
+    public Task<CitizenActivationCode?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
+        => Task.FromResult(Added.FirstOrDefault(c => c.Code == code));
 
     public Task AddAsync(CitizenActivationCode code, CancellationToken cancellationToken = default)
     {

@@ -25,6 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import si.mentis.eprevzemmobile.core.designsystem.components.buttons.EPrimaryButton
+import si.mentis.eprevzemmobile.core.designsystem.components.buttons.ESecondaryButton
 import si.mentis.eprevzemmobile.core.designsystem.components.buttons.ETextButton
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.ESummaryCard
 import si.mentis.eprevzemmobile.core.designsystem.components.cards.EIconTint
@@ -49,6 +50,7 @@ private object WelcomeStrings {
         "Za uporabo aplikacije potrebujete registracijsko kodo, ki ste jo " +
             "prejeli ob registraciji na ePrevzem spletni strani."
     const val RegisterCta = "Registriraj napravo"
+    const val DocumentProvisionCta = "Registriraj z osebnim dokumentom"
     const val HelpLink = "Kaj je registracijska koda?"
     const val HelpTitle = "Kaj je registracijska koda?"
     const val HelpMessage =
@@ -71,7 +73,7 @@ fun WelcomeScreen(
 ) {
     EScaffold(
         modifier = modifier,
-        topBar = { ETopBar(variant = ETopBarVariant.Home, eyebrow = "Republika Slovenija", actionIcon = null, onAction = null) },
+        topBar = { ETopBar(variant = ETopBarVariant.Home, actionIcon = null, onAction = null) },
         bottomBar = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(EPrevzemTheme.spacing.sm),
@@ -88,6 +90,12 @@ fun WelcomeScreen(
                     icon = EPrevzemIcons.arrowRight(),
                     label = WelcomeStrings.RegisterCta,
                     onClick = { onEvent(WelcomeEvent.RegisterDeviceClicked) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                ESecondaryButton(
+                    icon = EPrevzemIcons.shield(),
+                    label = WelcomeStrings.DocumentProvisionCta,
+                    onClick = { onEvent(WelcomeEvent.DocumentProvisionClicked) },
                     modifier = Modifier.fillMaxWidth(),
                 )
                 ETextButton(
@@ -148,6 +156,7 @@ fun WelcomeScreen(
 @Composable
 fun WelcomeRoute(
     onRegisterDeviceClick: () -> Unit,
+    onDocumentProvisionClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var state by remember { mutableStateOf(WelcomeState()) }
@@ -157,6 +166,7 @@ fun WelcomeRoute(
         onEvent = { event ->
             when (event) {
                 WelcomeEvent.RegisterDeviceClicked -> onRegisterDeviceClick()
+                WelcomeEvent.DocumentProvisionClicked -> onDocumentProvisionClick()
                 WelcomeEvent.HelpClicked -> state = state.copy(isHelpVisible = true)
                 WelcomeEvent.HelpDismissed -> state = state.copy(isHelpVisible = false)
             }

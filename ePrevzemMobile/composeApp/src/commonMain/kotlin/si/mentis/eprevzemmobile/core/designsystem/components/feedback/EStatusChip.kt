@@ -35,7 +35,7 @@ fun EStatusChip(
         EPickupStatus.Expiring -> StatusStyle(colors.warningBg, colors.warning, EPrevzemIcons.clock(), "Poteče kmalu")
         EPickupStatus.PickedUp -> StatusStyle(colors.infoBg, colors.info, EPrevzemIcons.locker(), "Prevzeto")
         EPickupStatus.Expired -> StatusStyle(colors.errorBg, colors.error, EPrevzemIcons.blocked(), "Poteklo")
-        EPickupStatus.Draft -> StatusStyle(colors.surfaceMuted, colors.textSecondary, EPrevzemIcons.drafts(), "Osnutek")
+        EPickupStatus.Draft -> StatusStyle(colors.surfaceMuted, colors.textSecondary, EPrevzemIcons.drafts(), "V pripravi")
     }
 
     Row(

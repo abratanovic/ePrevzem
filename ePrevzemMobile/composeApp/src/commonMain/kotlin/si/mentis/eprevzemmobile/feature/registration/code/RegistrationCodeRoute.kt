@@ -8,11 +8,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import si.mentis.eprevzemmobile.AppContainer
+import si.mentis.eprevzemmobile.data.registration.NetworkException
 import si.mentis.eprevzemmobile.data.registration.RegistrationRepository
 
 private const val InvalidCodeTitle = "Koda ni veljavna ali je potekla"
 private const val InvalidCodeMessage =
     "Preverite vnos ali zahtevajte novo kodo pri svoji organizaciji."
+private const val NetworkErrorTitle = "Napaka pri povezavi"
+private const val NetworkErrorMessage =
+    "Preverite internetno povezavo in poskusite znova."
 
 @Composable
 fun RegistrationCodeRoute(
@@ -30,11 +34,16 @@ fun RegistrationCodeRoute(
                 state = state.copy(isLoading = false)
                 onCodeAccepted(code)
             }
-            .onFailure {
+            .onFailure { error ->
+                val (title, message) = if (error is NetworkException) {
+                    NetworkErrorTitle to NetworkErrorMessage
+                } else {
+                    InvalidCodeTitle to InvalidCodeMessage
+                }
                 state = state.copy(
                     isLoading = false,
-                    errorTitle = InvalidCodeTitle,
-                    errorMessage = InvalidCodeMessage,
+                    errorTitle = title,
+                    errorMessage = message,
                 )
             }
     }

@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Navigate, useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, Lock, User, LayoutDashboard, Users, ClipboardList } from "lucide-react";
 import AuthLayout from "../components/auth/AuthLayout";
 import { useAuth } from "../contexts/useAuth";
 
 export default function AdminLoginPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, user } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -41,6 +41,15 @@ export default function AdminLoginPage() {
       setLoading(false);
     }
   };
+
+  if (user) {
+    return (
+      <Navigate
+        to={user.mustChangePassword ? "/sprememba-gesla" : "/dashboard"}
+        replace
+      />
+    );
+  }
 
   return (
     <AuthLayout

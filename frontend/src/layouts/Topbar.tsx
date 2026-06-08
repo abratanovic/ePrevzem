@@ -6,6 +6,7 @@ const ROUTE_TITLES: Record<string, string> = {
   "/dashboard": "Nadzorna plošča",
   "/prevzemi": "Vsi prevzemi",
   "/prevzemi/dodaj": "Dodaj prevzem",
+  "/audit-log": "Revizijska sled",
   "/profil": "Moj profil",
   "/paketniki": "Paketomati",
   "/organizacija": "Organizacija",

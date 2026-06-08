@@ -1,31 +1,51 @@
 package si.mentis.eprevzemmobile
 
+import si.mentis.eprevzemmobile.data.api.ApiClient
+import si.mentis.eprevzemmobile.data.auth.AuthSession
+import si.mentis.eprevzemmobile.data.auth.DeviceSessionStore
+import si.mentis.eprevzemmobile.data.auth.PersistedSessionStore
+import si.mentis.eprevzemmobile.data.auth.SessionStore
+import si.mentis.eprevzemmobile.data.dashboard.DashboardRepository
+import si.mentis.eprevzemmobile.data.dashboard.HttpDashboardRepository
 import si.mentis.eprevzemmobile.data.delegation.DelegationRepository
 import si.mentis.eprevzemmobile.data.delegation.FakeDelegationRepository
-import si.mentis.eprevzemmobile.data.logevent.FakeLogEventRepository
+import si.mentis.eprevzemmobile.data.insertion.HttpInsertionRepository
+import si.mentis.eprevzemmobile.data.insertion.InsertionRepository
+import si.mentis.eprevzemmobile.data.logevent.HttpLogEventRepository
 import si.mentis.eprevzemmobile.data.logevent.LogEventRepository
-import si.mentis.eprevzemmobile.data.locker.Direct4MeLockerRepository
+import si.mentis.eprevzemmobile.data.locker.HttpLockerRepository
 import si.mentis.eprevzemmobile.data.locker.LockerRepository
-import si.mentis.eprevzemmobile.data.pickups.FakePickupRepository
+import si.mentis.eprevzemmobile.data.pickups.HttpPickupRepository
 import si.mentis.eprevzemmobile.data.pickups.PickupRepository
-import si.mentis.eprevzemmobile.data.registration.FakeRegistrationRepository
+import si.mentis.eprevzemmobile.data.identity.HttpIdentityVerificationRepository
+import si.mentis.eprevzemmobile.data.identity.IdentityVerificationRepository
+import si.mentis.eprevzemmobile.data.registration.HttpRegistrationRepository
 import si.mentis.eprevzemmobile.data.registration.RegistrationRepository
 import si.mentis.eprevzemmobile.data.security.AuthRepository
-import si.mentis.eprevzemmobile.data.security.FakeAuthRepository
+import si.mentis.eprevzemmobile.data.security.HttpAuthRepository
 import si.mentis.eprevzemmobile.data.security.LocalSecurityRepository
 import si.mentis.eprevzemmobile.data.security.SecurityRepository
 import si.mentis.eprevzemmobile.data.settings.LocalUserSettingsRepository
 import si.mentis.eprevzemmobile.data.settings.UserSettingsRepository
 
 object AppContainer {
-    val registrationRepository: RegistrationRepository = FakeRegistrationRepository()
-    val pickupRepository: PickupRepository = FakePickupRepository()
+    val deviceSessionStore = DeviceSessionStore()
+    val sessionStore: SessionStore = PersistedSessionStore()
+    private val apiClient = ApiClient(
+        sessionStore = deviceSessionStore,
+        activeAccountId = { (sessionStore.session.value as? AuthSession.Authenticated)?.user?.id },
+    )
+    val registrationRepository: RegistrationRepository = HttpRegistrationRepository(apiClient, deviceSessionStore)
+    val pickupRepository: PickupRepository = HttpPickupRepository(apiClient)
+    val dashboardRepository: DashboardRepository = HttpDashboardRepository(apiClient)
     val delegationRepository: DelegationRepository = FakeDelegationRepository()
-    val logEventRepository: LogEventRepository = FakeLogEventRepository()
+    val logEventRepository: LogEventRepository =
+        HttpLogEventRepository(apiClient) { sessionStore.activeProfile() }
     val securityRepository: SecurityRepository = LocalSecurityRepository()
     val userSettingsRepository: UserSettingsRepository = LocalUserSettingsRepository()
-    val authRepository: AuthRepository = FakeAuthRepository()
-    val lockerRepository: LockerRepository = Direct4MeLockerRepository(
-        apiKey = PlatformConfig.direct4MeApiKey,
-    )
+    val authRepository: AuthRepository = HttpAuthRepository(apiClient, deviceSessionStore)
+    val lockerRepository: LockerRepository = HttpLockerRepository(apiClient)
+    val insertionRepository: InsertionRepository = HttpInsertionRepository(apiClient)
+    val identityVerificationRepository: IdentityVerificationRepository =
+        HttpIdentityVerificationRepository(apiClient)
 }

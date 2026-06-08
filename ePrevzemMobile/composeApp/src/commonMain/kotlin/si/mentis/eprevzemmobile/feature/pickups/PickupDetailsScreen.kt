@@ -28,9 +28,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.Canvas
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -53,6 +51,7 @@ import si.mentis.eprevzemmobile.core.designsystem.components.layout.EScaffold
 import si.mentis.eprevzemmobile.core.designsystem.components.layout.EScreen
 import si.mentis.eprevzemmobile.core.designsystem.components.navigation.ETopBar
 import si.mentis.eprevzemmobile.core.designsystem.components.navigation.ETopBarVariant
+import si.mentis.eprevzemmobile.core.designsystem.components.map.EStationMap
 import si.mentis.eprevzemmobile.core.designsystem.icons.EPrevzemIcons
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
 import si.mentis.eprevzemmobile.feature.pickups.model.PickupDetails
@@ -175,7 +174,7 @@ fun PickupDetailsRoute(
     onLockerDidNotOpen: (PickupDetails) -> Unit = onIdentityVerified,
     onDelegatePerson: () -> Unit = {},
     initialUnlockedAt: String? = null,
-    user: si.mentis.eprevzemmobile.domain.User? = null,
+    user: si.mentis.eprevzemmobile.domain.AppUser? = null,
     repository: si.mentis.eprevzemmobile.data.pickups.PickupRepository = si.mentis.eprevzemmobile.AppContainer.pickupRepository,
     delegationRepository: si.mentis.eprevzemmobile.data.delegation.DelegationRepository = si.mentis.eprevzemmobile.AppContainer.delegationRepository,
     securityRepository: si.mentis.eprevzemmobile.data.security.SecurityRepository = si.mentis.eprevzemmobile.AppContainer.securityRepository,
@@ -206,8 +205,9 @@ fun PickupDetailsRoute(
     }
 
     fun verifyBiometric() {
+        val accountId = user?.id ?: return
         scope.launch {
-            securityRepository.signChallengeWithBiometric("verify".encodeToByteArray())
+            securityRepository.signChallengeWithBiometric(accountId, "verify".encodeToByteArray())
                 .onSuccess {
                     state = state.copy(showBiometricSheet = false)
                     onIdentityVerified(state.details)
@@ -219,8 +219,9 @@ fun PickupDetailsRoute(
     }
 
     fun verifyPin(pin: String) {
+        val accountId = user?.id ?: return
         scope.launch {
-            securityRepository.signChallengeWithPin(pin, "verify".encodeToByteArray())
+            securityRepository.signChallengeWithPin(accountId, pin, "verify".encodeToByteArray())
                 .onSuccess {
                     state = state.copy(showPinSheet = false, pinValue = "")
                     onIdentityVerified(state.details)
@@ -269,12 +270,16 @@ fun PickupDetailsRoute(
                 PickupDetailsEvent.Share -> {}
                 PickupDetailsEvent.UnlockClicked -> state = state.copy(showUnlockDialog = true)
                 PickupDetailsEvent.UnlockConfirmed -> {
-                    val biometricEnabled = user?.isBiometricEnabled ?: true
-                    state = state.copy(
-                        showUnlockDialog = false,
-                        showBiometricSheet = biometricEnabled,
-                        showPinSheet = !biometricEnabled,
-                    )
+                    val accountId = user?.id
+                    state = state.copy(showUnlockDialog = false)
+                    scope.launch {
+                        val biometricEnabled =
+                            accountId?.let { securityRepository.isBiometricEnabled(it) } ?: false
+                        state = state.copy(
+                            showBiometricSheet = biometricEnabled,
+                            showPinSheet = !biometricEnabled,
+                        )
+                    }
                 }
                 PickupDetailsEvent.UnlockCancelled -> state = state.copy(
                     showUnlockDialog = false,
@@ -306,7 +311,15 @@ fun PickupDetailsRoute(
                     }
                 }
                 PickupDetailsEvent.IdentityVerified -> onIdentityVerified(state.details)
-                PickupDetailsEvent.Finish -> onPickupConfirmed(state.details)
+                PickupDetailsEvent.Finish -> {
+                    val confirmed = state.details
+                    scope.launch {
+                        // Commit the pickup (→ PickedUp). Navigate regardless: the
+                        // locker is already open, so a failed confirm must not trap the user.
+                        repository.confirmPickup(confirmed.id)
+                        onPickupConfirmed(confirmed)
+                    }
+                }
                 PickupDetailsEvent.LockerDidNotOpen -> onLockerDidNotOpen(state.details)
                 PickupDetailsEvent.DelegatePersonClicked -> onDelegatePerson()
                 is PickupDetailsEvent.RemoveDelegateClicked -> state = state.copy(
@@ -347,37 +360,17 @@ private fun IdlePhase(
                 variant = ETopBarVariant.Detail,
                 eyebrow = "EPREVZEM",
                 title = "Podrobnosti prevzema",
-                onBack = { onEvent(PickupDetailsEvent.Back) },
-                actionIcon = EPrevzemIcons.share(),
-                onAction = { onEvent(PickupDetailsEvent.Share) },
+                onBack = { onEvent(PickupDetailsEvent.Back) }
             )
         },
     ) { _ ->
         EScreen {
-            EStatusChip(status = state.details.status)
-
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = state.details.title,
                     style = typo.display,
                     color = colors.textPrimary,
                 )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Icon(
-                        painter = EPrevzemIcons.organization(),
-                        contentDescription = null,
-                        tint = colors.textSecondary,
-                        modifier = Modifier.size(14.dp),
-                    )
-                    Text(
-                        text = state.details.organization,
-                        style = typo.bodySmall,
-                        color = colors.textSecondary,
-                    )
-                }
             }
 
             if (state.details.isExpiringSoon) {
@@ -393,8 +386,10 @@ private fun IdlePhase(
                 Column {
                     DetailRow(label = "Referenca", value = state.details.reference)
                     EDivider()
-                    DetailRow(label = "Vrsta", value = state.details.type)
-                    EDivider()
+                    // "Vrsta" (document type) hidden: the backend does not model a
+                    // document type, so there is no value to show here.
+                    // DetailRow(label = "Vrsta", value = state.details.type)
+                    // EDivider()
                     DetailRow(label = "Organizacija", value = state.details.organization)
                     EDivider()
                     DetailRow(label = "Na voljo od", value = state.details.availableFrom)
@@ -414,7 +409,15 @@ private fun IdlePhase(
                 icon = EPrevzemIcons.location(),
                 trailing = { LockerChip(state.details.lockerNumber) },
             ) {
-                MapPlaceholder(locationName = state.details.locationName)
+                EStationMap(
+                    latitude = state.details.latitude,
+                    longitude = state.details.longitude,
+                    label = state.details.locationName,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(160.dp)
+                        .clip(EPrevzemTheme.shapes.medium),
+                )
                 Text(
                     text = state.details.locationName,
                     style = typo.cardTitle,
@@ -585,61 +588,6 @@ private fun LockerChip(text: String) {
             text = text,
             style = typo.caption.copy(fontWeight = FontWeight.SemiBold),
             color = colors.primary,
-        )
-    }
-}
-
-@Composable
-private fun MapPlaceholder(locationName: String) {
-    val colors = EPrevzemTheme.colors
-    val typo = EPrevzemTheme.typography
-    val gridColor = colors.border
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(160.dp)
-            .clip(EPrevzemTheme.shapes.medium)
-            .background(colors.surfaceSunken),
-    ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val step = 32.dp.toPx()
-            var x = 0f
-            while (x <= size.width) {
-                drawLine(gridColor, Offset(x, 0f), Offset(x, size.height), strokeWidth = 1f)
-                x += step
-            }
-            var y = 0f
-            while (y <= size.height) {
-                drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
-                y += step
-            }
-        }
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(44.dp)
-                .align(Alignment.Center)
-                .clip(CircleShape)
-                .background(colors.primary),
-        ) {
-            Icon(
-                painter = EPrevzemIcons.location(),
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(22.dp),
-            )
-        }
-        Text(
-            text = locationName,
-            style = typo.caption.copy(fontWeight = FontWeight.Medium),
-            color = colors.textPrimary,
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(10.dp)
-                .clip(EPrevzemTheme.shapes.pill)
-                .background(Color.White)
-                .padding(horizontal = 10.dp, vertical = 5.dp),
         )
     }
 }

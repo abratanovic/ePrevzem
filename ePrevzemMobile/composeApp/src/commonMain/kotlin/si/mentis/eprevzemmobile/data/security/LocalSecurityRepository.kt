@@ -1,26 +1,22 @@
 package si.mentis.eprevzemmobile.data.security
 
-private const val KEY_PUBLIC_KEY = "security.public_key_pem"
-private const val KEY_PRIVATE_KEY_CIPHERTEXT = "security.private_key_ciphertext"
-private const val KEY_PRIVATE_KEY_NONCE = "security.private_key_nonce"
-private const val KEY_PIN_SALT = "security.pin_salt"
-private const val KEY_BIOMETRIC_AES_KEY = "security.biometric_aes_key"
-
 class LocalSecurityRepository(
-    private val crypto: SecurityCrypto = SecurityCrypto(),
-    private val storage: SecureStorage = SecureStorage(),
-    private val biometricAuthenticator: BiometricAuthenticator = BiometricAuthenticator(),
+    private val crypto: SecurityCryptoPort = DefaultSecurityCrypto(),
+    private val storage: SecurityKeyStore = SecureStorageKeyStore(),
+    private val biometricAuthenticator: BiometricGate = DefaultBiometricGate(),
 ) : SecurityRepository {
 
-    override suspend fun isRegistered(): Boolean = runCatching {
-        storage.readString(KEY_PUBLIC_KEY) != null &&
-            storage.readString(KEY_PRIVATE_KEY_CIPHERTEXT) != null &&
-            storage.readString(KEY_PRIVATE_KEY_NONCE) != null &&
-            storage.readString(KEY_PIN_SALT) != null
+    private fun key(accountId: String, suffix: String) = "security.$accountId.$suffix"
+
+    override suspend fun isRegistered(accountId: String): Boolean = runCatching {
+        storage.readString(key(accountId, SUFFIX_PUBLIC)) != null &&
+            storage.readString(key(accountId, SUFFIX_CIPHERTEXT)) != null &&
+            storage.readString(key(accountId, SUFFIX_NONCE)) != null &&
+            storage.readString(key(accountId, SUFFIX_SALT)) != null
     }.getOrElse { false }
 
-    override suspend fun isBiometricEnabled(): Boolean = runCatching {
-        storage.readBiometricString(KEY_BIOMETRIC_AES_KEY) != null
+    override suspend fun isBiometricEnabled(accountId: String): Boolean = runCatching {
+        storage.readBiometricString(key(accountId, SUFFIX_BIOMETRIC)) != null
     }.getOrElse { false }
 
     override suspend fun register(pin: String, biometricEnabled: Boolean): Result<String> = runCatching {
@@ -29,10 +25,10 @@ class LocalSecurityRepository(
         val aesKey = crypto.deriveAesKey(pin = pin, salt = salt)
         val encryptedPrivateKey = crypto.encryptAesGcm(aesKey, keyPair.privateKeyBytes)
 
-        storage.writeString(KEY_PUBLIC_KEY, keyPair.publicKeyPem)
-        storage.writeString(KEY_PIN_SALT, salt.toBase64())
-        storage.writeString(KEY_PRIVATE_KEY_CIPHERTEXT, encryptedPrivateKey.ciphertext.toBase64())
-        storage.writeString(KEY_PRIVATE_KEY_NONCE, encryptedPrivateKey.nonce.toBase64())
+        storage.writeString(key(STAGING_ID, SUFFIX_PUBLIC), keyPair.publicKeyPem)
+        storage.writeString(key(STAGING_ID, SUFFIX_SALT), salt.toBase64())
+        storage.writeString(key(STAGING_ID, SUFFIX_CIPHERTEXT), encryptedPrivateKey.ciphertext.toBase64())
+        storage.writeString(key(STAGING_ID, SUFFIX_NONCE), encryptedPrivateKey.nonce.toBase64())
 
         if (biometricEnabled) {
             val enrolled = runCatching {
@@ -40,31 +36,54 @@ class LocalSecurityRepository(
                     "Aktivirajte biometrično zaščito za ePrevzem"
                 )
                 if (authenticated) {
-                    storage.writeBiometricString(KEY_BIOMETRIC_AES_KEY, aesKey.toBase64())
+                    storage.writeBiometricString(key(STAGING_ID, SUFFIX_BIOMETRIC), aesKey.toBase64())
                 }
                 authenticated
             }.getOrElse { false }
             if (!enrolled) {
-                storage.remove(KEY_BIOMETRIC_AES_KEY)
+                storage.remove(key(STAGING_ID, SUFFIX_BIOMETRIC))
             }
         } else {
-            storage.remove(KEY_BIOMETRIC_AES_KEY)
+            storage.remove(key(STAGING_ID, SUFFIX_BIOMETRIC))
         }
 
         keyPair.publicKeyPem
     }
 
-    override suspend fun enableBiometric(pin: String): Result<Unit> = runCatching {
-        val salt = storage.readString(KEY_PIN_SALT)?.fromBase64() ?: throw SecurityNotRegisteredException()
+    override suspend fun commitRegistration(accountId: String): Result<Unit> = runCatching {
+        val pub = storage.readString(key(STAGING_ID, SUFFIX_PUBLIC)) ?: throw SecurityNotRegisteredException()
+        val cipher = storage.readString(key(STAGING_ID, SUFFIX_CIPHERTEXT)) ?: throw SecurityNotRegisteredException()
+        val nonce = storage.readString(key(STAGING_ID, SUFFIX_NONCE)) ?: throw SecurityNotRegisteredException()
+        val salt = storage.readString(key(STAGING_ID, SUFFIX_SALT)) ?: throw SecurityNotRegisteredException()
+        val bio = storage.readBiometricString(key(STAGING_ID, SUFFIX_BIOMETRIC))
+
+        storage.writeString(key(accountId, SUFFIX_PUBLIC), pub)
+        storage.writeString(key(accountId, SUFFIX_CIPHERTEXT), cipher)
+        storage.writeString(key(accountId, SUFFIX_NONCE), nonce)
+        storage.writeString(key(accountId, SUFFIX_SALT), salt)
+        if (bio != null) {
+            storage.writeBiometricString(key(accountId, SUFFIX_BIOMETRIC), bio)
+        } else {
+            storage.remove(key(accountId, SUFFIX_BIOMETRIC))
+        }
+        storage.removeAll("security.$STAGING_ID")
+    }
+
+    override suspend fun discardStaging() {
+        storage.removeAll("security.$STAGING_ID")
+    }
+
+    override suspend fun enableBiometric(accountId: String, pin: String): Result<Unit> = runCatching {
+        val salt = storage.readString(key(accountId, SUFFIX_SALT))?.fromBase64() ?: throw SecurityNotRegisteredException()
         val aesKey = crypto.deriveAesKey(pin = pin, salt = salt)
-        decryptStoredPrivateKey(aesKey)
+        decryptStoredPrivateKey(accountId, aesKey)
 
         val authenticated = biometricAuthenticator.authenticate(
             "Aktivirajte biometrično zaščito za ePrevzem"
         )
         if (!authenticated) throw BiometricAuthenticationException()
 
-        storage.writeBiometricString(KEY_BIOMETRIC_AES_KEY, aesKey.toBase64())
+        storage.writeBiometricString(key(accountId, SUFFIX_BIOMETRIC), aesKey.toBase64())
     }.recoverCatching { error ->
         when (error) {
             is SecurityNotRegisteredException,
@@ -73,60 +92,60 @@ class LocalSecurityRepository(
         }
     }
 
-    override suspend fun disableBiometric(): Result<Unit> = runCatching {
-        storage.remove(KEY_BIOMETRIC_AES_KEY)
+    override suspend fun disableBiometric(accountId: String): Result<Unit> = runCatching {
+        storage.remove(key(accountId, SUFFIX_BIOMETRIC))
     }
 
-    override suspend fun changePin(currentPin: String, newPin: String): Result<Unit> = runCatching {
-        val currentSalt = storage.readString(KEY_PIN_SALT)?.fromBase64() ?: throw SecurityNotRegisteredException()
+    override suspend fun changePin(accountId: String, currentPin: String, newPin: String): Result<Unit> = runCatching {
+        val currentSalt = storage.readString(key(accountId, SUFFIX_SALT))?.fromBase64() ?: throw SecurityNotRegisteredException()
         val currentAesKey = crypto.deriveAesKey(pin = currentPin, salt = currentSalt)
-        val privateKey = decryptStoredPrivateKey(currentAesKey)
-        val biometricEnabled = storage.readBiometricString(KEY_BIOMETRIC_AES_KEY) != null
+        val privateKey = decryptStoredPrivateKey(accountId, currentAesKey)
+        val biometricEnabled = storage.readBiometricString(key(accountId, SUFFIX_BIOMETRIC)) != null
 
         val newSalt = crypto.randomBytes(size = 16)
         val newAesKey = crypto.deriveAesKey(pin = newPin, salt = newSalt)
         val encryptedPrivateKey = crypto.encryptAesGcm(newAesKey, privateKey)
 
-        storage.writeString(KEY_PIN_SALT, newSalt.toBase64())
-        storage.writeString(KEY_PRIVATE_KEY_CIPHERTEXT, encryptedPrivateKey.ciphertext.toBase64())
-        storage.writeString(KEY_PRIVATE_KEY_NONCE, encryptedPrivateKey.nonce.toBase64())
+        storage.writeString(key(accountId, SUFFIX_SALT), newSalt.toBase64())
+        storage.writeString(key(accountId, SUFFIX_CIPHERTEXT), encryptedPrivateKey.ciphertext.toBase64())
+        storage.writeString(key(accountId, SUFFIX_NONCE), encryptedPrivateKey.nonce.toBase64())
         if (biometricEnabled) {
-            storage.writeBiometricString(KEY_BIOMETRIC_AES_KEY, newAesKey.toBase64())
+            storage.writeBiometricString(key(accountId, SUFFIX_BIOMETRIC), newAesKey.toBase64())
         }
     }.recoverCatching { error ->
         if (error is SecurityNotRegisteredException) throw error
         throw InvalidPinException()
     }
 
-    override suspend fun signChallengeWithPin(pin: String, challenge: ByteArray): Result<ByteArray> = runCatching {
-        val salt = storage.readString(KEY_PIN_SALT)?.fromBase64() ?: throw SecurityNotRegisteredException()
+    override suspend fun signChallengeWithPin(accountId: String, pin: String, challenge: ByteArray): Result<ByteArray> = runCatching {
+        val salt = storage.readString(key(accountId, SUFFIX_SALT))?.fromBase64() ?: throw SecurityNotRegisteredException()
         val aesKey = crypto.deriveAesKey(pin = pin, salt = salt)
-        val privateKey = decryptStoredPrivateKey(aesKey)
+        val privateKey = decryptStoredPrivateKey(accountId, aesKey)
         crypto.signEcdsa(privateKey, challenge)
     }.recoverCatching { error ->
         if (error is SecurityNotRegisteredException) throw error
         throw InvalidPinException()
     }
 
-    override suspend fun signChallengeWithBiometric(challenge: ByteArray): Result<ByteArray> = runCatching {
+    override suspend fun signChallengeWithBiometric(accountId: String, challenge: ByteArray): Result<ByteArray> = runCatching {
         val authenticated = biometricAuthenticator.authenticate("Potrdite identiteto za podpis izziva")
         if (!authenticated) throw BiometricAuthenticationException()
 
-        val aesKey = storage.readBiometricString(KEY_BIOMETRIC_AES_KEY)?.fromBase64()
+        val aesKey = storage.readBiometricString(key(accountId, SUFFIX_BIOMETRIC))?.fromBase64()
             ?: throw BiometricAuthenticationException()
-        val privateKey = decryptStoredPrivateKey(aesKey)
+        val privateKey = decryptStoredPrivateKey(accountId, aesKey)
         crypto.signEcdsa(privateKey, challenge)
     }
 
-    private suspend fun decryptStoredPrivateKey(aesKey: ByteArray): ByteArray {
-        val ciphertext = storage.readString(KEY_PRIVATE_KEY_CIPHERTEXT)?.fromBase64()
+    private suspend fun decryptStoredPrivateKey(accountId: String, aesKey: ByteArray): ByteArray {
+        val ciphertext = storage.readString(key(accountId, SUFFIX_CIPHERTEXT))?.fromBase64()
             ?: throw SecurityNotRegisteredException()
-        val nonce = storage.readString(KEY_PRIVATE_KEY_NONCE)?.fromBase64()
+        val nonce = storage.readString(key(accountId, SUFFIX_NONCE))?.fromBase64()
             ?: throw SecurityNotRegisteredException()
         return crypto.decryptAesGcm(aesKey, EncryptedPayload(ciphertext, nonce))
     }
 
-    override suspend fun reset() {
-        storage.clearAll()
+    override suspend fun reset(accountId: String) {
+        storage.removeAll("security.$accountId")
     }
 }

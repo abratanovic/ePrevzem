@@ -1,5 +1,5 @@
 namespace ePrevzem.Domain.Audit;
-
+// komentar za resolvanje merge konflikta
 public enum AuditAction
 {
     // Packages & placements
@@ -11,6 +11,7 @@ public enum AuditAction
     PackageRetrievedAfterExpiry,
     PackageMarkedPickedUpManually,
     PackageCancelled,
+    PackageDeleted,
 
     // Delegations
     DelegationCreated,
@@ -23,20 +24,34 @@ public enum AuditAction
     EmployeeAccountCreated,
     EmployeeAccountDisabled,
     EmployeeAccountReenabled,
+    EmployeeAccountLoggedIn,
+    EmployeePasswordChanged,
     EmployeeAccountRoleGranted,
     EmployeeAccountRoleRevoked,
     EmployeeStationAccessGranted,
     EmployeeStationAccessRevoked,
     EmployeeDeviceRegistered,
     EmployeeDeviceRevoked,
+    CitizenActivationCodeIssued,
     CitizenDeviceRegistered,
     CitizenDeviceRevoked,
+    OrganizationAdminAccountCreated,
+    OrganizationAdminAccountDisabled,
+    OrganizationAdminAccountReenabled,
+    OrganizationAdminLoggedIn,
+    OrganizationAdminPasswordChanged,
 
     // Citizens
     CitizenOnboarded,
 
     // Tenancy & infrastructure
     OrganizationCreated,
+    SystemAdminLoggedIn,
+    SystemAdminLoginFailed,
+    SystemAdminPasswordChanged,
+    RefreshTokenRotated,
+    RefreshTokenChainRevoked,
+    PickupStationCreated,
     StationClaimed,
     StationReleased,
     LockerCreated,

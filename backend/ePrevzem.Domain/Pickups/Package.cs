@@ -207,6 +207,12 @@ public sealed class Package : AggregateRoot<PackageId>
     public void Cancel(OrganizationAdminAccountId cancelledBy, DateTimeOffset now)
         => CancelInternal(null, cancelledBy, now);
 
+    public void MarkDeleted(EmployeeAccountId deletedBy, DateTimeOffset now)
+        => MarkDeletedInternal(deletedBy, null, now);
+
+    public void MarkDeleted(OrganizationAdminAccountId deletedBy, DateTimeOffset now)
+        => MarkDeletedInternal(null, deletedBy, now);
+
     private void CancelInternal(
         EmployeeAccountId? cancelledByEmployee,
         OrganizationAdminAccountId? cancelledByOrganizationAdmin,
@@ -230,5 +236,16 @@ public sealed class Package : AggregateRoot<PackageId>
         Status = PackageStatus.Cancelled;
         FinalizedAt = now;
         Raise(new PackageCancelled(Id, cancelledByEmployee, cancelledByOrganizationAdmin, now));
+    }
+
+    private void MarkDeletedInternal(
+        EmployeeAccountId? deletedByEmployee,
+        OrganizationAdminAccountId? deletedByOrganizationAdmin,
+        DateTimeOffset now)
+    {
+        if (Status != PackageStatus.AwaitingPlacement || _placements.Count != 0)
+            throw new InvalidOperationException("Only pickups awaiting placement with no placement history can be deleted.");
+
+        Raise(new PackageDeleted(Id, OrganizationId, deletedByEmployee, deletedByOrganizationAdmin, now));
     }
 }

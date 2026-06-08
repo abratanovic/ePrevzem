@@ -1,0 +1,4 @@
+model=ArcFace
+score_type=cosine_similarity
+threshold=0.2
+decision=same_if_score_greater_or_equal

@@ -19,8 +19,8 @@ public class PickupReadRepositoryTests
         await using var db = CreateContext();
         var orgId = OrganizationId.New();
         var station = PickupStation.Create(PickupStationId.New(), "EP-PM-001", Now);
-        var firstLocker = station.AddLocker(LockerId.New(), 1);
-        station.AddLocker(LockerId.New(), 2);
+        var firstLocker = station.AddLocker(LockerId.New(), 1, 1001);
+        station.AddLocker(LockerId.New(), 2, 1002);
         var claim = StationClaim.Claim(
             StationClaimId.New(),
             station.Id,
@@ -50,6 +50,7 @@ public class PickupReadRepositoryTests
 
         var stats = await repository.GetDashboardStatsAsync(orgId, Now);
         stats.ActivePickups.Should().Be(1);
+        stats.AwaitingPlacement.Should().Be(0);
         stats.PendingPickups.Should().Be(1);
         stats.PendingExpiresToday.Should().Be(1);
         stats.OccupiedLockers.Should().Be(1);
@@ -67,6 +68,45 @@ public class PickupReadRepositoryTests
         occupancy.Should().ContainSingle();
         occupancy[0].Used.Should().Be(1);
         occupancy[0].Total.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task Dashboard_counts_packages_awaiting_placement()
+    {
+        await using var db = CreateContext();
+        var orgId = OrganizationId.New();
+        var station = PickupStation.Create(PickupStationId.New(), "EP-PM-001", Now);
+        var locker = station.AddLocker(LockerId.New(), 1, 1001);
+        var claim = StationClaim.Claim(
+            StationClaimId.New(),
+            station.Id,
+            orgId,
+            Location.Create(46m, 15m, "Koroška cesta", "46", "2000", "Maribor"),
+            Now);
+        var citizen = CitizenUser.Onboard(
+            CitizenUserId.New(), "Ana", "Kovač", "0101006500006", null, null, Now);
+
+        // One package left awaiting placement, one already placed into the locker.
+        var awaiting = Package.CreateByEmployee(
+            PackageId.New(), orgId, citizen.Id, EmployeeAccountId.New(), station.Id,
+            "EP-2026-000200", "Osebna izkaznica", Now);
+        var placed = Package.CreateByEmployee(
+            PackageId.New(), orgId, citizen.Id, EmployeeAccountId.New(), station.Id,
+            "EP-2026-000201", "Potrdilo", Now);
+        placed.Place(PlacementId.New(), locker.Id, EmployeeAccountId.New(), TimeSpan.FromHours(2), Now);
+
+        db.PickupStations.Add(station);
+        db.StationClaims.Add(claim);
+        db.CitizenUsers.Add(citizen);
+        db.Packages.AddRange(awaiting, placed);
+        await db.SaveChangesAsync();
+
+        var repository = new PickupReadRepository(db);
+
+        var stats = await repository.GetDashboardStatsAsync(orgId, Now);
+
+        stats.AwaitingPlacement.Should().Be(1);
+        stats.PendingPickups.Should().Be(1);
     }
 
     [Fact]

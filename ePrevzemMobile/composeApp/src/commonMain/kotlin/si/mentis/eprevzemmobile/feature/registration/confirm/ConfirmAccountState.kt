@@ -29,10 +29,14 @@ data class ConfirmAccountState(
 data class ConfirmAccountData(
     val fullName: String = "",
     val email: String = "",
+    val emso: String? = null,
     val phone: String = "",
     val status: String = "",
     val validUntil: String = "",
-)
+) {
+    val identityLabel: String get() = if (emso.isNullOrBlank()) "E-pošta" else "EMŠO"
+    val identityValue: String get() = emso?.takeIf { it.isNotBlank() } ?: email
+}
 
 @Immutable
 data class ConfirmOrganizationData(

@@ -1,4 +1,5 @@
 using ePrevzem.Application.Pickups.Delete;
+using ePrevzem.Application.Common.Abstractions;
 using ePrevzem.Domain.Identity;
 using ePrevzem.Domain.Lockers;
 using ePrevzem.Domain.Organizations;
@@ -105,7 +106,8 @@ public class DeletePickupHandlerTests
             repository,
             new TestEmployeeRepository(employee),
             new TestOrganizationAdminRepository(admin),
-            new TestPickupUnitOfWork());
+            new TestPickupUnitOfWork(),
+            new TestDeletePickupClock());
 
     private static EmployeeAccount RecordManager(OrganizationId organizationId)
         => EmployeeAccount.Create(
@@ -129,4 +131,9 @@ public class DeletePickupHandlerTests
             "EP-2026-000123",
             "Osebna izkaznica",
             Now);
+}
+
+public sealed class TestDeletePickupClock : IClock
+{
+    public DateTimeOffset UtcNow => new(2026, 6, 1, 10, 0, 0, TimeSpan.Zero);
 }

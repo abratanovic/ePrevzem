@@ -110,7 +110,8 @@ public class OrganizationPickupStationHandlerTests
         var handler = new UpdateOrganizationLockerServiceabilityCommandHandler(
             claimRepo,
             stationRepo,
-            unitOfWork);
+            unitOfWork,
+            new TestClockForStation(Now));
 
         var result = await handler.Handle(
             new UpdateOrganizationLockerServiceabilityCommand(
@@ -128,7 +129,7 @@ public class OrganizationPickupStationHandlerTests
     private static PickupStation SeedStation(TestPickupStationRepository repository, string serialNumber)
     {
         var station = PickupStation.Create(PickupStationId.New(), serialNumber, Now);
-        station.AddLocker(LockerId.New(), 1);
+        station.AddLocker(LockerId.New(), 1, 1001);
         repository.Items.Add(station);
         return station;
     }

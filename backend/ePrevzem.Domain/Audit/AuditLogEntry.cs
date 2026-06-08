@@ -10,6 +10,7 @@ public sealed class AuditLogEntry : AggregateRoot<AuditLogEntryId>
     public AuditActorKind ActorKind { get; private set; }
     public CitizenUserId? ActorCitizenUserId { get; private set; }
     public EmployeeAccountId? ActorEmployeeAccountId { get; private set; }
+    public OrganizationAdminAccountId? ActorOrganizationAdminAccountId { get; private set; }
     public SystemAdminId? ActorSystemAdminId { get; private set; }
     public OrganizationId? OrganizationId { get; private set; }
     public AuditAction Action { get; private set; }
@@ -25,6 +26,7 @@ public sealed class AuditLogEntry : AggregateRoot<AuditLogEntryId>
         AuditActorKind actorKind,
         CitizenUserId? actorCitizenUserId,
         EmployeeAccountId? actorEmployeeAccountId,
+        OrganizationAdminAccountId? actorOrganizationAdminAccountId,
         SystemAdminId? actorSystemAdminId,
         OrganizationId? organizationId,
         AuditAction action,
@@ -32,7 +34,7 @@ public sealed class AuditLogEntry : AggregateRoot<AuditLogEntryId>
         Guid targetId,
         string? details)
     {
-        ValidateActor(actorKind, actorCitizenUserId, actorEmployeeAccountId, actorSystemAdminId);
+        ValidateActor(actorKind, actorCitizenUserId, actorEmployeeAccountId, actorOrganizationAdminAccountId, actorSystemAdminId);
 
         return new AuditLogEntry
         {
@@ -41,6 +43,7 @@ public sealed class AuditLogEntry : AggregateRoot<AuditLogEntryId>
             ActorKind = actorKind,
             ActorCitizenUserId = actorCitizenUserId,
             ActorEmployeeAccountId = actorEmployeeAccountId,
+            ActorOrganizationAdminAccountId = actorOrganizationAdminAccountId,
             ActorSystemAdminId = actorSystemAdminId,
             OrganizationId = organizationId,
             Action = action,
@@ -54,9 +57,13 @@ public sealed class AuditLogEntry : AggregateRoot<AuditLogEntryId>
         AuditActorKind kind,
         CitizenUserId? citizenId,
         EmployeeAccountId? employeeId,
+        OrganizationAdminAccountId? organizationAdminId,
         SystemAdminId? adminId)
     {
-        var providedCount = (citizenId is null ? 0 : 1) + (employeeId is null ? 0 : 1) + (adminId is null ? 0 : 1);
+        var providedCount = (citizenId is null ? 0 : 1)
+            + (employeeId is null ? 0 : 1)
+            + (organizationAdminId is null ? 0 : 1)
+            + (adminId is null ? 0 : 1);
 
         if (kind == AuditActorKind.System)
         {
@@ -74,6 +81,8 @@ public sealed class AuditLogEntry : AggregateRoot<AuditLogEntryId>
                 throw new ArgumentException("Citizen actor requires ActorCitizenUserId.");
             case AuditActorKind.Employee when employeeId is null:
                 throw new ArgumentException("Employee actor requires ActorEmployeeAccountId.");
+            case AuditActorKind.OrganizationAdmin when organizationAdminId is null:
+                throw new ArgumentException("OrganizationAdmin actor requires ActorOrganizationAdminAccountId.");
             case AuditActorKind.SystemAdmin when adminId is null:
                 throw new ArgumentException("SystemAdmin actor requires ActorSystemAdminId.");
         }

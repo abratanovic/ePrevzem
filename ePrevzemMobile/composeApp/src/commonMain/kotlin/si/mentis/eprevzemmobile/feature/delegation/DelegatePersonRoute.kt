@@ -20,6 +20,7 @@ private const val DelegationErrorMessage = "Napaka pri pooblastitvi. Poskusite z
 @Composable
 fun DelegatePersonRoute(
     pickupId: String,
+    accountId: String,
     onBack: () -> Unit,
     onDelegated: () -> Unit,
     repository: DelegationRepository = AppContainer.delegationRepository,
@@ -52,7 +53,7 @@ fun DelegatePersonRoute(
 
     fun verifyBiometric() {
         scope.launch {
-            securityRepository.signChallengeWithBiometric("verify".encodeToByteArray())
+            securityRepository.signChallengeWithBiometric(accountId, "verify".encodeToByteArray())
                 .onSuccess {
                     state = state.copy(showBiometricSheet = false, isConfirming = true)
                 }
@@ -64,7 +65,7 @@ fun DelegatePersonRoute(
 
     fun verifyPin(pin: String) {
         scope.launch {
-            securityRepository.signChallengeWithPin(pin, "verify".encodeToByteArray())
+            securityRepository.signChallengeWithPin(accountId, pin, "verify".encodeToByteArray())
                 .onSuccess {
                     state = state.copy(showPinSheet = false, pinValue = "", isConfirming = true)
                 }
@@ -108,11 +109,19 @@ fun DelegatePersonRoute(
                         state = state.copy(isLoading = true, errorTitle = null, errorMessage = null)
                     }
                 }
-                DelegatePersonEvent.PersonSelected -> state = state.copy(
-                    phase = DelegatePersonPhase.Confirming,
-                    showBiometricSheet = true,
-                    confirmError = null,
-                )
+                DelegatePersonEvent.PersonSelected -> {
+                    state = state.copy(
+                        phase = DelegatePersonPhase.Confirming,
+                        confirmError = null,
+                    )
+                    scope.launch {
+                        val biometricEnabled = securityRepository.isBiometricEnabled(accountId)
+                        state = state.copy(
+                            showBiometricSheet = biometricEnabled,
+                            showPinSheet = !biometricEnabled,
+                        )
+                    }
+                }
                 DelegatePersonEvent.BiometricSelected -> state = state.copy(
                     showPinSheet = false,
                     showBiometricSheet = true,

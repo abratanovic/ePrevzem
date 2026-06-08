@@ -22,7 +22,11 @@ export default function EditPickupStationPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5 p-6">
-      <StationPageHeader title="Uredi paketomat" subtitle={`Spremenite lokacijo paketomata ${station.serialNumber}.`} />
+      <StationPageHeader
+        title="Uredi paketomat"
+        subtitle={`Spremenite lokacijo paketomata ${station.serialNumber}.`}
+        backTo={`/paketniki/${station.claimId}`}
+      />
       <StationForm
         initialValues={{ serialNumber: station.serialNumber, ...station.location }}
         lockSerialNumber

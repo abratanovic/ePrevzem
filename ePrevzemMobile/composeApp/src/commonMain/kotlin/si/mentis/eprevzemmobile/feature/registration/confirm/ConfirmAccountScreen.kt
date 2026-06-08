@@ -41,7 +41,6 @@ private object ConfirmAccountStrings {
     const val Description = "Preverite, ali so podatki pravilni."
     const val AccountSection = "Račun"
     const val FullNameLabel = "Polno ime"
-    const val EmailLabel = "E-pošta"
     const val PhoneLabel = "Telefon"
     const val ValidUntilLabel = "Veljavnost registracije"
     const val OrganizationSection = "Organizacija"
@@ -118,7 +117,9 @@ fun ConfirmAccountScreen(
             }
 
             AccountDetailsCard(account = state.account)
-            OrganizationDetailsCard(organization = state.organization)
+            if (state.organization.name.isNotEmpty()) {
+                OrganizationDetailsCard(organization = state.organization)
+            }
             SecuritySection(state = state, onEvent = onEvent)
         }
     }
@@ -134,34 +135,37 @@ private fun AccountDetailsCard(account: ConfirmAccountData) {
                 label = ConfirmAccountStrings.FullNameLabel,
                 value = account.fullName,
                 trailing = {
-                    EStatusChip(
-                        status = EPickupStatus.Ready,
-                        label = account.status,
-                    )
+                    if (account.status.isNotEmpty()) {
+                        EStatusChip(
+                            status = EPickupStatus.Ready,
+                            label = account.status,
+                        )
+                    }
                 },
             )
             EDetailsDivider()
             EDetailsRow(
                 icon = EPrevzemIcons.inbox(),
-                label = ConfirmAccountStrings.EmailLabel,
-                value = account.email,
+                label = account.identityLabel,
+                value = account.identityValue,
                 tint = EIconTint.Teal,
+                mono = account.emso?.isNotBlank() == true,
             )
-            EDetailsDivider()
-            EDetailsRow(
-                icon = EPrevzemIcons.notifications(),
-                label = ConfirmAccountStrings.PhoneLabel,
-                value = account.phone,
-                tint = EIconTint.Teal,
-                mono = true,
-            )
-            EDetailsDivider()
-            EDetailsRow(
-                icon = EPrevzemIcons.clock(),
-                label = ConfirmAccountStrings.ValidUntilLabel,
-                value = "Do ${account.validUntil}",
-                tint = EIconTint.Gold,
-            )
+//            EDetailsDivider()
+//            EDetailsRow(
+//                icon = EPrevzemIcons.notifications(),
+//                label = ConfirmAccountStrings.PhoneLabel,
+//                value = account.phone,
+//                tint = EIconTint.Teal,
+//                mono = true,
+//            )
+//            EDetailsDivider()
+//            EDetailsRow(
+//                icon = EPrevzemIcons.clock(),
+//                label = ConfirmAccountStrings.ValidUntilLabel,
+//                value = "Do ${account.validUntil}",
+//                tint = EIconTint.Gold,
+//            )
         }
     }
 }
@@ -176,20 +180,20 @@ private fun OrganizationDetailsCard(organization: ConfirmOrganizationData) {
                 label = ConfirmAccountStrings.OrganizationNameLabel,
                 value = organization.name,
             )
-            EDetailsDivider()
-            EDetailsRow(
-                icon = EPrevzemIcons.shield(),
-                label = ConfirmAccountStrings.OrganizationTypeLabel,
-                value = organization.type,
-                tint = EIconTint.Teal,
-            )
-            EDetailsDivider()
-            EDetailsRow(
-                icon = EPrevzemIcons.location(),
-                label = ConfirmAccountStrings.OrganizationLocationLabel,
-                value = organization.location,
-                tint = EIconTint.Teal,
-            )
+//            EDetailsDivider()
+//            EDetailsRow(
+//                icon = EPrevzemIcons.shield(),
+//                label = ConfirmAccountStrings.OrganizationTypeLabel,
+//                value = organization.type,
+//                tint = EIconTint.Teal,
+//            )
+//            EDetailsDivider()
+//            EDetailsRow(
+//                icon = EPrevzemIcons.location(),
+//                label = ConfirmAccountStrings.OrganizationLocationLabel,
+//                value = organization.location,
+//                tint = EIconTint.Teal,
+//            )
         }
     }
 }

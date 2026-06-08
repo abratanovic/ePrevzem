@@ -4,7 +4,6 @@ using ePrevzem.Application.Identity.Login;
 using ePrevzem.Domain.Identity;
 using ePrevzem.Domain.Identity.Events;
 using FluentAssertions;
-using MediatR;
 
 namespace ePrevzem.Tests.Application.Identity;
 
@@ -247,6 +246,9 @@ public sealed class TestTokenService : ITokenService
     public AccessTokenResult IssueAccessToken(EmployeeAccount employee)
         => new("emp_token", DateTimeOffset.UtcNow.AddMinutes(15));
 
+    public AccessTokenResult IssueAccessToken(CitizenUser citizen)
+        => new("citizen_token", DateTimeOffset.UtcNow.AddMinutes(15));
+
     public RefreshTokenResult IssueRefreshToken(DateTimeOffset now)
     {
         _refreshTokenCounter++;
@@ -257,35 +259,15 @@ public sealed class TestTokenService : ITokenService
     }
 }
 
-public sealed class TestMediator : IMediator
+public sealed class TestMediator : IDomainEventDispatcher
 {
     public List<object> PublishedEvents { get; } = new();
 
-    public Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken)
-        => throw new NotSupportedException();
-
-    public Task Send<TRequest>(TRequest request, CancellationToken cancellationToken) where TRequest : IRequest
-        => throw new NotSupportedException();
-
-    public Task<object?> Send(object request, CancellationToken cancellationToken)
-        => throw new NotSupportedException();
-
-    public IAsyncEnumerable<TResponse> CreateStream<TResponse>(IStreamRequest<TResponse> request, CancellationToken cancellationToken)
-        => throw new NotSupportedException();
-
-    public IAsyncEnumerable<object?> CreateStream(object request, CancellationToken cancellationToken)
-        => throw new NotSupportedException();
-
-    public Task Publish(object notification, CancellationToken cancellationToken = default)
+    public Task DispatchAsync(
+        IReadOnlyCollection<ePrevzem.Domain.Common.IDomainEvent> domainEvents,
+        CancellationToken cancellationToken = default)
     {
-        PublishedEvents.Add(notification);
-        return Task.CompletedTask;
-    }
-
-    public Task Publish<TNotification>(TNotification notification, CancellationToken cancellationToken = default)
-        where TNotification : INotification
-    {
-        PublishedEvents.Add(notification);
+        PublishedEvents.AddRange(domainEvents);
         return Task.CompletedTask;
     }
 }
