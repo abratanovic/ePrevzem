@@ -35,6 +35,7 @@ import si.mentis.eprevzemmobile.core.designsystem.components.navigation.ETopBar
 import si.mentis.eprevzemmobile.core.designsystem.components.navigation.ETopBarVariant
 import si.mentis.eprevzemmobile.core.designsystem.icons.EPrevzemIcons
 import si.mentis.eprevzemmobile.core.designsystem.theme.EPrevzemTheme
+import si.mentis.eprevzemmobile.data.identity.DocumentVerificationException
 import si.mentis.eprevzemmobile.data.identity.IdentityVerificationRepository
 
 private object DocumentCaptureStrings {
@@ -195,7 +196,7 @@ private fun CapturePrompt(
 @Composable
 fun DocumentCaptureRoute(
     variant: String,
-    onCodeObtained: (code: String, emso: String) -> Unit,
+    onCodeObtained: (code: String) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     repository: IdentityVerificationRepository = AppContainer.identityVerificationRepository,
@@ -219,31 +220,11 @@ fun DocumentCaptureRoute(
         val selfie = state.selfieBytes ?: return@LaunchedEffect
         val doc = state.documentBytes ?: return@LaunchedEffect
 
-        repository.verify(selfie, doc, variant)
-            .onSuccess { response ->
-                if (response.verified) {
-                    val emso = response.emso
-                    val firstName = response.firstName
-                    val lastName = response.lastName
-                    if (emso != null && firstName != null && lastName != null) {
-                        repository.registerByDocument(emso, firstName, lastName)
-                            .onSuccess { code -> onCodeObtained(code, emso) }
-                            .onFailure {
-                                state = state.copy(step = CaptureStep.ERROR, errorReasons = emptyList())
-                            }
-                    } else {
-                        val missingReasons = mutableListOf<String>()
-                        if (firstName == null) missingReasons.add("missing_name")
-                        if (lastName == null) missingReasons.add("missing_surname")
-                        if (emso == null) missingReasons.add("missing_emso")
-                        state = state.copy(step = CaptureStep.ERROR, errorReasons = missingReasons)
-                    }
-                } else {
-                    state = state.copy(step = CaptureStep.ERROR, errorReasons = response.reasons)
-                }
-            }
-            .onFailure {
-                state = state.copy(step = CaptureStep.ERROR, errorReasons = emptyList())
+        repository.verifyAndRegister(selfie, doc, variant)
+            .onSuccess { code -> onCodeObtained(code) }
+            .onFailure { ex ->
+                val reasons = (ex as? DocumentVerificationException)?.reasons ?: emptyList()
+                state = state.copy(step = CaptureStep.ERROR, errorReasons = reasons)
             }
     }
 

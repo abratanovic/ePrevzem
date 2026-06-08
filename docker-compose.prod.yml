@@ -26,6 +26,7 @@ services:
       SiTrust__Secret: ${SITRUST_JWT_SECRET}
       Identity__BootstrapAdmin__Username: ${BOOTSTRAP_ADMIN_USERNAME}
       Identity__BootstrapAdmin__InitialPassword: ${BOOTSTRAP_ADMIN_PASSWORD}
+      CvIdentity__BaseUrl: http://cv-identity:8000
     depends_on:
       postgres-db:
         condition: service_healthy
