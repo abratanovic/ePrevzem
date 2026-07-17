@@ -1,176 +1,179 @@
-# 📦 ePrevzem — Sistem za varen prevzem dokumentov
+# 📦 ePrevzem — Secure Document Pickup System
 
-> Generična (multi-tenant) platforma za **varen prevzem dokumentov in občutljivih
-> predmetov iz pametnih paketnikov** — brez čakanja na dostavo in brez vrst.
+> A generic (multi-tenant) platform for **secure pickup of documents and sensitive
+> items from smart lockers** — no waiting for delivery and no queues.
 
-Razvito v okviru projekta _Pametni paketnik_ na Fakulteti za elektrotehniko,
-računalništvo in informatiko Univerze v Mariboru (študijski program Računalništvo
-in informacijske tehnologije, VS).
-
----
-
-## 📑 Kazalo
-
-- [Opis](#-opis)
-- [Glavne funkcionalnosti](#-glavne-funkcionalnosti)
-- [Arhitektura in repozitorij](#️-arhitektura-in-repozitorij)
-- [Tehnologije](#️-tehnologije)
-- [Hitri zagon (Docker)](#-hitri-zagon-docker)
-- [Storitve in vrata](#-storitve-in-vrata)
-- [Razvojno okolje po podprojektih](#-razvojno-okolje-po-podprojektih)
-- [Konfiguracija (okoljske spremenljivke)](#-konfiguracija-okoljske-spremenljivke)
-- [Testiranje](#-testiranje)
-- [Osnovni potek uporabe](#-osnovni-potek-uporabe)
-- [Naslednji koraki](#-naslednji-koraki)
-- [Ekipa](#-ekipa)
-- [Opombe](#-opombe)
+Developed as part of the _Smart Locker_ project at the Faculty of Electrical
+Engineering, Computer Science and Informatics, University of Maribor (Computer
+Science and Information Technologies study program, VS).
 
 ---
 
-## 🧾 Opis
+## 📑 Table of Contents
 
-Sistem omogoča organizacijam (upravne enote, univerze, podjetja, banke), da
-pripravijo občutljive dokumente za prevzem v paketniku. Uporabnik prejme
-obvestilo, pride do paketnika, se **varno identificira** in odklene predalček
-prek mobilne aplikacije. Vsi dogodki so zabeleženi v revizijski sledi (audit log).
-
-Identifikacija se opravi na en od dva načina:
-
-- **Računalniški vid (cv-identity)** ob registraciji preveri živost obraza in
-  ujemanje s sliko na osebnem dokumentu ter prebere podatke z dokumenta (OCR).
-- **Simulacija državnih storitev (sitrust-mock)** posnema SI-TRUST / SI-PASS in
-  eOsebno (NFC / biometrija).
-
----
-
-## 🎯 Glavne funkcionalnosti
-
-**Varen proces prevzema**
-- Varna identifikacija pred uporabo sistema
-- Odklep ustreznega predalčka prek mobilne aplikacije
-- Beleženje vseh odklepov in dogodkov (audit log)
-
-**Za uporabnika**
-- Pregled aktivnih prevzemov, roka in lokacije paketnika
-- Začetek postopka identifikacije in odklep predalčka
-- Zgodovina prevzemov
-
-**Za organizacijo (portal)**
-- Upravljanje uporabnikov in organizacij
-- Kreiranje zahtevkov za prevzem in dodeljevanje dokumentov paketnikom
-- Spremljanje statusa prevzema in pregled dnevnika dogodkov
-
-**Integracija paketnikov**
-- Dejanska komunikacija s paketniki **Direct4.me** (odklep posameznega predalčka,
-  beleženje uspešnosti); arhitektura dopušča zamenjavo integracijskega sloja za
-  druge tipe paketnikov.
+- [Description](#-description)
+- [Main Features](#-main-features)
+- [Architecture and Repository](#️-architecture-and-repository)
+- [Technologies](#️-technologies)
+- [Quick Start (Docker)](#-quick-start-docker)
+- [Services and Ports](#-services-and-ports)
+- [Development Environment per Subproject](#-development-environment-per-subproject)
+- [Configuration (Environment Variables)](#-configuration-environment-variables)
+- [Testing](#-testing)
+- [Basic Usage Flow](#-basic-usage-flow)
+- [Next Steps](#-next-steps)
+- [Team](#-team)
+- [Notes](#-notes)
 
 ---
 
-## 🏗️ Arhitektura in repozitorij
+## 🧾 Description
 
-**Poliglotni monorepo** — vsak podprojekt ima svojo orodjarno; krovne gradnje ni.
-Korenska .NET rešitev (`ePrevzem.sln`) povezuje **samo** `backend/`.
+The system enables organizations (administrative units, universities, companies,
+banks) to prepare sensitive documents for pickup from a locker. The user receives
+a notification, comes to the locker, **securely identifies themselves**, and
+unlocks the compartment via the mobile application. All events are recorded in an
+audit log.
+
+Identification is performed in one of two ways:
+
+- **Computer vision (cv-identity)** verifies face liveness during registration and
+  the match with the photo on the identity document, and reads the data from the
+  document (OCR).
+- **Simulation of state services (sitrust-mock)** mimics SI-TRUST / SI-PASS and
+  eOsebna (NFC / biometrics).
+
+---
+
+## 🎯 Main Features
+
+**Secure pickup process**
+- Secure identification before using the system
+- Unlocking the appropriate compartment via the mobile application
+- Logging of all unlocks and events (audit log)
+
+**For the user**
+- Overview of active pickups, deadline, and locker location
+- Starting the identification process and unlocking the compartment
+- Pickup history
+
+**For the organization (portal)**
+- Management of users and organizations
+- Creating pickup requests and assigning documents to lockers
+- Tracking pickup status and reviewing the event log
+
+**Locker integration**
+- Actual communication with **Direct4.me** lockers (unlocking an individual
+  compartment, logging success); the architecture allows replacing the integration
+  layer for other types of lockers.
+
+---
+
+## 🏗️ Architecture and Repository
+
+**Polyglot monorepo** — each subproject has its own toolchain; there is no
+top-level build. The root .NET solution (`ePrevzem.sln`) wires **only** `backend/`.
 
 ```
 ePrevzem/
-├── backend/          # ASP.NET Core 9 modularni monolit (Clean Architecture) — produkcijski backend
-│   ├── ePrevzem.Api             # tanki kontrolerji, DI, avtentikacija, OpenAPI
-│   ├── ePrevzem.Application     # MediatR use case-i, DTO-ji, validatorji, porti
-│   ├── ePrevzem.Domain          # agregati, vrednostni objekti, domenski dogodki (brez odvisnosti)
-│   ├── ePrevzem.Infrastructure  # EF Core (Npgsql), adapterji
+├── backend/          # ASP.NET Core 9 modular monolith (Clean Architecture) — production backend
+│   ├── ePrevzem.Api             # thin controllers, DI, authentication, OpenAPI
+│   ├── ePrevzem.Application     # MediatR use cases, DTOs, validators, ports
+│   ├── ePrevzem.Domain          # aggregates, value objects, domain events (no dependencies)
+│   ├── ePrevzem.Infrastructure  # EF Core (Npgsql), adapters
 │   └── ePrevzem.Tests           # xUnit + Testcontainers Postgres
-├── frontend/         # React 19 + Vite — administracijski portal za organizacije
-├── ePrevzemMobile/   # Kotlin Multiplatform / Compose (Android + iOS) — odjemalec za prevzem
-├── cv-identity/      # Python servis (FastAPI, OpenCV, MediaPipe) — računalniški vid za identiteto
-├── sitrust-mock/     # Simulator državne identitetne infrastrukture (ločena rešitev)
+├── frontend/         # React 19 + Vite — administration portal for organizations
+├── ePrevzemMobile/   # Kotlin Multiplatform / Compose (Android + iOS) — pickup client
+├── cv-identity/      # Python service (FastAPI, OpenCV, MediaPipe) — computer vision for identity
+├── sitrust-mock/     # State identity infrastructure simulator (separate solution)
 │   ├── backend/        #   ASP.NET Core 9 mock SI-TRUST API
-│   ├── frontend/       #   React 19 + Vite — SI-PASS spletna prijava
-│   └── eosebna_mobile/ #   Flutter — eOsebna NFC/biometrija
-├── docker-compose.yml       # lokalni / razvojni stack
-└── docker-compose.prod.yml  # produkcijski stack
+│   ├── frontend/       #   React 19 + Vite — SI-PASS web login
+│   └── eosebna_mobile/ #   Flutter — eOsebna NFC/biometrics
+├── docker-compose.yml       # local / development stack
+└── docker-compose.prod.yml  # production stack
 ```
 
-Backend sledi strogemu enosmernemu toku odvisnosti (`Api → Application → Domain`,
-`Infrastructure → Application, Domain`), z modularno delitvijo po funkcionalnostih
+The backend follows a strict one-way dependency flow (`Api → Application → Domain`,
+`Infrastructure → Application, Domain`), with modular separation by feature
 (Organizations / Pickups / Lockers / Delegations / Identity / Audit /
-Notifications) in komunikacijo med moduli prek domenskih dogodkov.
+Notifications) and communication between modules via domain events.
 
-> Servis računalniškega vida je podrobneje opisan v `cv-identity/README.md`,
-> celotno poročilo o njem pa v `cv-identity/docs/porocilo.md`.
+> The computer vision service is described in more detail in
+> `cv-identity/README.md`, and the full report on it is in
+> `cv-identity/docs/porocilo.md`.
 
 ---
 
-## 🛠️ Tehnologije
+## 🛠️ Technologies
 
-| Področje | Tehnologija |
+| Area | Technology |
 |----------|-------------|
 | Backend | .NET 9 (ASP.NET Core Web API), EF Core 9 + Npgsql, MediatR, FluentValidation, Serilog, JWT |
-| Baza | PostgreSQL 18 |
-| Administracijski portal | React 19 + Vite + TypeScript |
-| Mobilna aplikacija | Kotlin Multiplatform / Compose Multiplatform (Android + iOS) |
-| Računalniški vid | Python 3.12, FastAPI, OpenCV, MediaPipe, TensorFlow/Keras, DeepFace (ArcFace), Tesseract OCR |
-| Simulator identitete | ASP.NET Core 9 + React 19 + Flutter |
-| Kontejnerizacija | Docker / Docker Compose |
+| Database | PostgreSQL 18 |
+| Administration portal | React 19 + Vite + TypeScript |
+| Mobile application | Kotlin Multiplatform / Compose Multiplatform (Android + iOS) |
+| Computer vision | Python 3.12, FastAPI, OpenCV, MediaPipe, TensorFlow/Keras, DeepFace (ArcFace), Tesseract OCR |
+| Identity simulator | ASP.NET Core 9 + React 19 + Flutter |
+| Containerization | Docker / Docker Compose |
 
 ---
 
-## 🚀 Hitri zagon (Docker)
+## 🚀 Quick Start (Docker)
 
-Najhitrejši način je celoten stack prek Docker Compose.
+The fastest way is the entire stack via Docker Compose.
 
-**Predpogoji:** Docker in Docker Compose.
+**Prerequisites:** Docker and Docker Compose.
 
 ```bash
 git clone https://github.com/abratanovic/ePrevzem.git
 cd ePrevzem
 
-# 1) pripravi okoljske spremenljivke
-cp .env.example .env        # nato uredi vrednosti (gesla, JWT skrivnosti …)
+# 1) prepare environment variables
+cp .env.example .env        # then edit the values (passwords, JWT secrets …)
 
-# 2) zaženi celoten sistem
+# 2) start the entire system
 docker compose up -d
 
-# 3) preveri delovanje
+# 3) verify it works
 curl http://localhost:8080/health     # backend
 curl http://localhost:8000/health     # cv-identity
 ```
 
-Servis računalniškega vida potrebuje artefakte modela na gostitelju pod
+The computer vision service needs model artifacts on the host under
 `cv-identity/app/models/` (`liveness_model.keras`, `threshold.txt`,
-`face_match_config.txt`) — montirajo se kot read-only volume. Glej
+`face_match_config.txt`) — they are mounted as a read-only volume. See
 `cv-identity/README.md`.
 
-Posamezno storitev zaženete z imenom, npr. `docker compose up -d cv-identity`.
-Za produkcijo uporabite `docker-compose.prod.yml`.
+You can start an individual service by name, e.g. `docker compose up -d cv-identity`.
+For production, use `docker-compose.prod.yml`.
 
 ---
 
-## 🌐 Storitve in vrata
+## 🌐 Services and Ports
 
-| Storitev | Vloga | Vrata (host) |
+| Service | Role | Port (host) |
 |----------|-------|-------------:|
-| `frontend` | React administracijski portal | 3000 |
+| `frontend` | React administration portal | 3000 |
 | `backend` | ePrevzem REST API | 8080 |
-| `cv-identity` | API računalniškega vida | 8000 |
+| `cv-identity` | Computer vision API | 8000 |
 | `sitrust-backend` | Mock SI-TRUST / SI-PASS API | 5070 |
-| `sitrust-frontend` | Mock SI-PASS spletna prijava | 5174 |
-| `postgres-db` | PostgreSQL | (interno) |
+| `sitrust-frontend` | Mock SI-PASS web login | 5174 |
+| `postgres-db` | PostgreSQL | (internal) |
 
 ---
 
-## 💻 Razvojno okolje po podprojektih
+## 💻 Development Environment per Subproject
 
-Vsak podprojekt je samostojno gradljiv s svojo orodjarno.
+Each subproject is independently buildable with its own toolchain.
 
 ### backend — ASP.NET Core 9
 
 ```bash
 dotnet build ePrevzem.sln
 dotnet run --project backend/ePrevzem.Api
-dotnet test backend/ePrevzem.Tests          # Testcontainers Postgres (potrebuje Docker)
+dotnet test backend/ePrevzem.Tests          # Testcontainers Postgres (requires Docker)
 
-# EF migracije
+# EF migrations
 dotnet ef migrations add <Name> \
   --project backend/ePrevzem.Infrastructure --startup-project backend/ePrevzem.Api
 ```
@@ -180,8 +183,8 @@ dotnet ef migrations add <Name> \
 ```bash
 cd frontend
 npm install
-npm run dev        # razvojni strežnik
-npm run build      # produkcijska gradnja
+npm run dev        # development server
+npm run build      # production build
 npm run lint
 ```
 
@@ -190,10 +193,10 @@ npm run lint
 ```bash
 cd ePrevzemMobile
 ./gradlew :composeApp:assembleDebug                          # Android APK
-./gradlew :composeApp:installDebug                           # namestitev na napravo
-./gradlew :composeApp:compileCommonMainKotlinMetadata        # hiter cross-platform preizkus
+./gradlew :composeApp:installDebug                           # install on device
+./gradlew :composeApp:compileCommonMainKotlinMetadata        # fast cross-platform check
 ./gradlew :composeApp:allTests
-# Windows: uporabite gradlew.bat
+# Windows: use gradlew.bat
 ```
 
 ### cv-identity — Python / FastAPI
@@ -207,82 +210,82 @@ uvicorn app.main:app --reload --port 8000
 pytest -v
 ```
 
-Podroben opis (artefakti, endpointi, uporaba) je v `cv-identity/README.md`.
+A detailed description (artifacts, endpoints, usage) is in `cv-identity/README.md`.
 
-### sitrust-mock — simulator identitete
+### sitrust-mock — identity simulator
 
 ```bash
 cd sitrust-mock
 dotnet run --project backend/SiTrustMock      # mock API
-cd frontend && npm install && npm run dev     # SI-PASS spletna prijava
+cd frontend && npm install && npm run dev     # SI-PASS web login
 cd eosebna_mobile && flutter pub get && flutter run   # eOsebna mock
 ```
 
 ---
 
-## 🔑 Konfiguracija (okoljske spremenljivke)
+## 🔑 Configuration (Environment Variables)
 
-Compose bere spremenljivke iz datoteke `.env` v korenu (predloga: `.env.example`).
-Ključne spremenljivke:
+Compose reads variables from the `.env` file in the root (template: `.env.example`).
+Key variables:
 
-| Spremenljivka | Opis |
+| Variable | Description |
 |---------------|------|
-| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | PostgreSQL poverilnice in ime baze |
-| `JWT_SECRET` / `JWT_ISSUER` / `JWT_AUDIENCE` | JWT podpisovanje za backend |
-| `BOOTSTRAP_ADMIN_USERNAME` / `BOOTSTRAP_ADMIN_PASSWORD` | začetni administrator |
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | PostgreSQL credentials and database name |
+| `JWT_SECRET` / `JWT_ISSUER` / `JWT_AUDIENCE` | JWT signing for the backend |
+| `BOOTSTRAP_ADMIN_USERNAME` / `BOOTSTRAP_ADMIN_PASSWORD` | initial administrator |
 | `SITRUST_JWT_SECRET` / `SITRUST_BASE_URL` / `SITRUST_PUBLIC_BASE_URL` | mock SI-TRUST |
-| `VITE_EPREVZEM_URL` / `VITE_SIPASS_URL` | URL-ji za spletne odjemalce |
+| `VITE_EPREVZEM_URL` / `VITE_SIPASS_URL` | URLs for web clients |
 
-Backend kliče cv-identity prek `CvIdentity__BaseUrl` (v Docker omrežju
+The backend calls cv-identity via `CvIdentity__BaseUrl` (in the Docker network
 `http://cv-identity:8000`).
 
 ---
 
-## 🧪 Testiranje
+## 🧪 Testing
 
 ```bash
 dotnet test backend/ePrevzem.Tests              # backend (xUnit + Testcontainers)
 dotnet test sitrust-mock/backend/SiTrustMock.Tests
-cd cv-identity && pytest -v                      # računalniški vid
+cd cv-identity && pytest -v                      # computer vision
 cd ePrevzemMobile && ./gradlew :composeApp:allTests
 cd sitrust-mock/eosebna_mobile && flutter test
 ```
 
 ---
 
-## 🔄 Osnovni potek uporabe
+## 🔄 Basic Usage Flow
 
-1. Organizacija ustvari zahtevek za prevzem dokumenta.
-2. Dokument se shrani v predalček paketnika.
-3. Uporabnik  pride do paketnika.
-4. V aplikaciji se varno identificira.
-5. Sistem preveri pravice dostopa.
-6. Predalček se odklene.
-7. Dogodek se zabeleži (audit log).
-
----
-
-## 🧭 Naslednji koraki
-
-Načrtovane funkcionalnosti, ki še niso implementirane:
-
-- **Delegacija prevzema drugi osebi** (elektronsko pooblastilo) — uporabnik bo
-  lahko pooblastil drugo osebo za prevzem v svojem imenu.
+1. The organization creates a document pickup request.
+2. The document is stored in a locker compartment.
+3. The user comes to the locker.
+4. They securely identify themselves in the application.
+5. The system verifies access rights.
+6. The compartment is unlocked.
+7. The event is logged (audit log).
 
 ---
 
-## 👥 Ekipa
+## 🧭 Next Steps
 
-- Adnan Bratanović (vodja)
+Planned features that are not yet implemented:
+
+- **Delegating pickup to another person** (electronic authorization) — the user
+  will be able to authorize another person to pick up on their behalf.
+
+---
+
+## 👥 Team
+
+- Adnan Bratanović (lead)
 - Edvin Bečić
 - Emir Ribić
 
 ---
 
-## 📝 Opombe
+## 📝 Notes
 
-- Projekt je prototip za izobraževalne namene.
-- Deli identifikacije (SI-TRUST / eOsebna) so **simulirani** — nikoli niso
-  povezani z realnimi državnimi storitvami; v tem repozitoriju se ne uporablja
-  resničnih osebnih podatkov.
-- Fokus je na arhitekturi, varnosti in uporabniški izkušnji.
+- The project is a prototype for educational purposes.
+- The identification parts (SI-TRUST / eOsebna) are **simulated** — they are never
+  connected to real state services; no real personal data is used in this
+  repository.
+- The focus is on architecture, security, and user experience.
